@@ -1,0 +1,10 @@
+otel_bundle:
+  tracer_name: '%env(OTEL_TRACER_NAME)%'
+  autoload_enabled: '%env(bool:OTEL_PHP_AUTOLOAD_ENABLED)%'
+  service_name: '%env(OTEL_SERVICE_NAME)%'
+  traces_processor: '%env(OTEL_PHP_TRACES_PROCESSOR)%'
+  traces_exporter: '%env(OTEL_TRACES_EXPORTER)%'
+  exporter_otlp_traces_endpoint: '%env(OTEL_EXPORTER_OTLP_TRACES_ENDPOINT)%'
+  propagators: '%env(OTEL_PROPAGATORS)%'
+  span_tracers:
+    - { class: 'Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer', tag: 'kernel.event_subscriber' }

@@ -1,0 +1,36 @@
+{
+    "name": "macpaw/symfony-otel-bundle",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Macpaw\\SymfonyOtelBundle\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Taras Ziabukhin",
+            "email": "t.ziabukhin@macpaw.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": "^8.2",
+        "ext-opentelemetry": "*",
+        "symfony/dependency-injection": "^7.0",
+        "symfony/config": "^7.0",
+        "symfony/yaml": "^7.0",
+        "open-telemetry/symfony-sdk-bundle": "^0.0.25",
+        "symfony/http-client": "^7.0",
+        "nyholm/psr7": "^1.8",
+        "guzzlehttp/promises": "^2.0",
+        "php-http/httplug": "^2.4",
+        "symfony/http-kernel": "^7.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true,
+            "tbachert/spi": true
+        }
+    }
+}

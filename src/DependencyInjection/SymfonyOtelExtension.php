@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Macpaw\SymfonyOtelBundle\DependencyInjection;
 
 use Exception;
-use Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
@@ -16,9 +15,11 @@ class SymfonyOtelExtension extends Extension
     public const NAME = 'otel_bundle';
 
     /**
+     * @param array<string, mixed> $configs
+     *
      * @throws Exception
      */
-    public function load(array $configs, ContainerBuilder $container)
+    public function load(array $configs, ContainerBuilder $container): void
     {
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/../../Resources/config'));
         $loader->load('services.yml');
@@ -26,13 +27,9 @@ class SymfonyOtelExtension extends Extension
         $configuration = $this->getConfiguration($configs, $container);
         $configs = $this->processConfiguration($configuration, $configs);
 
-        $definition = $container->getDefinition(ExecutionTimeSpanTracer::class);
-        $definition->setArguments([
-            '$tracerName' => $configs['tracer_name'],
-        ]);
-
-        $container->setDefinition(ExecutionTimeSpanTracer::class, $definition);
-
+        $container->setParameter('otel_bundle.tracer_name', $configs['tracer_name']);
+        $container->setParameter('otel_bundle.tracer_name', $configs['tracer_name']);
+        $container->setParameter('otel_bundle.span_tracers', $configs['span_tracers']);
     }
 
     /**
@@ -41,5 +38,10 @@ class SymfonyOtelExtension extends Extension
     public function getConfiguration(array $config, ContainerBuilder $container): Configuration
     {
         return new Configuration();
+    }
+
+    public function getAlias(): string
+    {
+        return self::NAME;
     }
 }

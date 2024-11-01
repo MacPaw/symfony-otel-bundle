@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Macpaw\SymfonyOtelBundle;
 
 use Macpaw\SymfonyOtelBundle\DependencyInjection\SymfonyOtelCompilerPass;

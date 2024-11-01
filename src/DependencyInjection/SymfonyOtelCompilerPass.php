@@ -1,17 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Macpaw\SymfonyOtelBundle\DependencyInjection;
 
 use Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer;
-use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 
 class SymfonyOtelCompilerPass implements CompilerPassInterface
 {
 
-    public function process(ContainerBuilder $container)
+    public function process(ContainerBuilder $container): void
     {
-
         $listeners = $container->getParameter('otel_bundle.span_tracers');
 
         foreach ($listeners as $listener) {

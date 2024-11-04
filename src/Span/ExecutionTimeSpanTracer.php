@@ -6,6 +6,7 @@ namespace Macpaw\SymfonyOtelBundle\Span;
 
 use OpenTelemetry\API\Trace\Span;
 use OpenTelemetry\API\Trace\SpanInterface;
+use OpenTelemetry\Context\Context;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -13,7 +14,7 @@ use Symfony\Component\HttpKernel\Event\TerminateEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 
-final class ExecutionTimeSpanTracer implements EventSubscriberInterface
+class ExecutionTimeSpanTracer implements EventSubscriberInterface
 {
     public const NAME = 'execution_time';
 
@@ -30,13 +31,8 @@ final class ExecutionTimeSpanTracer implements EventSubscriberInterface
 
     public function onKernelRequest(RequestEvent $event): void
     {
-        $request = $event->getRequest();
-        $headers = $request->headers->all();
-        $context = $this->propagator->extract($headers);
-
-        $spanInjectedContext = Span::fromContext($context)->getContext();
-
-        if ($spanInjectedContext->isValid() === false) {
+        $context = $this->checkTraceInjectionValidity($event);
+        if ($context === null) {
             return;
         }
 
@@ -74,5 +70,15 @@ final class ExecutionTimeSpanTracer implements EventSubscriberInterface
             KernelEvents::REQUEST => 'onKernelRequest',
             KernelEvents::TERMINATE => 'onKernelTerminate',
         ];
+    }
+
+    protected function checkTraceInjectionValidity(RequestEvent $event): ?Context
+    {
+        $request = $event->getRequest();
+        $headers = $request->headers->all();
+        $context = $this->propagator->extract($headers);
+        $spanInjectedContext = Span::fromContext($context)->getContext();
+
+        return $spanInjectedContext->isValid() ? $context : null;
     }
 }

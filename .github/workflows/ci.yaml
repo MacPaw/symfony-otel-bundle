@@ -56,10 +56,10 @@ jobs:
       - name: Update Symfony version
         if: matrix.symfony-versions != ''
         run: |
-          composer require symfony/dependency-injection:${{ matrix.symfony-versions }} --no-update --no-scripts
-          composer require symfony/config:${{ matrix.symfony-versions }} --no-update --no-scripts
-          composer require --dev symfony/yaml:${{ matrix.symfony-versions }} --no-update --no-scripts
-          composer require symfony/http-kernel:${{ matrix.symfony-versions }} --no-update --no-scripts
+          composer require symfony/dependency-injection:${{ matrix.symfony-versions }} --no-update --no-scripts --ignore-platform-req=ext-opentelemetry
+          composer require symfony/config:${{ matrix.symfony-versions }} --no-update --no-scripts --ignore-platform-req=ext-opentelemetry
+          composer require --dev symfony/yaml:${{ matrix.symfony-versions }} --no-update --no-scripts --ignore-platform-req=ext-opentelemetry
+          composer require symfony/http-kernel:${{ matrix.symfony-versions }} --no-update --no-scripts --ignore-platform-req=ext-opentelemetry
           composer require open-telemetry/symfony-sdk-bundle --no-update --no-scripts --ignore-platform-req=ext-opentelemetry
       - name: Install dependencies
         run: composer install

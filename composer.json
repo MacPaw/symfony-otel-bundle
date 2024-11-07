@@ -17,7 +17,7 @@
     "require": {
         "php": "^8.2",
         "ext-opentelemetry": "*",
-        "symfony/dependency-injection": "^7.0",
+        "symfony/dependency-injection": "^6.4|^7.0",
         "symfony/config": "^7.0",
         "symfony/yaml": "^7.0",
         "open-telemetry/symfony-sdk-bundle": "^0.0.25",

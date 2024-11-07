@@ -12,25 +12,10 @@ return [
 ```
 
 ## Configuration understanding
-First in first, you need to configure otel bundle itself. Example:
-```.env
-OTEL_TRACER_NAME='io.opentelemetry.contrib.php'
-OTEL_PHP_AUTOLOAD_ENABLED=true
-OTEL_SERVICE_NAME=your-service-name
-OTEL_PHP_TRACES_PROCESSOR=batch
-OTEL_TRACES_EXPORTER=otlp
-OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://local-collector:4318
-OTEL_PROPAGATORS=tracecontext
-```
+This bundle is a decoration under [https://github.com/opentelemetry-php/contrib-sdk-bundle](https://github.com/opentelemetry-php/contrib-sdk-bundle) to simplify integration with the official bundle and provide generic kernel listeners for data tracing.
+If you want to get more information about configuration, please refer to the official bundle documentation.
 
-Then you can configure your own span tracers. Example:
-```yaml
-otel_bundle:
-  tracer_name: '%otel_bundle.tracer_name%'
-  service_name: '%otel_bundle.service_name%'
-  span_tracers:
-    - { class: 'Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer', tag: 'kernel.event_subscriber' }
-```
+## Setup bundle
 
 ## Kernel event listeners
 Example of kernel event listener implementation can be found in `Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer` class.

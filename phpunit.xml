@@ -3,8 +3,10 @@
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.1/phpunit.xsd"
          bootstrap="vendor/autoload.php"
-         colors="true"
-         environment="OTEL_PROPAGATORS=baggage,tracecontext">
+         colors="true">
+    <php>
+        <env name="OTEL_PROPAGATORS" value="baggage,tracecontext"/>
+    </php>
     <testsuites>
         <testsuite name="Unit Tests">
             <directory>tests</directory>

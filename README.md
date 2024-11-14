@@ -20,3 +20,40 @@ If you want to get more information about configuration, please refer to the off
 ## Kernel event listeners
 Example of kernel event listener implementation can be found in `Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer` class.
 When specific listener need to be configured, you need to add it to `span_tracers` list in configuration after implementation.
+
+### Example
+
+1. Create a custom span tracer class:
+
+    ```php
+    namespace Macpaw\SymfonyOtelBundle\Span;
+
+    use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+    use OpenTelemetry\API\Trace\Span;
+
+    class CustomSpanTracer implements EventSubscriberInterface
+    {
+        public function onKernelRequest(RequestEvent $event): void
+        {
+            $span = Span::startSpan('custom_span');
+            // Add custom tracing logic here
+            $span->end();
+        }
+   
+        public static function getSubscribedEvents(): array
+        {
+            return [
+                KernelEvents::REQUEST => 'onKernelRequest',
+            ];
+        }
+    }
+    ```
+   
+2. Register the custom span tracer in the Symfony configuration:
+
+    ```yaml
+    # config/packages/symfony_otel.yaml
+    symfony_otel:
+        span_tracers:
+            - App\Span\CustomSpanTracer
+    ```

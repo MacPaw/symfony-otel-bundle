@@ -18,14 +18,14 @@
         "php": "^8.2",
         "ext-opentelemetry": "*",
         "symfony/dependency-injection": "^6.4|^7.0",
-        "symfony/config": "^7.0",
-        "symfony/yaml": "^7.0",
+        "symfony/config": "^6.4|^7.0",
+        "symfony/yaml": "^6.4|^7.0",
         "open-telemetry/symfony-sdk-bundle": "^0.0.25",
-        "symfony/http-client": "^7.0",
+        "symfony/http-client": "^6.4|^7.0",
         "nyholm/psr7": "^1.8",
         "guzzlehttp/promises": "^2.0",
         "php-http/httplug": "^2.4",
-        "symfony/http-kernel": "^7.0"
+        "symfony/http-kernel": "^6.4|^7.0"
     },
     "config": {
         "allow-plugins": {

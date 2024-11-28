@@ -72,10 +72,8 @@ jobs:
         run: vendor/bin/phpunit --coverage-clover=coverage.xml
         if: matrix.coverage == 'xdebug'
 
-      - name: Run codecov
-        uses: codecov/codecov-action@v4.0.1
+      - name: Upload coverage reports to Codecov
         if: matrix.coverage == 'xdebug'
+        uses: codecov/codecov-action@v4.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: './coverage.xml'
-          fail_ci_if_error: true

@@ -12,9 +12,14 @@
             <directory>tests</directory>
         </testsuite>
     </testsuites>
-    <coverage>
+    <source>
         <include>
-            <directory>src</directory>
+            <directory>./src/Service</directory>
+            <directory>./src/Span</directory>
         </include>
-    </coverage>
+        <exclude>
+            <directory suffix="Exception.php">src</directory>
+            <directory suffix="php">src/DependencyInjection</directory>
+        </exclude>
+    </source>
 </phpunit>

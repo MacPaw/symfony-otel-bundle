@@ -11,10 +11,10 @@
         <testsuite name="Unit Tests">
             <directory>tests</directory>
         </testsuite>
-        <coverage>
-            <include>
-                <directory>src</directory>
-            </include>
-        </coverage>
     </testsuites>
+    <coverage>
+        <include>
+            <directory>src</directory>
+        </include>
+    </coverage>
 </phpunit>

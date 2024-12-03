@@ -1,0 +1,23 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+
+  Macpaw\SymfonyOtelBundle\Service\TraceService:
+    arguments:
+      $tracerProvider: '@OpenTelemetry\SDK\Trace\TracerProviderInterface'
+
+  otpl.tracerProviderFactory:
+    class: OpenTelemetry\SDK\Trace\TracerProviderFactory
+
+  OpenTelemetry\SDK\Trace\TracerProviderInterface:
+    class: OpenTelemetry\SDK\Trace\TracerProvider
+    factory: [ '@otpl.tracerProviderFactory', 'create' ]
+    tags:
+      - { name: 'otpl.tracerProvider' }
+
+  OpenTelemetry\Context\Propagation\TextMapPropagatorInterface:
+    factory: [ '@OpenTelemetry\SDK\Propagation\PropagatorFactory', 'create' ]
+
+  OpenTelemetry\SDK\Propagation\PropagatorFactory:
+    class: OpenTelemetry\SDK\Propagation\PropagatorFactory

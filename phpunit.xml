@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- https://phpunit.readthedocs.io/en/latest/configuration.html -->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.1/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true">
+    <php>
+        <env name="OTEL_PROPAGATORS" value="baggage,tracecontext"/>
+    </php>
+    <testsuites>
+        <testsuite name="Unit Tests">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>./src/Service</directory>
+            <directory>./src/Span</directory>
+        </include>
+        <exclude>
+            <directory suffix="Exception.php">src</directory>
+            <directory suffix="php">src/DependencyInjection</directory>
+        </exclude>
+    </source>
+</phpunit>

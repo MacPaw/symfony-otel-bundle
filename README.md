@@ -57,3 +57,21 @@ When specific listener need to be configured, you need to add it to `span_tracer
         span_tracers:
             - App\Span\CustomSpanTracer
     ```
+
+## Environment Variables
+
+This bundle supports the following OpenTelemetry SDK environment variables for configuration:
+
+- `OTEL_RESOURCE_ATTRIBUTES`: Key-value pairs to be used as resource attributes.
+- `OTEL_SERVICE_NAME`: The name of the service.
+- `OTEL_TRACES_EXPORTER`: The exporter to be used for traces.
+- `OTEL_METRICS_EXPORTER`: The exporter to be used for metrics.
+- `OTEL_LOGS_EXPORTER`: The exporter to be used for logs.
+- `OTEL_EXPORTER_OTLP_ENDPOINT`: The endpoint for the OTLP exporter.
+- `OTEL_EXPORTER_OTLP_HEADERS`: Headers to be sent with each OTLP request.
+- `OTEL_EXPORTER_OTLP_TIMEOUT`: Timeout for OTLP requests.
+- `OTEL_PROPAGATORS`: Propagators to be used for context propagation.
+- `OTEL_TRACES_SAMPLER`: The sampler to be used for traces.
+- `OTEL_TRACES_SAMPLER_ARG`: Arguments for the trace sampler.
+
+For a complete list and detailed descriptions, please refer to the [OpenTelemetry SDK Environment Variables documentation](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/).

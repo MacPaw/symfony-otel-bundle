@@ -328,3 +328,16 @@ security-scan: ## Run local security scanning
 	@echo "$(BLUE)🔒 Running local security scan...$(NC)"
 	@docker run --rm -v $(PWD):/workspace aquasec/trivy fs --security-checks vuln /workspace
 	@echo "$(GREEN)✅ Security scan completed$(NC)"
+
+fix-whitespace: ## Fix trailing whitespace in all files
+	@echo "$(BLUE)🧹 Fixing trailing whitespace...$(NC)"
+	@find src tests -name "*.php" -exec sed -i 's/[[:space:]]*$$//' {} \; 2>/dev/null || \
+	 find src tests -name "*.php" -exec sed -i '' 's/[[:space:]]*$$//' {} \;
+	@echo "$(GREEN)✅ Trailing whitespace fixed$(NC)"
+
+setup-hooks: ## Install git hooks for code quality
+	@echo "$(BLUE)🪝 Setting up git hooks...$(NC)"
+	@git config core.hooksPath .githooks
+	@chmod +x .githooks/pre-commit
+	@echo "$(GREEN)✅ Git hooks installed$(NC)"
+	@echo "$(YELLOW)💡 Code style will be automatically checked and fixed on commit$(NC)"

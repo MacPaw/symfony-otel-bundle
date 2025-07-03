@@ -31,6 +31,5 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
 
             $container->setDefinition($listener['class'], $definition);
         }
-
     }
 }

@@ -21,3 +21,4 @@ services:
 
   OpenTelemetry\SDK\Propagation\PropagatorFactory:
     class: OpenTelemetry\SDK\Propagation\PropagatorFactory
+

@@ -1,0 +1,35 @@
+# Development overrides for the Docker Compose configuration
+# This file is automatically loaded by docker-compose
+
+services:
+  php-app:
+    environment:
+      # Development environment variables
+      - APP_ENV=dev
+      - APP_DEBUG=true
+      - OTEL_LOG_LEVEL=debug
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_METRICS_EXPORTER=none
+      - OTEL_LOGS_EXPORTER=none
+      # Enable additional debugging
+      - OTEL_PHP_AUTOLOAD_ENABLED=true
+      - OTEL_TRACES_SAMPLER=always_on
+    volumes:
+      # Mount source code for development
+      - ./src:/var/www/html/src:ro
+      - ./tests:/var/www/html/tests:ro
+      - ./Resources:/var/www/html/Resources:ro
+      - ./composer.json:/var/www/html/composer.json:ro
+    command: >
+      sh -c "
+        composer install --no-scripts --no-autoloader &&
+        composer dump-autoload --optimize &&
+        php -S 0.0.0.0:8080 -t test_app/public
+      "
+
+  # Additional debugging service for viewing raw traces
+  tempo:
+    environment:
+      - TEMPO_LOG_LEVEL=debug
+    volumes:
+      - ./docker/tempo/tempo.yaml:/etc/tempo.yaml:ro 

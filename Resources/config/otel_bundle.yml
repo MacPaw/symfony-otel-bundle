@@ -3,3 +3,4 @@ otel_bundle:
   service_name: '%env(OTEL_SERVICE_NAME)%'
   span_tracers:
     - { class: 'Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer', tag: 'kernel.event_subscriber' }
+

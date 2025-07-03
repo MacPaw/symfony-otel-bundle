@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Macpaw\SymfonyOtelBundle\Span;
 
+use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\Span;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\Context\Context;
-use Symfony\Component\HttpKernel\KernelEvents;
-use Macpaw\SymfonyOtelBundle\Service\TraceService;
+use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\TerminateEvent;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Symfony\Component\HttpKernel\KernelEvents;
 
 class ExecutionTimeSpanTracer implements EventSubscriberInterface
 {

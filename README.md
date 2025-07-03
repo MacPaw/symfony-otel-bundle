@@ -75,3 +75,4 @@ This bundle supports the following OpenTelemetry SDK environment variables for c
 - `OTEL_TRACES_SAMPLER_ARG`: Arguments for the trace sampler.
 
 For a complete list and detailed descriptions, please refer to the [OpenTelemetry SDK Environment Variables documentation](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/).
+

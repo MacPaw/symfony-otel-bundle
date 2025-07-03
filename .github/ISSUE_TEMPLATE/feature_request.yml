@@ -1,0 +1,104 @@
+name: ✨ Feature Request
+description: Suggest an idea for this project
+title: "[FEATURE] "
+labels: [ "enhancement", "triage" ]
+assignees: [ ]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! ✨
+        
+        Please search existing issues to ensure this hasn't been requested before.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please confirm these before proceeding
+      options:
+        - label: I have searched existing issues to ensure this feature has not been requested before
+          required: true
+        - label: I have read the documentation to ensure this feature doesn't already exist
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Description
+      description: What problem would this feature solve?
+      placeholder: I'm always frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see
+      placeholder: I would like to see...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or features you've considered
+      placeholder: Alternative approaches could be...
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Complexity
+      description: How complex do you think this feature would be to implement?
+      options:
+        - Low (simple configuration change)
+        - Medium (new functionality, limited scope)
+        - High (major new functionality)
+        - Very High (architectural changes required)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Would you be willing to contribute to implementing this feature?
+      options:
+        - label: I'm willing to submit a PR for this feature
+        - label: I can help with testing
+        - label: I can help with documentation
+        - label: I can provide feedback during development
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use Case
+      description: Provide a specific use case or example where this feature would be valuable
+      placeholder: |
+        For example:
+        - When tracing microservices...
+        - When integrating with monitoring system X...
+        - When debugging performance issues...
+
+  - type: textarea
+    id: example
+    attributes:
+      label: Example Implementation
+      description: If you have ideas about the API or configuration, show an example
+      render: php
+      placeholder: |
+        // Example configuration or code
+        otel_bundle:
+          new_feature:
+            enabled: true
+            option: value
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, or examples about the feature request
+      placeholder: Links to similar implementations, mockups, related documentation, etc. 

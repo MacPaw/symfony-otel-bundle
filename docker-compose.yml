@@ -1,0 +1,79 @@
+services:
+  # Tempo - OpenTelemetry traces backend
+  tempo:
+    image: grafana/tempo:latest
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./docker/tempo/tempo.yaml:/etc/tempo.yaml
+      - tempo-data:/tmp/tempo
+    ports:
+      - "3200:3200"   # tempo
+      - "4317:4317"   # otlp grpc
+      - "4318:4318"   # otlp http
+    networks:
+      - otel-network
+
+  # Grafana - for viewing traces
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - tempo
+    networks:
+      - otel-network
+
+  # PHP application for testing
+  php-app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: symfony-otel-app
+    volumes:
+      - .:/var/www/html
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+    ports:
+      - "8080:8080"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=symfony-otel-test
+      - OTEL_TRACER_NAME=symfony-otel-bundle
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=symfony-otel-test,service.version=1.0.0
+      - OTEL_PROPAGATORS=tracecontext,baggage
+    depends_on:
+      - tempo
+    networks:
+      - otel-network
+
+  # OpenTelemetry Collector (optional - for more advanced setups)
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    volumes:
+      - ./docker/otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4319:4317"   # OTLP gRPC receiver
+      - "4320:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus metrics
+    depends_on:
+      - tempo
+    networks:
+      - otel-network
+
+volumes:
+  tempo-data:
+  grafana-data:
+
+networks:
+  otel-network:
+    driver: bridge 
+

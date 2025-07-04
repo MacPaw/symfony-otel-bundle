@@ -25,8 +25,7 @@ RUN docker-php-ext-install \
     xml
 
 # Install OpenTelemetry extension
-RUN pecl install opentelemetry-1.0.0 \
-    && docker-php-ext-enable opentelemetry
+RUN pecl install opentelemetry-1.0.0
 
 # Install Xdebug for code coverage
 RUN apk add --no-cache linux-headers \

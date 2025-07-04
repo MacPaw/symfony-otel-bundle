@@ -7,6 +7,21 @@ services:
     arguments:
       $tracerProvider: '@OpenTelemetry\SDK\Trace\TracerProviderInterface'
 
+  # ReactPHP-based async trace service
+  Macpaw\SymfonyOtelBundle\Service\AsyncTraceService:
+    arguments:
+      $tracerProvider: '@OpenTelemetry\SDK\Trace\TracerProviderInterface'
+      $otlpEndpoint: '%env(OTEL_EXPORTER_OTLP_ENDPOINT)%/v1/traces'
+      $headers: [ ]
+
+  # ReactPHP-based OTLP exporter
+  Macpaw\SymfonyOtelBundle\Service\ReactPhpOtlpExporter:
+    arguments:
+      $endpoint: '%env(OTEL_EXPORTER_OTLP_ENDPOINT)%/v1/traces'
+      $headers: [ ]
+      $batchSize: 100
+      $flushInterval: 5.0
+
   otpl.tracerProviderFactory:
     class: OpenTelemetry\SDK\Trace\TracerProviderFactory
 

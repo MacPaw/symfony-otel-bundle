@@ -231,4 +231,209 @@ class ExecutionTimeSpanTracerTest extends TestCase
 
         $executionTimeSpanTracer->onKernelRequest($subRequestEvent);
     }
+
+    public function testExecutionTimeIsPositive(): void
+    {
+        $traceService = $this->createMock(TraceService::class);
+        $propagator = $this->createMock(TextMapPropagatorInterface::class);
+        $tracerName = 'test_tracer';
+
+        $span = $this->createMock(SpanInterface::class);
+        $scope = $this->createMock(ScopeInterface::class);
+        $tracer = $this->createMock(TracerInterface::class);
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+
+        $traceService->expects($this->once())
+            ->method('getTracer')
+            ->with($tracerName)
+            ->willReturn($tracer);
+
+        $tracer->expects($this->once())
+            ->method('spanBuilder')
+            ->with(ExecutionTimeSpanTracer::NAME)
+            ->willReturn($spanBuilder);
+
+        $spanBuilder->expects($this->once())
+            ->method('setParent')
+            ->willReturnSelf();
+        $spanBuilder->expects($this->once())
+            ->method('startSpan')
+            ->willReturn($span);
+
+        $span->expects($this->once())
+            ->method('activate')
+            ->willReturn($scope);
+
+        // Critical: Assert that execution time is positive
+        $span->expects($this->once())
+            ->method('addEvent')
+            ->with(
+                $this->callback(function (string $message) {
+                    // Extract execution time from message
+                    if (preg_match('/Execution time: ([0-9.]+) seconds/', $message, $matches)) {
+                        $executionTime = (float)$matches[1];
+                        // This will catch the + vs - mutant because + would result in a huge number
+                        return $executionTime > 0 && $executionTime < 1; // Should be a reasonable positive value
+                    }
+                    return false;
+                }),
+            );
+
+        $span->expects($this->once())->method('end');
+        $scope->expects($this->once())->method('detach');
+        $traceService->expects($this->once())->method('shutdown');
+
+        $executionTimeSpanTracer = $this->getMockBuilder(ExecutionTimeSpanTracer::class)
+            ->setConstructorArgs([$traceService, $propagator, $tracerName])
+            ->onlyMethods(['checkTraceInjectionValidity'])
+            ->getMock();
+
+        $executionTimeSpanTracer->expects($this->once())
+            ->method('checkTraceInjectionValidity')
+            ->willReturn(Context::getCurrent());
+
+        $request = new Request();
+        $kernel = $this->createMock(HttpKernelInterface::class);
+        $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+        $terminateEvent = new TerminateEvent($kernel, $request, new Response());
+
+        $executionTimeSpanTracer->onKernelRequest($requestEvent);
+
+        // Small delay to ensure measurable execution time but not too long
+        usleep(1000); // 1ms
+
+        $executionTimeSpanTracer->onKernelTerminate($terminateEvent);
+    }
+
+    public function testFinallyBlockExecutesEvenWhenExceptionOccurs(): void
+    {
+        $traceService = $this->createMock(TraceService::class);
+        $propagator = $this->createMock(TextMapPropagatorInterface::class);
+        $tracerName = 'test_tracer';
+
+        $span = $this->createMock(SpanInterface::class);
+        $scope = $this->createMock(ScopeInterface::class);
+        $tracer = $this->createMock(TracerInterface::class);
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+
+        $traceService->expects($this->once())
+            ->method('getTracer')
+            ->with($tracerName)
+            ->willReturn($tracer);
+
+        $tracer->expects($this->once())
+            ->method('spanBuilder')
+            ->with(ExecutionTimeSpanTracer::NAME)
+            ->willReturn($spanBuilder);
+
+        $spanBuilder->expects($this->once())
+            ->method('setParent')
+            ->willReturnSelf();
+        $spanBuilder->expects($this->once())
+            ->method('startSpan')
+            ->willReturn($span);
+
+        $span->expects($this->once())
+            ->method('activate')
+            ->willReturn($scope);
+
+        // Make addEvent throw an exception to test finally block
+        $span->expects($this->once())
+            ->method('addEvent')
+            ->willThrowException(new \RuntimeException('Test exception'));
+
+        // The finally block should still execute despite the exception
+        $scope->expects($this->once())->method('detach');
+        $traceService->expects($this->once())->method('shutdown');
+
+        $executionTimeSpanTracer = $this->getMockBuilder(ExecutionTimeSpanTracer::class)
+            ->setConstructorArgs([$traceService, $propagator, $tracerName])
+            ->onlyMethods(['checkTraceInjectionValidity'])
+            ->getMock();
+
+        $executionTimeSpanTracer->expects($this->once())
+            ->method('checkTraceInjectionValidity')
+            ->willReturn(Context::getCurrent());
+
+        $request = new Request();
+        $kernel = $this->createMock(HttpKernelInterface::class);
+        $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+        $terminateEvent = new TerminateEvent($kernel, $request, new Response());
+
+        $executionTimeSpanTracer->onKernelRequest($requestEvent);
+
+        // The exception should propagate but finally block should still execute
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Test exception');
+
+        $executionTimeSpanTracer->onKernelTerminate($terminateEvent);
+    }
+
+    public function testFinallyBlockExecutesWhenSpanEndThrows(): void
+    {
+        $traceService = $this->createMock(TraceService::class);
+        $propagator = $this->createMock(TextMapPropagatorInterface::class);
+        $tracerName = 'test_tracer';
+
+        $span = $this->createMock(SpanInterface::class);
+        $scope = $this->createMock(ScopeInterface::class);
+        $tracer = $this->createMock(TracerInterface::class);
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+
+        $traceService->expects($this->once())
+            ->method('getTracer')
+            ->with($tracerName)
+            ->willReturn($tracer);
+
+        $tracer->expects($this->once())
+            ->method('spanBuilder')
+            ->with(ExecutionTimeSpanTracer::NAME)
+            ->willReturn($spanBuilder);
+
+        $spanBuilder->expects($this->once())
+            ->method('setParent')
+            ->willReturnSelf();
+        $spanBuilder->expects($this->once())
+            ->method('startSpan')
+            ->willReturn($span);
+
+        $span->expects($this->once())
+            ->method('activate')
+            ->willReturn($scope);
+
+        $span->expects($this->once())
+            ->method('addEvent')
+            ->with($this->stringContains('Execution time:'));
+
+        // Make span->end() throw an exception to test finally block
+        $span->expects($this->once())
+            ->method('end')
+            ->willThrowException(new \RuntimeException('Span end failed'));
+
+        // The finally block should still execute despite the exception
+        $scope->expects($this->once())->method('detach');
+        $traceService->expects($this->once())->method('shutdown');
+
+        $executionTimeSpanTracer = $this->getMockBuilder(ExecutionTimeSpanTracer::class)
+            ->setConstructorArgs([$traceService, $propagator, $tracerName])
+            ->onlyMethods(['checkTraceInjectionValidity'])
+            ->getMock();
+
+        $executionTimeSpanTracer->expects($this->once())
+            ->method('checkTraceInjectionValidity')
+            ->willReturn(Context::getCurrent());
+
+        $request = new Request();
+        $kernel = $this->createMock(HttpKernelInterface::class);
+        $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+        $terminateEvent = new TerminateEvent($kernel, $request, new Response());
+
+        $executionTimeSpanTracer->onKernelRequest($requestEvent);
+
+        // The exception should propagate but finally block should still execute
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Span end failed');
+
+        $executionTimeSpanTracer->onKernelTerminate($terminateEvent);
+    }
 }

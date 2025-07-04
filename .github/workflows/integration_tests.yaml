@@ -1,0 +1,92 @@
+name: Security checks
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+  schedule:
+    # Run daily at 2 AM UTC to catch dependency issues
+    - cron: '0 2 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  COMPOSER_ROOT_VERSION: "1.0.0"
+
+jobs:
+  # =====================================================
+  # Integration Tests
+  # =====================================================
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [ unit-tests ]
+
+    services:
+      tempo:
+        image: grafana/tempo:latest
+        ports:
+          - 3200:3200
+          - 4317:4317
+          - 4318:4318
+        options: >-
+          --health-cmd="wget --no-verbose --tries=1 --spider http://localhost:3200/ready || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          extensions: opentelemetry
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --ignore-platform-req=ext-opentelemetry
+
+      - name: Start test application
+        run: |
+          cd test_app
+          php -S localhost:8080 -t public &
+          echo $! > server.pid
+          sleep 5
+
+      - name: Wait for Tempo to be ready
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:3200/ready; do sleep 2; done'
+
+      - name: Run integration tests
+        run: |
+          # Test basic endpoint
+          curl -X GET http://localhost:8080/api/test
+
+          # Test with trace headers
+          curl -X GET http://localhost:8080/api/test \
+            -H "traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+
+          # Test nested spans
+          curl -X GET http://localhost:8080/api/nested
+
+          # Wait for traces to be processed
+          sleep 10
+
+          # Verify traces were received by Tempo
+          curl -X GET "http://localhost:3200/api/search?tags=service.name=symfony-otel-test" | jq '.'
+
+      - name: Stop test application
+        if: always()
+        run: |
+          if [ -f test_app/server.pid ]; then
+            kill $(cat test_app/server.pid) || true
+            rm test_app/server.pid
+          fi

@@ -1,0 +1,98 @@
+name: Security checks
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+  schedule:
+    # Run daily at 2 AM UTC to catch dependency issues
+    - cron: '0 2 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  COMPOSER_ROOT_VERSION: "1.0.0"
+
+jobs:
+  # =====================================================
+  # Performance Tests
+  # =====================================================
+  performance:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [ unit-tests ]
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          extensions: opentelemetry
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --ignore-platform-req=ext-opentelemetry
+
+      - name: Run performance benchmarks
+        run: |
+          # Simple performance test to ensure no major regressions
+          cd test_app
+          php -S localhost:8080 -t public &
+          SERVER_PID=$!
+          sleep 5
+
+          # Benchmark requests
+          echo "Running performance benchmark..."
+          time for i in {1..100}; do
+            curl -s http://localhost:8080/api/test > /dev/null
+          done
+
+          kill $SERVER_PID
+
+  # =====================================================
+  # Docker Build Test
+  # =====================================================
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/php/Dockerfile
+          push: false
+          tags: symfony-otel-bundle:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker container
+        run: |
+          docker run --rm -d --name test-container \
+            -p 8080:8080 \
+            symfony-otel-bundle:test
+
+          sleep 10
+
+          # Test the container
+          curl -f http://localhost:8080/api/test || exit 1
+
+          docker stop test-container

@@ -10,36 +10,8 @@ parameters:
         - tests
         - test_app/src
 
-    excludePaths:
-        - vendor
-        - var
-        - docker
-
-    symfony:
-        container_xml_path: '%currentWorkingDirectory%/var/cache/dev/App_KernelDevDebugContainer.xml'
+    # symfony:
+        # container_xml_path: '%currentWorkingDirectory%/var/cache/dev/App_KernelDevDebugContainer.xml'
         # If you have a different cache directory, adjust the path accordingly
         # container_xml_path: '%currentWorkingDirectory%/test_app/var/cache/dev/App_KernelDevDebugContainer.xml'
-        console_application_loader: test_app/bin/console
-
-    doctrine:
-        repositoryClass: Doctrine\ORM\EntityRepository
-
-    ignoreErrors:
-        # Ignore errors for the test application kernel
-        - '#Call to an undefined method Symfony\\Component\\Config\\Definition\\Builder\\NodeDefinition::children\(\)#'
-        - '#Access to an undefined property Symfony\\Component\\DependencyInjection\\ContainerBuilder::\$[a-zA-Z0-9_]+#'
-        
-        # Ignore OpenTelemetry specific issues that might not be fully typed
-        - '#Call to method [a-zA-Z0-9_\\]+\(\) on an unknown class OpenTelemetry\\#'
-        - '#Access to property \$[a-zA-Z0-9_]+ on an unknown class OpenTelemetry\\#'
-        
-        # Ignore test-specific issues
-        - '#Call to method [a-zA-Z0-9_]+\(\) on an unknown class PHPUnit\\Framework\\MockObject\\#'
-        - path: tests
-          message: '#Unsafe usage of new static\(\)#'
-
-    checkGenericClassInNonGenericObjectType: false
-    checkMissingIterableValueType: false
-    reportUnmatchedIgnoredErrors: false
-
-    tmpDir: var/cache/phpstan 
+        # console_application_loader: test_app/bin/console

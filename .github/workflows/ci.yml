@@ -145,7 +145,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: opentelemetry, json, mbstring, xdebug
-          coverage: xdebug
+          coverage: none
           tools: composer:v2
 
       - name: Show php extensions

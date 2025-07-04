@@ -38,7 +38,6 @@ services:
       - "4320:4318"   # OTLP HTTP receiver
       - "8889:8889"   # Prometheus metrics
 
-
   # Additional debugging service for viewing raw traces
   tempo:
     environment:

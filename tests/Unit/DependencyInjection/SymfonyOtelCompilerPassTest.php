@@ -9,6 +9,7 @@ use Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException;
 
 class SymfonyOtelCompilerPassTest extends TestCase
 {
@@ -147,7 +148,7 @@ class SymfonyOtelCompilerPassTest extends TestCase
         ]);
         // Not setting otel_bundle.tracer_name parameter
 
-        $this->expectException(\Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException::class);
+        $this->expectException(ParameterNotFoundException::class);
 
         $this->compilerPass->process($this->container);
     }

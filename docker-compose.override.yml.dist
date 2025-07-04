@@ -16,10 +16,7 @@ services:
       - OTEL_TRACES_SAMPLER=always_on
     volumes:
       # Mount source code for development
-      - ./src:/var/www/html/src:ro
-      - ./tests:/var/www/html/tests:ro
-      - ./Resources:/var/www/html/Resources:ro
-      - ./composer.json:/var/www/html/composer.json:ro
+      - ./:/var/www/html:rw
     command: >
       sh -c "
         composer install --no-scripts --no-autoloader &&
@@ -43,7 +40,7 @@ services:
     environment:
       - TEMPO_LOG_LEVEL=debug
     volumes:
-      - ./docker/tempo/tempo.yaml:/etc/tempo.yaml:ro 
+      - ./docker/tempo/tempo.yaml:/etc/tempo.yaml:rw
     ports:
       - "3200:3200"   # tempo
       - "4317:4317"   # otlp grpc

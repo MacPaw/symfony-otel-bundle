@@ -35,6 +35,7 @@ class SymfonyOtelExtensionTest extends TestCase
             ],
         ];
 
+        // @phpstan-ignore-next-line
         $this->extension->load($configs, $this->container);
 
         $this->assertTrue($this->container->hasParameter('otel_bundle.tracer_name'));
@@ -53,6 +54,7 @@ class SymfonyOtelExtensionTest extends TestCase
     {
         $configs = [[]];
 
+        // @phpstan-ignore-next-line
         $this->extension->load($configs, $this->container);
 
         $this->assertEquals('test-template', $this->container->getParameter('otel_bundle.tracer_name'));
@@ -92,6 +94,7 @@ class SymfonyOtelExtensionTest extends TestCase
             ],
         ];
 
+        // @phpstan-ignore-next-line
         $this->extension->load($configs, $this->container);
 
         // Second config should override first
@@ -145,6 +148,7 @@ class SymfonyOtelExtensionTest extends TestCase
             ],
         ];
 
+        // @phpstan-ignore-next-line
         $this->extension->load($configs, $this->container);
 
         $this->assertEquals(
@@ -170,13 +174,19 @@ class SymfonyOtelExtensionTest extends TestCase
             ],
         ];
 
+        // @phpstan-ignore-next-line
         $this->extension->load($configs, $this->container);
 
+        /** @var array<int|string, array<string, string>> $spanTracers */
         $spanTracers = $this->container->getParameter('otel_bundle.span_tracers');
+        /** @var array<string, mixed> $firstTracer */
+        $firstTracer = $spanTracers[0];
+        /** @var array<string, mixed> $firstTracer */
+        $secondTracer = $spanTracers[1];
         $this->assertCount(2, $spanTracers);
-        $this->assertEquals('Namespace\\With\\Backslashes\\TracerClass', $spanTracers[0]['class']);
-        $this->assertEquals('custom.tag.with.dots', $spanTracers[0]['tag']);
-        $this->assertEquals('Another\\Tracer\\Class', $spanTracers[1]['class']);
-        $this->assertEquals('another_tag_with_underscores', $spanTracers[1]['tag']);
+        $this->assertEquals('Namespace\\With\\Backslashes\\TracerClass', $firstTracer['class']);
+        $this->assertEquals('custom.tag.with.dots', $firstTracer['tag']);
+        $this->assertEquals('Another\\Tracer\\Class', $secondTracer['class']);
+        $this->assertEquals('another_tag_with_underscores', $secondTracer['tag']);
     }
 }

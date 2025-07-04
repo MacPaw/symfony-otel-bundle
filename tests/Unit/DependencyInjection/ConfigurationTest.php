@@ -7,6 +7,7 @@ namespace Tests\Unit\DependencyInjection;
 use Macpaw\SymfonyOtelBundle\DependencyInjection\Configuration;
 use Macpaw\SymfonyOtelBundle\DependencyInjection\SymfonyOtelExtension;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\Processor;
 
 class ConfigurationTest extends TestCase
@@ -21,7 +22,6 @@ class ConfigurationTest extends TestCase
     public function testDefaultConfiguration(): void
     {
         $processor = new Processor();
-        $treeBuilder = $this->configuration->getConfigTreeBuilder();
 
         $config = $processor->processConfiguration($this->configuration, []);
 
@@ -46,18 +46,21 @@ class ConfigurationTest extends TestCase
             ],
         ];
 
+        /** @var array<int|string, mixed> $config */
         $config = $processor->processConfiguration($this->configuration, $inputConfig);
+        /** @var array<int, array<int|string, mixed>> $tracers */
+        $tracers = $config['span_tracers'];
 
         $this->assertEquals('custom-tracer', $config['tracer_name']);
         $this->assertEquals('custom-service', $config['service_name']);
-        $this->assertCount(1, $config['span_tracers']);
-        $this->assertEquals('App\\Span\\CustomTracer', $config['span_tracers'][0]['class']);
-        $this->assertEquals('kernel.event_subscriber', $config['span_tracers'][0]['tag']);
+        $this->assertCount(1, $tracers);
+        $this->assertEquals('App\\Span\\CustomTracer', $tracers[0]['class']);
+        $this->assertEquals('kernel.event_subscriber', $tracers[0]['tag']);
     }
 
     public function testEmptyTracerNameThrowsException(): void
     {
-        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
+        $this->expectException(InvalidConfigurationException::class);
 
         $processor = new Processor();
         $inputConfig = [
@@ -71,7 +74,7 @@ class ConfigurationTest extends TestCase
 
     public function testEmptyServiceNameThrowsException(): void
     {
-        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
+        $this->expectException(InvalidConfigurationException::class);
 
         $processor = new Processor();
         $inputConfig = [
@@ -85,7 +88,7 @@ class ConfigurationTest extends TestCase
 
     public function testSpanTracerWithoutClassThrowsException(): void
     {
-        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
+        $this->expectException(InvalidConfigurationException::class);
 
         $processor = new Processor();
         $inputConfig = [
@@ -103,7 +106,7 @@ class ConfigurationTest extends TestCase
 
     public function testSpanTracerWithoutTagThrowsException(): void
     {
-        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
+        $this->expectException(InvalidConfigurationException::class);
 
         $processor = new Processor();
         $inputConfig = [
@@ -137,10 +140,13 @@ class ConfigurationTest extends TestCase
             ],
         ];
 
+        /** @var array<int|string, mixed> $config */
         $config = $processor->processConfiguration($this->configuration, $inputConfig);
+        /** @var array<int, array<int|string, mixed>> $tracers */
+        $tracers = $config['span_tracers'];
 
-        $this->assertCount(2, $config['span_tracers']);
-        $this->assertEquals('App\\Span\\TracerOne', $config['span_tracers'][0]['class']);
-        $this->assertEquals('App\\Span\\TracerTwo', $config['span_tracers'][1]['class']);
+        $this->assertCount(2, $tracers);
+        $this->assertEquals('App\\Span\\TracerOne', $tracers[0]['class']);
+        $this->assertEquals('App\\Span\\TracerTwo', $tracers[1]['class']);
     }
 }

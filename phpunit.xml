@@ -2,6 +2,8 @@
 <!-- https://phpunit.readthedocs.io/en/latest/configuration.html -->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.1/phpunit.xsd"
+         executionOrder="random"
+         resolveDependencies="true"
          bootstrap="vendor/autoload.php"
          colors="true">
     <php>

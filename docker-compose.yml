@@ -1,6 +1,7 @@
 services:
   # Tempo - OpenTelemetry traces backend
   tempo:
+    user: root
     image: grafana/tempo:latest
     command: [ "-config.file=/etc/tempo.yaml" ]
     volumes:
@@ -17,8 +18,8 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
     volumes:
-      - grafana-data:/var/lib/grafana
-      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana:rw
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:rw
     depends_on:
       - tempo
     networks:
@@ -26,13 +27,14 @@ services:
 
   # PHP application for testing
   php-app:
+    user: root
     build:
       context: .
       dockerfile: docker/php/Dockerfile
     container_name: symfony-otel-app
     volumes:
-      - .:/var/www/html
-      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+      - .:/var/www/html:rw
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:rw
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4318
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
@@ -51,7 +53,7 @@ services:
     container_name: otel-collector
     command: [ "--config=/etc/otel-collector-config.yaml" ]
     volumes:
-      - ./docker/otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - ./docker/otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml:rw
     depends_on:
       - tempo
     networks:

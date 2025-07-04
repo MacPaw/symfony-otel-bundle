@@ -7,7 +7,7 @@ namespace Macpaw\SymfonyOtelBundle\Span;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\Span;
 use OpenTelemetry\API\Trace\SpanInterface;
-use OpenTelemetry\Context\Context;
+use OpenTelemetry\Context\ContextInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -72,7 +72,7 @@ class ExecutionTimeSpanTracer implements EventSubscriberInterface
         ];
     }
 
-    protected function checkTraceInjectionValidity(RequestEvent $event): ?Context
+    protected function checkTraceInjectionValidity(RequestEvent $event): ?ContextInterface
     {
         $request = $event->getRequest();
         $headers = $request->headers->all();

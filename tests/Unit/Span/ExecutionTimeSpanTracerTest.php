@@ -7,11 +7,9 @@ namespace Tests\Unit\Span;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
-use OpenTelemetry\API\Trace\SpanContextInterface;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\TracerInterface;
 use OpenTelemetry\Context\Context;
-use OpenTelemetry\Context\ContextInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use OpenTelemetry\Context\ScopeInterface;
 use PHPUnit\Framework\TestCase;
@@ -120,54 +118,10 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $executionTimeSpanTracer->onKernelTerminate($terminateEvent);
     }
 
-    public function testCheckTraceInjectionValidityWithValidContext(): void
-    {
-        $traceService = $this->createMock(TraceService::class);
-        $propagator = $this->createMock(TextMapPropagatorInterface::class);
-        $tracerName = 'test_tracer';
-
-        $executionTimeSpanTracer = new ExecutionTimeSpanTracer($traceService, $propagator, $tracerName);
-
-        $request = new Request();
-        $request->headers->add([
-            'traceparent' => '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
-        ]);
-
-        $mockContext = $this->createMock(ContextInterface::class);
-        $mockSpanContext = $this->createMock(SpanContextInterface::class);
-        $mockSpan = $this->createMock(SpanInterface::class);
-
-        $propagator->expects($this->never())
-            ->method('extract')
-            ->with($request->headers->all())
-            ->willReturn($mockContext);
-
-        $mockSpan->expects($this->never())
-            ->method('getContext')
-            ->willReturn($mockSpanContext);
-
-        $mockSpanContext->expects($this->never())
-            ->method('isValid')
-            ->willReturn(true);
-
-        // Mock static method call
-        $reflection = new \ReflectionClass($executionTimeSpanTracer);
-        $method = $reflection->getMethod('checkTraceInjectionValidity');
-        $method->setAccessible(true);
-
-        $kernel = $this->createMock(HttpKernelInterface::class);
-        $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
-
-        // This test would need to mock static methods which is complex in PHPUnit
-        // For now, we'll test the integration through the public methods
-        $this->assertTrue(true); // Placeholder for complex static method testing
-    }
-
     public function testGetSubscribedEvents(): void
     {
         $events = ExecutionTimeSpanTracer::getSubscribedEvents();
 
-        $this->assertIsArray($events);
         $this->assertArrayHasKey('kernel.request', $events);
         $this->assertArrayHasKey('kernel.terminate', $events);
         $this->assertEquals('onKernelRequest', $events['kernel.request']);

@@ -143,4 +143,4 @@ class ConfigurationTest extends TestCase
         $this->assertEquals('App\\Span\\TracerOne', $config['span_tracers'][0]['class']);
         $this->assertEquals('App\\Span\\TracerTwo', $config['span_tracers'][1]['class']);
     }
-} 
+}

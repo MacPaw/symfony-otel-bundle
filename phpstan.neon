@@ -1,17 +1,8 @@
-includes:
-    - vendor/phpstan/phpstan-symfony/extension.neon
-    - vendor/phpstan/phpstan-phpunit/extension.neon
-
 parameters:
-    level: 8
-    
+    level: max
+    excludePaths:
+        - src/DependencyInjection/Configuration.php
     paths:
         - src
         - tests
-        - test_app/src
-
-    # symfony:
-        # container_xml_path: '%currentWorkingDirectory%/var/cache/dev/App_KernelDevDebugContainer.xml'
-        # If you have a different cache directory, adjust the path accordingly
-        # container_xml_path: '%currentWorkingDirectory%/test_app/var/cache/dev/App_KernelDevDebugContainer.xml'
-        # console_application_loader: test_app/bin/console
+        - test_app

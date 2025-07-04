@@ -7,11 +7,12 @@ namespace Tests\Unit\Service;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\TracerInterface;
 use OpenTelemetry\SDK\Trace\TracerProviderInterface;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class TraceServiceTest extends TestCase
 {
-    private TracerProviderInterface $tracerProvider;
+    private TracerProviderInterface&MockObject $tracerProvider;
     private TraceService $traceService;
 
     protected function setUp(): void
@@ -25,8 +26,7 @@ class TraceServiceTest extends TestCase
         $tracerName = 'test-tracer';
         $expectedTracer = $this->createMock(TracerInterface::class);
 
-        $this->tracerProvider
-            ->expects($this->once())
+        $this->tracerProvider->expects($this->once())
             ->method('getTracer')
             ->with($tracerName)
             ->willReturn($expectedTracer);
@@ -105,4 +105,4 @@ class TraceServiceTest extends TestCase
         $this->assertSame($expectedTracer1, $result1);
         $this->assertSame($expectedTracer2, $result2);
     }
-} 
+}

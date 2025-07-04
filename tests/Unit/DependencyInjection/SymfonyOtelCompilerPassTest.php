@@ -199,4 +199,4 @@ class SymfonyOtelCompilerPassTest extends TestCase
         $definition = $this->container->getDefinition($complexClassName);
         $this->assertTrue($definition->hasTag('complex.tag.with.dots_and_underscores'));
     }
-} 
+}

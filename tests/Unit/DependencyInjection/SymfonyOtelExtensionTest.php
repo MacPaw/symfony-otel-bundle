@@ -179,4 +179,4 @@ class SymfonyOtelExtensionTest extends TestCase
         $this->assertEquals('Another\\Tracer\\Class', $spanTracers[1]['class']);
         $this->assertEquals('another_tag_with_underscores', $spanTracers[1]['tag']);
     }
-} 
+}

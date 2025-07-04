@@ -90,4 +90,4 @@ class SymfonyOtelBundleTest extends TestCase
         $this->assertInstanceOf(SymfonyOtelExtension::class, $extension1);
         $this->assertInstanceOf(SymfonyOtelExtension::class, $extension2);
     }
-} 
+}

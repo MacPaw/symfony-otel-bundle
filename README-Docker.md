@@ -8,7 +8,7 @@ Tempo for trace collection and Grafana for visualization.
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Symfony App   │───▶│     Tempo       │───▶│    Grafana      │
-│   (PHP 8.2)     │    │   (Traces)      │    │  (Visualization)│
+│   (PHP 8.2+)    │    │   (Traces)      │    │  (Visualization)│
 │   Port: 8080    │    │   Port: 3200    │    │   Port: 3000    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
         │                        ▲
@@ -25,38 +25,34 @@ Tempo for trace collection and Grafana for visualization.
    ```
 
 2. **View the test application:**
-    - Open http://localhost:8080 in your browser
-    - This shows the test application with available endpoints
+   - Open http://localhost:8080 in your browser
+   - This shows the test application with available endpoints
 
 3. **Access Grafana:**
-    - Open http://localhost:3000 in your browser
-    - Login: `admin` / `admin`
-    - Navigate to "Explore" → "Tempo" to view traces
+   - Open http://localhost:3000 in your browser
+   - Login: `admin` / `admin`
+   - Navigate to "Explore" → "Tempo" to view traces
 
 ## 📊 Services
 
 ### 🔍 Tempo (Traces Backend)
-
 - **Port:** 3200 (HTTP), 4317 (OTLP gRPC), 4318 (OTLP HTTP)
 - **Purpose:** Collects and stores OpenTelemetry traces
 - **Config:** `docker/tempo/tempo.yaml`
 
 ### 📈 Grafana (Visualization)
-
 - **Port:** 3000
 - **Credentials:** admin/admin
 - **Purpose:** Visualize traces and create dashboards
 - **Config:** `docker/grafana/provisioning/`
 
 ### 🐘 PHP Application
-
 - **Port:** 8080
 - **Purpose:** Test Symfony application with OpenTelemetry bundle
 - **Framework:** Symfony 6.4+ with PHP 8.2
 - **OpenTelemetry:** Configured to send traces to Tempo
 
 ### 📡 OpenTelemetry Collector (Optional)
-
 - **Ports:** 4319 (gRPC), 4320 (HTTP), 8889 (Metrics)
 - **Purpose:** Advanced trace processing and routing
 - **Config:** `docker/otel-collector/otel-collector-config.yaml`
@@ -97,9 +93,9 @@ curl -X GET http://localhost:8080/api/test \
 2. **Navigate to Explore:** Click "Explore" in the left sidebar
 3. **Select Tempo:** Choose "Tempo" as the data source
 4. **Search traces:** Use TraceQL or search by:
-    - Service name: `symfony-otel-test`
-    - Operation name: `execution_time`, `api_test_operation`, etc.
-    - Tags: `http.method`, `http.route`, etc.
+   - Service name: `symfony-otel-test`
+   - Operation name: `execution_time`, `api_test_operation`, etc.
+   - Tags: `http.method`, `http.route`, etc.
 
 ### Example TraceQL Queries
 
@@ -147,13 +143,11 @@ otel_bundle:
 ## 🐛 Troubleshooting
 
 ### Check Service Status
-
 ```bash
 docker-compose ps
 ```
 
 ### View Logs
-
 ```bash
 # All services
 docker-compose logs -f
@@ -165,7 +159,6 @@ docker-compose logs -f grafana
 ```
 
 ### Debug OpenTelemetry
-
 ```bash
 # Check if traces are being exported
 docker-compose logs -f php-app | grep -i otel
@@ -177,19 +170,19 @@ docker-compose logs -f tempo | grep -i trace
 ### Common Issues
 
 1. **No traces in Grafana:**
-    - Check if the PHP app is sending traces: `docker-compose logs php-app`
-    - Verify Tempo is receiving traces: `docker-compose logs tempo`
-    - Ensure correct OTLP endpoint configuration
+   - Check if the PHP app is sending traces: `docker-compose logs php-app`
+   - Verify Tempo is receiving traces: `docker-compose logs tempo`
+   - Ensure correct OTLP endpoint configuration
 
 2. **Grafana connection issues:**
-    - Verify Tempo is running: `docker-compose ps tempo`
-    - Check Grafana datasource configuration
-    - Try restarting Grafana: `docker-compose restart grafana`
+   - Verify Tempo is running: `docker-compose ps tempo`
+   - Check Grafana datasource configuration
+   - Try restarting Grafana: `docker-compose restart grafana`
 
 3. **PHP application errors:**
-    - Check PHP logs: `docker-compose logs php-app`
-    - Verify OpenTelemetry extension is loaded
-    - Check bundle configuration
+   - Check PHP logs: `docker-compose logs php-app`
+   - Verify OpenTelemetry extension is loaded
+   - Check bundle configuration
 
 ## 🧹 Cleanup
 
@@ -207,18 +200,15 @@ docker-compose down --rmi all
 ## 🔧 Development
 
 ### Rebuild PHP Container
-
 ```bash
 docker-compose build php-app
 docker-compose up -d php-app
 ```
 
 ### Update Bundle Code
-
 The bundle source code is mounted as a volume, so changes are reflected immediately.
 
 ### Add Custom Tracers
-
 1. Create your tracer class in `src/Span/`
 2. Add it to the bundle configuration in `test_app/src/Kernel.php`
 3. Restart the container: `docker-compose restart php-app`
@@ -229,4 +219,3 @@ The bundle source code is mounted as a volume, so changes are reflected immediat
 - [Grafana Tempo Documentation](https://grafana.com/docs/tempo/)
 - [TraceQL Documentation](https://grafana.com/docs/tempo/latest/traceql/)
 - [Symfony Bundle Best Practices](https://symfony.com/doc/current/bundles/best_practices.html) 
-

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App;
 
+use Macpaw\SymfonyOtelBundle\DependencyInjection\SymfonyOtelCompilerPass;
 use Macpaw\SymfonyOtelBundle\SymfonyOtelBundle;
 use OpenTelemetry\Contrib\Symfony\OtelBundle\OtelBundle;
 use OpenTelemetry\Contrib\Symfony\OtelSdkBundle\OtelSdkBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
@@ -27,8 +29,20 @@ class Kernel extends BaseKernel
         ];
     }
 
+    protected function build(ContainerBuilder $container): void
+    {
+        parent::build($container);
+
+        $container->addCompilerPass(new SymfonyOtelCompilerPass());
+    }
+
     protected function configureContainer(ContainerConfigurator $container): void
     {
+        putenv('APP_DEBUG=true');
+        $_ENV['APP_DEBUG'] = $_SERVER['APP_DEBUG'] = true;
+
+        $container->import(__DIR__ . '/../../Resources/config/otel_bundle.yml');
+        $container->import(__DIR__ . '/../../Resources/config/services.yml');
         $container->import('../config/services.yaml');
 
         $container->extension('framework', [
@@ -37,39 +51,10 @@ class Kernel extends BaseKernel
                 'utf8' => true,
             ],
         ]);
-
-        $container->extension('open_telemetry', [
-            'resource' => [
-                'service' => [
-                    'name' => '%env(OTEL_SERVICE_NAME)%',
-                    'version' => '1.0.0',
-                ],
-            ],
-            'tracing' => [
-                'enabled' => true,
-                'exporter' => [
-                    'otlp' => [
-                        'endpoint' => '%env(OTEL_EXPORTER_OTLP_ENDPOINT)%',
-                        'protocol' => '%env(OTEL_EXPORTER_OTLP_PROTOCOL)%',
-                    ],
-                ],
-            ],
-        ]);
-
-        $container->extension('otel_bundle', [
-            'tracer_name' => '%env(OTEL_TRACER_NAME)%',
-            'service_name' => '%env(OTEL_SERVICE_NAME)%',
-            'span_tracers' => [
-                [
-                    'class' => 'Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer',
-                    'tag' => 'kernel.event_subscriber',
-                ],
-            ],
-        ]);
     }
 
     protected function configureRoutes(RoutingConfigurator $routes): void
     {
         $routes->import('../config/routes.yaml');
     }
-} 
+}

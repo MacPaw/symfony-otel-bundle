@@ -4,3 +4,4 @@ var/coverage/
 composer.lock
 /.phpunit.result.cache
 /.phpcs-cache
+/var/cache

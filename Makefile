@@ -18,7 +18,7 @@ COMPOSE_FILE := docker-compose.yml
 COMPOSE_OVERRIDE := docker-compose.override.yml
 
 ## Environment Management
-start: ## Start the complete testing environment
+up: ## Start the complete testing environment
 	@echo "$(BLUE)🐳 Starting Symfony OpenTelemetry Bundle Test Environment$(NC)"
 	@docker-compose up -d --build
 	@echo "$(GREEN)✅ Environment started successfully!$(NC)"
@@ -29,12 +29,12 @@ start: ## Start the complete testing environment
 	@echo ""
 	@echo "$(YELLOW)Run 'make test' to run sample tests$(NC)"
 
-stop: ## Stop all services
+down: ## Stop all services
 	@echo "$(YELLOW)🛑 Stopping services...$(NC)"
 	@docker-compose down
 	@echo "$(GREEN)✅ Services stopped$(NC)"
 
-restart: stop start ## Restart all services
+restart: up down ## Restart all services
 
 build: ## Build/rebuild all services
 	@echo "$(BLUE)🔨 Building services...$(NC)"
@@ -145,13 +145,13 @@ load-test: ## Run simple load test
 	@echo "$(GREEN)✅ Load test completed$(NC)"
 
 ## Access Commands
-shell: ## Access PHP container shell
+bash: ## Access PHP container shell
 	@echo "$(BLUE)🐚 Accessing PHP container shell...$(NC)"
-	@docker-compose exec php-app /bin/sh
+	@docker-compose exec php-app /bin/bash
 
-shell-tempo: ## Access Tempo container shell
+bash-tempo: ## Access Tempo container shell
 	@echo "$(BLUE)🐚 Accessing Tempo container shell...$(NC)"
-	@docker-compose exec tempo /bin/sh
+	@docker-compose exec tempo /bin/bash
 
 ## Web Access
 grafana: ## Open Grafana in browser

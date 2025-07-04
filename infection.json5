@@ -1,0 +1,21 @@
+{
+  "$schema": "vendor/infection/infection/resources/schema.json",
+  "source": {
+    "directories": [
+      "."
+    ],
+    "excludes": [
+      "vendor",
+      "tests"
+    ]
+  },
+  "phpUnit": {
+    "customPath": "vendor/bin/phpunit"
+  },
+  "logs": {
+    "text": "no"
+  },
+  "mutators": {
+    "@default": true
+  }
+}

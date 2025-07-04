@@ -39,7 +39,8 @@
     "config": {
         "allow-plugins": {
             "php-http/discovery": true,
-            "tbachert/spi": true
+            "tbachert/spi": true,
+            "infection/extension": true
         }
     },
     "require-dev": {

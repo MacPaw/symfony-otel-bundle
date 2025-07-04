@@ -1,4 +1,4 @@
-name: Performance Tests
+name: Performance Testing
 
 on:
   pull_request:

@@ -24,7 +24,6 @@ jobs:
     name: Performance Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [ unit-tests ]
     if: github.event_name == 'pull_request'
 
     steps:

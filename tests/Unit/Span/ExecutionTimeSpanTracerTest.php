@@ -124,8 +124,8 @@ class ExecutionTimeSpanTracerTest extends TestCase
 
         $this->assertArrayHasKey('kernel.request', $events);
         $this->assertArrayHasKey('kernel.terminate', $events);
-        $this->assertEquals('onKernelRequest', $events['kernel.request']);
-        $this->assertEquals('onKernelTerminate', $events['kernel.terminate']);
+        $this->assertEquals(['onKernelRequest', -PHP_INT_MAX], $events['kernel.request']);
+        $this->assertEquals(['onKernelTerminate', PHP_INT_MAX], $events['kernel.terminate']);
     }
 
     public function testConstantName(): void

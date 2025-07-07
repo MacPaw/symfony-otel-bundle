@@ -6,7 +6,8 @@
     ],
     "excludes": [
       "vendor",
-      "tests"
+      "tests",
+      "src/DependencyInjection"
     ]
   },
   "phpUnit": {

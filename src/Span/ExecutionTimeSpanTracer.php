@@ -77,8 +77,8 @@ class ExecutionTimeSpanTracer implements EventSubscriberInterface, SpanPriorityI
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST => ['onKernelRequest', -1000],
-            KernelEvents::TERMINATE => ['onKernelTerminate', 1000],
+            KernelEvents::REQUEST => ['onKernelRequest', -PHP_INT_MAX],
+            KernelEvents::TERMINATE => ['onKernelTerminate', PHP_INT_MAX],
         ];
     }
 

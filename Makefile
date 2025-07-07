@@ -47,6 +47,36 @@ clean: ## Stop services and remove all containers, networks, and volumes
 	@docker system prune -f
 	@echo "$(GREEN)✅ Cleanup completed$(NC)"
 
+clear-data: down ## Clear all spans data from Tempo and Grafana (keeps containers)
+	@echo "$(YELLOW)🗑️  Clearing all spans data from Tempo and Grafana...$(NC)"
+	@echo "$(BLUE)Removing data volumes...$(NC)"
+	@docker volume rm -f symfony-otel-bundle_tempo-data symfony-otel-bundle_grafana-data 2>/dev/null || true
+	@echo "$(BLUE)Restarting services with clean data...$(NC)"
+	@docker-compose up -d
+	@echo "$(GREEN)✅ All spans data cleared! Tempo and Grafana restarted with clean state$(NC)"
+	@echo "$(BLUE)💡 You can now run tests to generate fresh trace data$(NC)"
+
+clear-spans: clear-data ## Alias for clear-data command
+
+clear-tempo: down ## Clear only Tempo spans data
+	@echo "$(YELLOW)🗑️  Clearing Tempo spans data...$(NC)"
+	@echo "$(BLUE)Removing Tempo data volume...$(NC)"
+	@docker volume rm -f symfony-otel-bundle_tempo-data 2>/dev/null
+	@echo "$(BLUE)Restarting Tempo with clean data...$(NC)"
+	@docker-compose up -d
+	@echo "$(GREEN)✅ Tempo spans data cleared! Service restarted with clean state$(NC)"
+
+reset-all: ## Complete reset - clear all data, rebuild, and restart everything
+	@echo "$(RED)🔄 Performing complete environment reset...$(NC)"
+	@echo "$(BLUE)Step 1: Stopping all services...$(NC)"
+	@docker-compose down
+	@echo "$(BLUE)Step 2: Removing all data volumes...$(NC)"
+	@docker volume rm -f symfony-otel-bundle_tempo-data symfony-otel-bundle_grafana-data 2>/dev/null || true
+	@echo "$(BLUE)Step 3: Rebuilding and starting services...$(NC)"
+	@docker-compose up -d --build
+	@echo "$(GREEN)✅ Complete reset finished! Environment ready with clean state$(NC)"
+	@echo "$(BLUE)💡 All trace data cleared and services rebuilt$(NC)"
+
 ## Service Management
 php-rebuild: ## Rebuild only the PHP container
 	@echo "$(BLUE)🐘 Rebuilding PHP container...$(NC)"
@@ -293,18 +323,45 @@ endpoints: ## Show all test endpoints
 	@echo "  GET  /api/nested      - Nested spans example"
 	@echo "  GET  /api/error       - Error handling example"
 
+data-commands: ## Show data management commands
+	@echo "$(BLUE)🗂️  Data Management Commands:$(NC)"
+	@echo "  make clear-data     - Clear all spans from Tempo & Grafana"
+	@echo "  make clear-tempo    - Clear only Tempo spans data"
+	@echo "  make clear-spans    - Alias for clear-data"
+	@echo "  make reset-all      - Complete reset with rebuild"
+	@echo "  make clean          - Remove everything (containers, volumes, images)"
+	@echo "  make data-status    - Show current data volume status"
+	@echo ""
+	@echo "$(YELLOW)💡 Tip: Use 'clear-data' for a quick fresh start during testing$(NC)"
+
+data-status: ## Show current data volume status and trace count
+	@echo "$(BLUE)📊 Data Volume Status:$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Docker Volumes:$(NC)"
+	@docker volume ls | grep symfony-otel-bundle || echo "No volumes found"
+	@echo ""
+	@echo "$(YELLOW)Tempo Health:$(NC)"
+	@curl -s http://localhost:3200/ready > /dev/null && echo "✅ Tempo is ready" || echo "❌ Tempo not accessible"
+	@echo ""
+	@echo "$(YELLOW)Recent Traces:$(NC)"
+	@curl -s "http://localhost:3200/api/search?limit=5" 2>/dev/null | jq -r '.traces[]?.traceID // "No traces found"' | head -5 || echo "No traces or Tempo not accessible"
+	@echo ""
+	@echo "$(YELLOW)Grafana Health:$(NC)"
+	@curl -s http://localhost:3000/api/health > /dev/null && echo "✅ Grafana is ready" || echo "❌ Grafana not accessible"
+
 help: ## Show this help message
 	@echo "$(BLUE)🚀 Symfony OpenTelemetry Bundle - Available Commands$(NC)"
 	@echo ""
 	@awk 'BEGIN {FS = ":.*##"; printf "\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  $(GREEN)%-18s$(NC) %s\n", $$1, $$2 } /^##@/ { printf "\n$(YELLOW)%s$(NC)\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "$(BLUE)💡 Quick Start:$(NC)"
-	@echo "  make start     # Start the environment"
-	@echo "  make test      # Run all tests"
-	@echo "  make coverage  # Generate coverage report"
-	@echo "  make grafana   # Open Grafana dashboard"
-	@echo "  make stop      # Stop the environment"
-	@echo "" 
+	@echo "  make start       # Start the environment"
+	@echo "  make test        # Run all tests"
+	@echo "  make clear-data  # Clear all spans data (fresh start)"
+	@echo "  make coverage    # Generate coverage report"
+	@echo "  make grafana     # Open Grafana dashboard"
+	@echo "  make stop        # Stop the environment"
+	@echo ""
 
 validate-workflows: ## Validate GitHub Actions workflows
 	@echo "$(BLUE)🔍 Validating GitHub Actions workflows...$(NC)"

@@ -14,7 +14,7 @@ use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\TerminateEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
-class ExecutionTimeSpanTracer implements EventSubscriberInterface
+class ExecutionTimeSpanTracer implements EventSubscriberInterface, SpanPriorityInterface
 {
     public const NAME = 'execution_time';
 
@@ -29,6 +29,16 @@ class ExecutionTimeSpanTracer implements EventSubscriberInterface
     ) {
     }
 
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function getPriority(): int
+    {
+        return 1000;
+    }
+
     public function onKernelRequest(RequestEvent $event): void
     {
         $context = $this->checkTraceInjectionValidity($event);
@@ -40,7 +50,7 @@ class ExecutionTimeSpanTracer implements EventSubscriberInterface
 
         $this->contextSpan = $this->traceService
             ->getTracer($this->tracerName)
-            ->spanBuilder(self::NAME)
+            ->spanBuilder($this->getName())
             ->setParent($context)
             ->startSpan();
     }
@@ -67,8 +77,8 @@ class ExecutionTimeSpanTracer implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST => 'onKernelRequest',
-            KernelEvents::TERMINATE => 'onKernelTerminate',
+            KernelEvents::REQUEST => ['onKernelRequest', -1000],
+            KernelEvents::TERMINATE => ['onKernelTerminate', 1000],
         ];
     }
 

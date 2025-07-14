@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Macpaw\SymfonyOtelBundle\DependencyInjection;
 
-use Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer;
+use Macpaw\SymfonyOtelBundle\Span\InstrumentationEventSubscriber;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -23,7 +23,7 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
 
                 $definition->setAutowired(true);
 
-                if ($listener['class'] === ExecutionTimeSpanTracer::class) {
+                if ($listener['class'] === InstrumentationEventSubscriber::class) {
                     $definition->setArguments([
                         '$tracerName' => $container->getParameter('otel_bundle.tracer_name'),
                     ]);

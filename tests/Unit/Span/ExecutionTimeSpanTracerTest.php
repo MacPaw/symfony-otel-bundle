@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Span;
 
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
-use Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer;
+use Macpaw\SymfonyOtelBundle\Span\InstrumentationEventSubscriber;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\TracerInterface;
@@ -41,7 +41,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
 
         $tracer->expects($this->once())
             ->method('spanBuilder')
-            ->with(ExecutionTimeSpanTracer::NAME)
+            ->with(InstrumentationEventSubscriber::NAME)
             ->willReturn($spanBuilder);
 
         $spanBuilder->expects($this->once())
@@ -54,7 +54,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $traceService->expects($this->once())
             ->method('shutdown');
 
-        $executionTimeSpanTracer = $this->getMockBuilder(ExecutionTimeSpanTracer::class)
+        $executionTimeSpanTracer = $this->getMockBuilder(InstrumentationEventSubscriber::class)
             ->setConstructorArgs([$traceService, $propagator, $tracerName])
             ->onlyMethods(['checkTraceInjectionValidity'])
             ->getMock();
@@ -71,8 +71,8 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
         $terminateEvent = new TerminateEvent($kernel, $request, new Response());
 
-        $executionTimeSpanTracer->onKernelRequest($requestEvent);
-        $executionTimeSpanTracer->onKernelTerminate($terminateEvent);
+        $executionTimeSpanTracer->onKernelRequestExecutionTime($requestEvent);
+        $executionTimeSpanTracer->onKernelTerminateExecutionTime($terminateEvent);
     }
 
     public function testOnKernelRequestWithInvalidTraceContext(): void
@@ -81,7 +81,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $tracerName = 'test_tracer';
 
-        $executionTimeSpanTracer = $this->getMockBuilder(ExecutionTimeSpanTracer::class)
+        $executionTimeSpanTracer = $this->getMockBuilder(InstrumentationEventSubscriber::class)
             ->setConstructorArgs([$traceService, $propagator, $tracerName])
             ->onlyMethods(['checkTraceInjectionValidity'])
             ->getMock();
@@ -97,7 +97,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $kernel = $this->createMock(HttpKernelInterface::class);
         $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
 
-        $executionTimeSpanTracer->onKernelRequest($requestEvent);
+        $executionTimeSpanTracer->onKernelRequestExecutionTime($requestEvent);
     }
 
     public function testOnKernelTerminateWithoutSpan(): void
@@ -106,7 +106,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $tracerName = 'test_tracer';
 
-        $executionTimeSpanTracer = new ExecutionTimeSpanTracer($traceService, $propagator, $tracerName);
+        $executionTimeSpanTracer = new InstrumentationEventSubscriber($traceService, $propagator, $tracerName);
 
         // Should not call any tracer methods when no span exists
         $traceService->expects($this->never())->method('shutdown');
@@ -115,12 +115,12 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $kernel = $this->createMock(HttpKernelInterface::class);
         $terminateEvent = new TerminateEvent($kernel, $request, new Response());
 
-        $executionTimeSpanTracer->onKernelTerminate($terminateEvent);
+        $executionTimeSpanTracer->onKernelTerminateExecutionTime($terminateEvent);
     }
 
     public function testGetSubscribedEvents(): void
     {
-        $events = ExecutionTimeSpanTracer::getSubscribedEvents();
+        $events = InstrumentationEventSubscriber::getSubscribedEvents();
 
         $this->assertArrayHasKey('kernel.request', $events);
         $this->assertArrayHasKey('kernel.terminate', $events);
@@ -130,7 +130,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
 
     public function testConstantName(): void
     {
-        $this->assertEquals('execution_time', ExecutionTimeSpanTracer::NAME);
+        $this->assertEquals('execution_time', InstrumentationEventSubscriber::NAME);
     }
 
     public function testOnKernelRequestStoresStartTime(): void
@@ -151,7 +151,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
 
         $tracer->expects($this->once())
             ->method('spanBuilder')
-            ->with(ExecutionTimeSpanTracer::NAME)
+            ->with(InstrumentationEventSubscriber::NAME)
             ->willReturn($spanBuilder);
 
         $spanBuilder->expects($this->once())
@@ -173,7 +173,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $scope->expects($this->once())->method('detach');
         $traceService->expects($this->once())->method('shutdown');
 
-        $executionTimeSpanTracer = $this->getMockBuilder(ExecutionTimeSpanTracer::class)
+        $executionTimeSpanTracer = $this->getMockBuilder(InstrumentationEventSubscriber::class)
             ->setConstructorArgs([$traceService, $propagator, $tracerName])
             ->onlyMethods(['checkTraceInjectionValidity'])
             ->getMock();
@@ -188,12 +188,12 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $terminateEvent = new TerminateEvent($kernel, $request, new Response());
 
         $startTime = microtime(true);
-        $executionTimeSpanTracer->onKernelRequest($requestEvent);
+        $executionTimeSpanTracer->onKernelRequestExecutionTime($requestEvent);
 
         // Small delay to ensure execution time is measurable
         usleep(1000);
 
-        $executionTimeSpanTracer->onKernelTerminate($terminateEvent);
+        $executionTimeSpanTracer->onKernelTerminateExecutionTime($terminateEvent);
     }
 
     public function testSubRequestIsIgnored(): void
@@ -202,7 +202,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $tracerName = 'test_tracer';
 
-        $executionTimeSpanTracer = $this->getMockBuilder(ExecutionTimeSpanTracer::class)
+        $executionTimeSpanTracer = $this->getMockBuilder(InstrumentationEventSubscriber::class)
             ->setConstructorArgs([$traceService, $propagator, $tracerName])
             ->onlyMethods(['checkTraceInjectionValidity'])
             ->getMock();
@@ -229,7 +229,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $spanBuilder->method('setParent')->willReturnSelf();
         $spanBuilder->method('startSpan')->willReturn($span);
 
-        $executionTimeSpanTracer->onKernelRequest($subRequestEvent);
+        $executionTimeSpanTracer->onKernelRequestExecutionTime($subRequestEvent);
     }
 
     public function testExecutionTimeIsPositive(): void
@@ -250,7 +250,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
 
         $tracer->expects($this->once())
             ->method('spanBuilder')
-            ->with(ExecutionTimeSpanTracer::NAME)
+            ->with(InstrumentationEventSubscriber::NAME)
             ->willReturn($spanBuilder);
 
         $spanBuilder->expects($this->once())
@@ -283,7 +283,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $scope->expects($this->once())->method('detach');
         $traceService->expects($this->once())->method('shutdown');
 
-        $executionTimeSpanTracer = $this->getMockBuilder(ExecutionTimeSpanTracer::class)
+        $executionTimeSpanTracer = $this->getMockBuilder(InstrumentationEventSubscriber::class)
             ->setConstructorArgs([$traceService, $propagator, $tracerName])
             ->onlyMethods(['checkTraceInjectionValidity'])
             ->getMock();
@@ -297,11 +297,11 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
         $terminateEvent = new TerminateEvent($kernel, $request, new Response());
 
-        $executionTimeSpanTracer->onKernelRequest($requestEvent);
+        $executionTimeSpanTracer->onKernelRequestExecutionTime($requestEvent);
 
         // Small delay to ensure measurable execution time but not too long
         usleep(1000); // 1ms
 
-        $executionTimeSpanTracer->onKernelTerminate($terminateEvent);
+        $executionTimeSpanTracer->onKernelTerminateExecutionTime($terminateEvent);
     }
 }

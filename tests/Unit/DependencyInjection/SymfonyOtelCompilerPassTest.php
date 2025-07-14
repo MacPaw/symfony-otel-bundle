@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\DependencyInjection;
 
 use Macpaw\SymfonyOtelBundle\DependencyInjection\SymfonyOtelCompilerPass;
-use Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer;
+use Macpaw\SymfonyOtelBundle\Span\InstrumentationEventSubscriber;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -36,7 +36,7 @@ class SymfonyOtelCompilerPassTest extends TestCase
     {
         $this->container->setParameter('otel_bundle.span_tracers', [
             [
-                'class' => ExecutionTimeSpanTracer::class,
+                'class' => InstrumentationEventSubscriber::class,
                 'tag' => 'kernel.event_subscriber',
             ],
         ]);
@@ -44,9 +44,9 @@ class SymfonyOtelCompilerPassTest extends TestCase
 
         $this->compilerPass->process($this->container);
 
-        $this->assertTrue($this->container->hasDefinition(ExecutionTimeSpanTracer::class));
+        $this->assertTrue($this->container->hasDefinition(InstrumentationEventSubscriber::class));
 
-        $definition = $this->container->getDefinition(ExecutionTimeSpanTracer::class);
+        $definition = $this->container->getDefinition(InstrumentationEventSubscriber::class);
         $this->assertTrue($definition->isAutowired());
         $this->assertTrue($definition->hasTag('kernel.event_subscriber'));
 
@@ -80,13 +80,13 @@ class SymfonyOtelCompilerPassTest extends TestCase
 
     public function testProcessWithExistingDefinition(): void
     {
-        $existingDefinition = new Definition(ExecutionTimeSpanTracer::class);
+        $existingDefinition = new Definition(InstrumentationEventSubscriber::class);
         $existingDefinition->setAutowired(false);
-        $this->container->setDefinition(ExecutionTimeSpanTracer::class, $existingDefinition);
+        $this->container->setDefinition(InstrumentationEventSubscriber::class, $existingDefinition);
 
         $this->container->setParameter('otel_bundle.span_tracers', [
             [
-                'class' => ExecutionTimeSpanTracer::class,
+                'class' => InstrumentationEventSubscriber::class,
                 'tag' => 'kernel.event_subscriber',
             ],
         ]);
@@ -94,7 +94,7 @@ class SymfonyOtelCompilerPassTest extends TestCase
 
         $this->compilerPass->process($this->container);
 
-        $definition = $this->container->getDefinition(ExecutionTimeSpanTracer::class);
+        $definition = $this->container->getDefinition(InstrumentationEventSubscriber::class);
         $this->assertSame($existingDefinition, $definition);
         $this->assertTrue($definition->isAutowired()); // Should be updated
         $this->assertTrue($definition->hasTag('kernel.event_subscriber'));
@@ -104,7 +104,7 @@ class SymfonyOtelCompilerPassTest extends TestCase
     {
         $this->container->setParameter('otel_bundle.span_tracers', [
             [
-                'class' => ExecutionTimeSpanTracer::class,
+                'class' => InstrumentationEventSubscriber::class,
                 'tag' => 'kernel.event_subscriber',
             ],
             [
@@ -121,8 +121,8 @@ class SymfonyOtelCompilerPassTest extends TestCase
         $this->compilerPass->process($this->container);
 
         // Check ExecutionTimeSpanTracer
-        $this->assertTrue($this->container->hasDefinition(ExecutionTimeSpanTracer::class));
-        $executionTimeDef = $this->container->getDefinition(ExecutionTimeSpanTracer::class);
+        $this->assertTrue($this->container->hasDefinition(InstrumentationEventSubscriber::class));
+        $executionTimeDef = $this->container->getDefinition(InstrumentationEventSubscriber::class);
         $this->assertTrue($executionTimeDef->hasTag('kernel.event_subscriber'));
         $this->assertArrayHasKey('$tracerName', $executionTimeDef->getArguments());
 
@@ -142,7 +142,7 @@ class SymfonyOtelCompilerPassTest extends TestCase
     {
         $this->container->setParameter('otel_bundle.span_tracers', [
             [
-                'class' => ExecutionTimeSpanTracer::class,
+                'class' => InstrumentationEventSubscriber::class,
                 'tag' => 'kernel.event_subscriber',
             ],
         ]);

@@ -24,7 +24,7 @@ class Configuration implements ConfigurationInterface
                     ->cannotBeEmpty()
                     ->defaultValue('test-service')
                 ->end()
-                ->arrayNode('span_tracers')
+            ->arrayNode('spans')
                 ->defaultValue([])
                     ->arrayPrototype()
                         ->children()

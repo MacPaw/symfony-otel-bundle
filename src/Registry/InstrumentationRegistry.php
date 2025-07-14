@@ -57,4 +57,15 @@ final class InstrumentationRegistry
         $this->spans[$spanName] = null;
         unset($this->spans[$spanName]);
     }
+
+    public function __destruct()
+    {
+        foreach ($this->spans as $span) {
+            if ($span->isRecording()) {
+                $span->end();
+            }
+        }
+
+        $this->scope?->detach();
+    }
 }

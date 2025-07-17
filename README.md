@@ -164,28 +164,65 @@ A **span** represents a single operation or step (e.g., an HTTP request, method 
 #### Creating a Root Span
 
 ```php
-use OpenTelemetry\API\Globals;
+use Macpaw\SymfonyOtelBundle\Service\TraceService;
 
-$tracer = Globals::tracerProvider()->getTracer('example');
-$rootSpan = $tracer->spanBuilder('root.operation')->startSpan();
-// ... your logic ...
-$rootSpan->end();
+class MyController
+{
+    public function __construct(private TraceService $traceService) {}
+    
+    public function myAction(): Response
+    {
+        $tracer = $this->traceService->getTracer('my-app');
+        $rootSpan = $tracer->spanBuilder('root.operation')->startSpan();
+        $scope = $rootSpan->activate();
+        
+        try {
+            // ... your logic ...
+        } finally {
+            $scope->detach();
+            $rootSpan->end();
+        }
+        
+        return new Response('OK');
+    }
+}
 ```
 
 #### Creating a Child Span
 
 ```php
-use OpenTelemetry\API\Globals;
+use Macpaw\SymfonyOtelBundle\Service\TraceService;
 
-$tracer = Globals::tracerProvider()->getTracer('example');
-$rootSpan = $tracer->spanBuilder('root.operation')->startSpan();
-
-$childSpan = $tracer->spanBuilder('child.operation')
-    ->setParent($rootSpan->getContext())
-    ->startSpan();
-// ... child logic ...
-$childSpan->end();
-$rootSpan->end();
+class MyController
+{
+    public function __construct(private TraceService $traceService) {}
+    
+    public function myAction(): Response
+    {
+        $tracer = $this->traceService->getTracer('my-app');
+        $rootSpan = $tracer->spanBuilder('root.operation')->startSpan();
+        $rootScope = $rootSpan->activate();
+        
+        try {
+            $childSpan = $tracer->spanBuilder('child.operation')
+                ->setParent($rootSpan->getContext())
+                ->startSpan();
+            $childScope = $childSpan->activate();
+            
+            try {
+                // ... child logic ...
+            } finally {
+                $childScope->detach();
+                $childSpan->end();
+            }
+        } finally {
+            $rootScope->detach();
+            $rootSpan->end();
+        }
+        
+        return new Response('OK');
+    }
+}
 ```
 
 ---
@@ -217,17 +254,33 @@ $rootSpan->end();
 Attach known attributes before starting the span:
 
 ```php
-use OpenTelemetry\API\Globals;
+use Macpaw\SymfonyOtelBundle\Service\TraceService;
 
-$tracer = Globals::tracerProvider()->getTracer('example');
-$span = $tracer
-    ->spanBuilder('order.process')
-    ->setAttribute('order.id', '12345')
-    ->setAttribute('user.authenticated', true)
-    ->setAttribute('retry.count', 3)
-    ->startSpan();
-// ...
-$span->end();
+class MyController
+{
+    public function __construct(private TraceService $traceService) {}
+    
+    public function processOrder(): Response
+    {
+        $tracer = $this->traceService->getTracer('my-app');
+        $span = $tracer
+            ->spanBuilder('order.process')
+            ->setAttribute('order.id', '12345')
+            ->setAttribute('user.authenticated', true)
+            ->setAttribute('retry.count', 3)
+            ->startSpan();
+        $scope = $span->activate();
+        
+        try {
+            // ...
+        } finally {
+            $scope->detach();
+            $span->end();
+        }
+        
+        return new Response('OK');
+    }
+}
 ```
 
 ### On an Active Span
@@ -235,17 +288,24 @@ $span->end();
 Use when attributes depend on runtime conditions:
 
 ```php
+$tracer = $this->traceService->getTracer('my-app');
 $span = $tracer->spanBuilder('db.query')->startSpan();
-if ($span->isRecording()) {
-    $span->setAttribute('db.statement', $sql);
-    $span->setAttributes([
-        'db.system'       => 'mysql',
-        'db.user'         => 'readonly',
-        'db.rows_returned'=> 42,
-    ]);
+$scope = $span->activate();
+
+try {
+    if ($span->isRecording()) {
+        $span->setAttribute('db.statement', $sql);
+        $span->setAttributes([
+            'db.system'       => 'mysql',
+            'db.user'         => 'readonly',
+            'db.rows_returned'=> 42,
+        ]);
+    }
+    // ...
+} finally {
+    $scope->detach();
+    $span->end();
 }
-// ...
-$span->end();
 ```
 
 **Tip**: Always check `isRecording()` before setting attributes to avoid overhead when sampling drops the span.
@@ -307,7 +367,8 @@ A **Context** is an immutable carrier for:
 ```php
 use OpenTelemetry\Context\Context;
 
-$rootSpan = $tracer->spanBuilder('root').startSpan();
+$tracer = $this->traceService->getTracer('my-app');
+$rootSpan = $tracer->spanBuilder('root')->startSpan();
 $context = $rootSpan->storeInContext(Context::getCurrent());
 ```
 
@@ -327,6 +388,7 @@ $propagator->inject(
 
 // On the server side:
 $extracted = $propagator->extract($_SERVER, fn($carrier, $key) => $carrier[$key] ?? null);
+$tracer = $this->traceService->getTracer('my-app');
 $serverSpan = $tracer->spanBuilder('http.server')->setParent($extracted)->startSpan();
 ```
 
@@ -338,12 +400,25 @@ $serverSpan = $tracer->spanBuilder('http.server')->setParent($extracted)->startS
 * **Scope** is a handle returned when you activate a context, making it the current active context in the thread.
 
 ```php
+$tracer = $this->traceService->getTracer('my-app');
+$rootSpan = $tracer->spanBuilder('root')->startSpan();
 $scope = $rootSpan->activate();
-// Within this scope, new spans inherit from $rootSpan
-$child = $tracer->spanBuilder('child').startSpan();
-$child->end();
-$scope->detach(); // restore previous context
-$rootSpan->end();
+
+try {
+    // Within this scope, new spans inherit from $rootSpan
+    $child = $tracer->spanBuilder('child')->startSpan();
+    $childScope = $child->activate();
+    
+    try {
+        // child operations
+    } finally {
+        $childScope->detach();
+        $child->end();
+    }
+} finally {
+    $scope->detach(); // restore previous context
+    $rootSpan->end();
+}
 ```
 
 ---
@@ -368,24 +443,24 @@ $rootSpan->end();
 2. **SpanProcessor**: `SimpleSpanProcessor` (immediate export) or `BatchSpanProcessor`.
 3. **Exporter**: e.g., OTLP exporter sending spans to a collector.
 4. **TraceService**: helper service for retrieving tracers in your code.
-5. **InstrumentationRegistry**: stores and manages all registered instrumentations.
-6. **AbstractInstrumentation**: base class for declarative instrumentation (pre/post hooks, event subscribers).
 
 ### Creating and Exporting a Custom Span
 
 ```php
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\SpanKind;
+use OpenTelemetry\API\Trace\StatusCode;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class OrderController
 {
-    public function __construct(private TraceService $trace) {}
+    public function __construct(private TraceService $traceService) {}
 
     public function process(): JsonResponse
     {
-        $tracer = $this->trace->getTracer('app.orders');
+        $tracer = $this->traceService->getTracer('app.orders');
         $span = $tracer->spanBuilder('order.process')
-            ->setSpanKind(SpanKind::INTERNAL)
+            ->setSpanKind(SpanKind::KIND_INTERNAL)
             ->setAttribute('order.id', 123)
             ->startSpan();
         $scope = $span->activate();
@@ -410,33 +485,56 @@ class OrderController
 }
 ```
 
-### Declarative Instrumentation via `AbstractInstrumentation`
+### Using TraceService in Your Services
 
-1. Extend `AbstractInstrumentation`.
-2. Implement `buildSpan()` to configure the span (kind, attributes).
-3. Register your class via service tags or in `InstrumentationRegistry`.
+The `TraceService` provides a simple way to get tracers in your application:
 
 ```php
-namespace App\Instrumentation;
+<?php
 
-use Macpaw\SymfonyOtelBundle\Instrumentation\AbstractInstrumentation;
-use OpenTelemetry\API\Trace\SpanKind;
+namespace App\Service;
 
-class MyCustomInstrumentation extends AbstractInstrumentation
+use Macpaw\SymfonyOtelBundle\Service\TraceService;
+
+class MyBusinessService
 {
-    public function getName(): string
+    public function __construct(private TraceService $traceService) {}
+    
+    public function processData(array $data): void
     {
-        return 'my_custom';
+        $tracer = $this->traceService->getTracer('my-business-service');
+        $span = $tracer->spanBuilder('process_data')
+            ->setAttribute('data.count', count($data))
+            ->startSpan();
+        $scope = $span->activate();
+        
+        try {
+            // Your business logic here
+            foreach ($data as $item) {
+                $this->processItem($item);
+            }
+        } finally {
+            $scope->detach();
+            $span->end();
+        }
     }
-
-    protected function buildSpan($builder)
+    
+    private function processItem($item): void
     {
-        return $builder
-            ->setSpanKind(SpanKind::INTERNAL)
-            ->startSpan()
-            ->setAttribute('foo', 'bar');
+        $tracer = $this->traceService->getTracer('my-business-service');
+        $span = $tracer->spanBuilder('process_item')
+            ->setAttribute('item.id', $item['id'] ?? 'unknown')
+            ->startSpan();
+        $scope = $span->activate();
+        
+        try {
+            // Process individual item
+        } finally {
+            $scope->detach();
+            $span->end();
+        }
     }
 }
 ```
 
-This setup ensures automatic span creation and enrichment without modifying your business logic.
+This setup ensures proper span creation and context propagation throughout your application.

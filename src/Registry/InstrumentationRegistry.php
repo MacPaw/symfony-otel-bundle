@@ -61,6 +61,16 @@ final class InstrumentationRegistry
         unset($this->spans[$spanName]);
     }
 
+    public function clearSpans(): void
+    {
+        $this->spans = [];
+    }
+
+    public function clearScope(): void
+    {
+        $this->scope = null;
+    }
+
     public function __destruct()
     {
         foreach ($this->spans as $span) {

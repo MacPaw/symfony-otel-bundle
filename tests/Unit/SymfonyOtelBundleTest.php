@@ -4,73 +4,54 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
-use Macpaw\SymfonyOtelBundle\DependencyInjection\SymfonyOtelCompilerPass;
 use Macpaw\SymfonyOtelBundle\SymfonyOtelBundle;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 
 class SymfonyOtelBundleTest extends TestCase
 {
-    public function testGetPath(): void
-    {
-        $bundle = new SymfonyOtelBundle();
-        $path = $bundle->getPath();
+    private SymfonyOtelBundle $bundle;
 
-        $this->assertIsString($path);
-        $this->assertNotEmpty($path);
-        $this->assertDirectoryExists($path);
+    protected function setUp(): void
+    {
+        $this->bundle = new SymfonyOtelBundle();
     }
 
-    public function testGetPathReturnsDifferentInstances(): void
+    public function testBundleImplementsBundleInterface(): void
     {
-        $bundle1 = new SymfonyOtelBundle();
-        $bundle2 = new SymfonyOtelBundle();
-
-        $path1 = $bundle1->getPath();
-        $path2 = $bundle2->getPath();
-
-        $this->assertEquals($path1, $path2);
+        $this->assertInstanceOf(BundleInterface::class, $this->bundle);
     }
 
-    public function testBuild(): void
+    public function testBundleName(): void
     {
-        $bundle = new SymfonyOtelBundle();
+        $this->assertEquals('SymfonyOtelBundle', $this->bundle->getName());
+    }
+
+    public function testBundleNamespace(): void
+    {
+        $this->assertEquals('Macpaw\SymfonyOtelBundle', $this->bundle->getNamespace());
+    }
+
+    public function testBundlePath(): void
+    {
+        $expectedPath = dirname(__DIR__, 2) . '/src';
+        $this->assertEquals($expectedPath, $this->bundle->getPath());
+    }
+
+    public function testBuildMethod(): void
+    {
         $container = new ContainerBuilder();
-
-        $bundle->build($container);
+        $this->bundle->build($container);
 
         $this->assertTrue(true);
     }
 
-    public function testBuildAddsCompilerPass(): void
+    public function testGetContainerExtension(): void
     {
-        $bundle = new SymfonyOtelBundle();
-        $container = new ContainerBuilder();
+        $extension = $this->bundle->getContainerExtension();
 
-        $bundle->build($container);
-
-        $passes = $container->getCompilerPassConfig()->getPasses();
-        $hasCompilerPass = false;
-
-        foreach ($passes as $pass) {
-            if ($pass instanceof SymfonyOtelCompilerPass) {
-                $hasCompilerPass = true;
-                break;
-            }
-        }
-
-        $this->assertTrue($hasCompilerPass);
-    }
-
-    public function testMultipleBuildCalls(): void
-    {
-        $bundle = new SymfonyOtelBundle();
-        $container1 = new ContainerBuilder();
-        $container2 = new ContainerBuilder();
-
-        $bundle->build($container1);
-        $bundle->build($container2);
-
-        $this->assertTrue(true);
+        $this->assertNotNull($extension);
+        $this->assertEquals('otel_bundle', $extension->getAlias());
     }
 }

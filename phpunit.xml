@@ -16,12 +16,13 @@
     </testsuites>
     <source>
         <include>
-            <directory>./src/Service</directory>
-            <directory>./src/Span</directory>
+            <directory>./src</directory>
         </include>
         <exclude>
             <directory suffix="Exception.php">src</directory>
             <directory suffix="php">src/DependencyInjection</directory>
+            <directory suffix="php">src/Listeners</directory>
+            <file>src/SymfonyOtelBundle.php</file>
         </exclude>
     </source>
 </phpunit>

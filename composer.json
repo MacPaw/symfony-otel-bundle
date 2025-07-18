@@ -79,5 +79,9 @@
             "@phpstan",
             "@coverage"
         ]
+    },
+    "suggest": {
+        "ext-grpc": "For gRPC transport support in OpenTelemetry",
+        "open-telemetry/transport-grpc": "For gRPC transport support in OpenTelemetry"
     }
 }

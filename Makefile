@@ -159,6 +159,10 @@ test-error: ## Test error handling endpoint
 	@echo "$(BLUE)🧪 Testing error handling endpoint...$(NC)"
 	@curl -s http://localhost:8080/api/error | jq .
 
+test-exception: ## Test exception handling endpoint
+	@echo "$(BLUE)🧪 Testing exception handling endpoint...$(NC)"
+	@curl -s http://localhost:8080/api/exception-test | jq .
+
 test-distributed: ## Test with distributed tracing headers
 	@echo "$(BLUE)🧪 Testing distributed tracing...$(NC)"
 	@curl -s -H "traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01" \
@@ -322,6 +326,7 @@ endpoints: ## Show all test endpoints
 	@echo "  GET  /api/slow        - Slow operation (2 seconds)"
 	@echo "  GET  /api/nested      - Nested spans example"
 	@echo "  GET  /api/error       - Error handling example"
+	@echo "  GET  /api/exception-test - Exception handling test"
 
 data-commands: ## Show data management commands
 	@echo "$(BLUE)🗂️  Data Management Commands:$(NC)"

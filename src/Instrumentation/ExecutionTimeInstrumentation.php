@@ -32,8 +32,7 @@ final class ExecutionTimeInstrumentation extends AbstractInstrumentation
         InstrumentationRegistry $instrumentationRegistry,
         TracerInterface $tracer,
         TextMapPropagatorInterface $propagator,
-        private ClockInterface $clock,
-        private TraceService $traceService
+        private ClockInterface $clock
     ) {
         parent::__construct($instrumentationRegistry, $tracer, $propagator);
     }
@@ -56,13 +55,12 @@ final class ExecutionTimeInstrumentation extends AbstractInstrumentation
     {
         $this->startTime = $this->clock->now();
 
-        $context = $this->checkTraceInjectionValidity();
+        $context = $this->retrieveContext();
 
         $this->initSpan($context);
     }
 
-    //@todo rename this method to something more appropriate
-    protected function checkTraceInjectionValidity(): ?ContextInterface
+    protected function retrieveContext(): ContextInterface
     {
         $context = $this->propagator->extract($this->headers);
         $spanInjectedContext = Span::fromContext($context)->getContext();
@@ -74,7 +72,7 @@ final class ExecutionTimeInstrumentation extends AbstractInstrumentation
     {
         $executionTime = $this->clock->now() - $this->startTime;
 
-        if ($this->span !== null) {
+        if ($this->span !== null) { // @phpstan-ignore-line
             $this->span->addEvent(
                 sprintf('Execution time (in nanoseconds): %d', $executionTime),
             );

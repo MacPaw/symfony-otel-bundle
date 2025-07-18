@@ -29,11 +29,6 @@ services:
   grafana:
     ports:
       - "3000:3000"
-  otel-collector:
-      ports:
-      - "4319:4317"   # OTLP gRPC receiver
-      - "4320:4318"   # OTLP HTTP receiver
-      - "8889:8889"   # Prometheus metrics
 
   # Additional debugging service for viewing raw traces
   tempo:

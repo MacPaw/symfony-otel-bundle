@@ -46,7 +46,10 @@ class SymfonyOtelExtensionTest extends TestCase
 
         $this->assertEquals('custom_tracer', $this->container->getParameter('otel_bundle.tracer_name'));
         $this->assertEquals('custom_service', $this->container->getParameter('otel_bundle.service_name'));
-        $this->assertEquals(['App\Instrumentation\CustomInstrumentation'], $this->container->getParameter('otel_bundle.instrumentations'));
+        $this->assertEquals(
+            ['App\Instrumentation\CustomInstrumentation'],
+            $this->container->getParameter('otel_bundle.instrumentations')
+        );
     }
 
     public function testLoadWithMultipleConfigurations(): void
@@ -68,7 +71,10 @@ class SymfonyOtelExtensionTest extends TestCase
 
         $this->assertEquals('second_tracer', $this->container->getParameter('otel_bundle.tracer_name'));
         $this->assertEquals('second_service', $this->container->getParameter('otel_bundle.service_name'));
-        $this->assertEquals(['App\Instrumentation\SecondInstrumentation'], $this->container->getParameter('otel_bundle.instrumentations'));
+        $this->assertEquals(
+            ['App\Instrumentation\SecondInstrumentation'],
+            $this->container->getParameter('otel_bundle.instrumentations')
+        );
     }
 
     public function testGetAlias(): void

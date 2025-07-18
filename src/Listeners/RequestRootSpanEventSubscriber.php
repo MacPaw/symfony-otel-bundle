@@ -36,14 +36,13 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
         $this->instrumentationRegistry->setContext($context);
 
         $request = $event->getRequest();
-        $routeName = $this->routerUtils->getRouteName();
 
         $spanBuilder = $this->traceService
             ->getTracer()
-            ->spanBuilder(sprintf('%s %s', $request->getMethod(), $routeName))
+            ->spanBuilder(sprintf('%s %s', $request->getMethod(), $request->getPathInfo()))
             ->setParent($context)
-            ->setAttribute(TraceAttributes::HTTP_ROUTE, $request->getPathInfo())
             ->setAttribute(TraceAttributes::HTTP_REQUEST_METHOD, $request->getMethod())
+            ->setAttribute(TraceAttributes::HTTP_ROUTE, $request->getPathInfo())
             ->setAttribute(TraceAttributes::URL_SCHEME, $request->getScheme())
             ->setAttribute(TraceAttributes::SERVER_ADDRESS, $request->getHost());
 
@@ -55,10 +54,13 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
 
     public function onKernelTerminate(TerminateEvent $event): void
     {
+        $request = $event->getRequest();
+        $routeName = $this->routerUtils->getRouteName();
         $rootSpan = $this->instrumentationRegistry->getSpans()['root_span'] ?? null;
         if ($rootSpan !== null) {
             $response = $event->getResponse();
-            $rootSpan->setAttribute(TraceAttributes::HTTP_RESPONSE_STATUS_CODE, $response->getStatusCode());
+            $rootSpan->updateName(sprintf('%s %s', $request->getMethod(), $routeName))
+                ->setAttribute(TraceAttributes::HTTP_RESPONSE_STATUS_CODE, $response->getStatusCode());
         }
 
         $scope = $this->instrumentationRegistry->getScope();

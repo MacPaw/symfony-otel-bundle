@@ -1,38 +1,65 @@
+parameters:
+  otel_service_name: '%env(OTEL_SERVICE_NAME)%'
+  otel_tracer_name: '%env(OTEL_TRACER_NAME)%'
+
 services:
   _defaults:
     autowire: true
     autoconfigure: true
 
   Macpaw\SymfonyOtelBundle\Service\TraceService:
+    public: true
     arguments:
       $tracerProvider: '@OpenTelemetry\SDK\Trace\TracerProviderInterface'
+      $serviceName: '%otel_bundle.service_name%'
+      $tracerName: '%otel_bundle.tracer_name%'
 
-  # ReactPHP-based async trace service
-  Macpaw\SymfonyOtelBundle\Service\AsyncTraceService:
+  Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry:
+    public: true
+
+  Macpaw\SymfonyOtelBundle\Span\InstrumentationEventSubscriber:
+    tags:
+      - { name: 'kernel.event_subscriber' }
+
+  Macpaw\SymfonyOtelBundle\Listeners\RequestRootSpanEventSubscriber:
+    tags:
+      - { name: 'kernel.event_subscriber' }
+
+  Macpaw\SymfonyOtelBundle\Listeners\ExceptionHandlingEventSubscriber:
+    tags:
+      - { name: 'kernel.event_subscriber' }
+
+  Macpaw\SymfonyOtelBundle\Service\HookManagerService:
+    public: true
     arguments:
-      $tracerProvider: '@OpenTelemetry\SDK\Trace\TracerProviderInterface'
-      $otlpEndpoint: '%env(OTEL_EXPORTER_OTLP_ENDPOINT)%/v1/traces'
-      $headers: [ ]
+      $logger: '@?logger'
+      $hookManager: '@OpenTelemetry\API\Instrumentation\AutoInstrumentation\ExtensionHookManager'
+    lazy: false
 
-  # ReactPHP-based OTLP exporter
-  Macpaw\SymfonyOtelBundle\Service\ReactPhpOtlpExporter:
-    arguments:
-      $endpoint: '%env(OTEL_EXPORTER_OTLP_ENDPOINT)%/v1/traces'
-      $headers: [ ]
-      $batchSize: 100
-      $flushInterval: 5.0
-
-  otpl.tracerProviderFactory:
-    class: OpenTelemetry\SDK\Trace\TracerProviderFactory
+  OpenTelemetry\API\Instrumentation\AutoInstrumentation\ExtensionHookManager: ~
 
   OpenTelemetry\SDK\Trace\TracerProviderInterface:
-    class: OpenTelemetry\SDK\Trace\TracerProvider
-    factory: [ '@otpl.tracerProviderFactory', 'create' ]
-    tags:
-      - { name: 'otpl.tracerProvider' }
+    factory: [ '@OpenTelemetry\SDK\Trace\TracerProviderFactory', 'create' ]
+
+  OpenTelemetry\SDK\Trace\TracerProviderFactory:
+    class: OpenTelemetry\SDK\Trace\TracerProviderFactory
+
+  OpenTelemetry\API\Trace\TracerInterface:
+    factory: [ '@OpenTelemetry\SDK\Trace\TracerProviderInterface', 'getTracer' ]
+    arguments:
+      - '%otel_bundle.tracer_name%'
 
   OpenTelemetry\Context\Propagation\TextMapPropagatorInterface:
+    public: true
     factory: [ '@OpenTelemetry\SDK\Propagation\PropagatorFactory', 'create' ]
 
   OpenTelemetry\SDK\Propagation\PropagatorFactory:
     class: OpenTelemetry\SDK\Propagation\PropagatorFactory
+
+  OpenTelemetry\API\Common\Time\ClockInterface:
+    public: true
+    class: OpenTelemetry\API\Common\Time\SystemClock
+
+  Macpaw\SymfonyOtelBundle\Instrumentation\ExecutionTimeInstrumentation: ~
+
+  Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils: ~

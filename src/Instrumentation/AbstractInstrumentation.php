@@ -48,15 +48,6 @@ abstract class AbstractInstrumentation implements InstrumentationInterface
         $this->isSpanSet = true;
     }
 
-    protected function closeScope(ScopeInterface $scope): void
-    {
-        if ($this->isSpanSet === false) {
-            return;
-        }
-
-        $scope->detach();
-    }
-
     protected function closeSpan(SpanInterface $span): void
     {
         if ($this->isSpanSet === false) {

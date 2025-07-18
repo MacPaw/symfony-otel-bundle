@@ -7,6 +7,7 @@ namespace Macpaw\SymfonyOtelBundle\Service;
 use Macpaw\SymfonyOtelBundle\Instrumentation\HookInstrumentationInterface;
 use OpenTelemetry\API\Instrumentation\AutoInstrumentation\HookManagerInterface;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Throwable;
 
 final readonly class HookManagerService
@@ -23,19 +24,19 @@ final readonly class HookManagerService
         $method = $instrumentation->getMethod();
 
         try {
-            $logger = $this->logger ?? new \Psr\Log\NullLogger();
-            $preHook = static function () use ($instrumentation, $logger) {
+            $logger = $this->logger ?? new NullLogger();
+            $preHook = static function () use ($instrumentation, $logger, $class, $method) {
                 try {
                     $instrumentation->pre();
-                    $logger->debug("Successfully executed pre hook for {class}::{method}");
+                    $logger->debug("Successfully executed pre hook for {$class}::{$method}");
                 } catch (Throwable $e) {
                     $logger->error("Error in hook pre(): {error}", ['error' => $e->getMessage()]);
                 }
             };
-            $postHook = static function () use ($instrumentation, $logger) {
+            $postHook = static function () use ($instrumentation, $logger, $class, $method) {
                 try {
                     $instrumentation->post();
-                    $logger->debug("Successfully executed post hook for {class}::{method}");
+                    $logger->debug("Successfully executed post hook for {$class}::{$method}");
                 } catch (Throwable $e) {
                     $logger->error("Error in hook post(): {error}", ['error' => $e->getMessage()]);
                 }

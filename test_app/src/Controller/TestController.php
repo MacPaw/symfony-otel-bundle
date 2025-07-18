@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Exception;
+use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
+use PDO;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -48,10 +51,10 @@ class TestController
                     <strong>GET <a href="/api/nested">/api/nested</a></strong> - Nested spans example
                 </div>
                 <div class="endpoint">
-                    <strong>GET <a href="/api/error">/api/error</a></strong> - Error endpoint (for testing error traces)
+                    <strong>GET <a href="/api/pdo-test">/api/pdo-test</a></strong> - PDO query test (for testing ExampleHookInstrumentation)
                 </div>
                 <div class="endpoint">
-                    <strong>GET <a href="/api/pdo-test">/api/pdo-test</a></strong> - PDO query test (for testing ExampleHookInstrumentation)
+                    <strong>GET <a href="/api/exception-test">/api/exception-test</a></strong> - Exception test (for testing auto-close spans functionality)
                 </div>
                 
                 <h2>Trace Viewing:</h2>
@@ -71,41 +74,18 @@ class TestController
         return new Response($html);
     }
 
-    #[Route('/api/test')]
-    public function apiTest(): JsonResponse
+    #[Route('/api/test', name: 'api_test')]
+    public function apiTest(RouterUtils $routerUtils): JsonResponse
     {
-//        $tracer = $this->traceService->getTracer('test-controller');
-//
-//        $span = $tracer->spanBuilder('api_test_operation')
-//            ->setSpanKind(SpanKind::KIND_SERVER)
-//            ->startSpan();
-//
-//        $scope = $span->activate();
+        // Simulate some work
+        usleep(100000); // 100ms
 
-        try {
-//            $span->addEvent('Processing API test request');
-//            $span->setAttribute('http.method', 'GET');
-//            $span->setAttribute('http.route', '/api/test');
+        $data = [
+            'message' => 'Hello from Symfony OpenTelemetry Bundle!',
+            'timestamp' => time(),
+        ];
 
-            // Simulate some work
-            usleep(100000); // 100ms
-
-            $data = [
-                'message' => 'Hello from Symfony OpenTelemetry Bundle!',
-                'timestamp' => time(),
-                // 'trace_id' => $span->getContext()->getTraceId(),
-                // 'span_id' => $span->getContext()->getSpanId(),
-            ];
-
-//            $span->addEvent('API test completed successfully');
-
-            return new JsonResponse($data);
-        } finally {
-//           $scope->detach();
-//           $span->end();
-//            // Don't call shutdown here - let the instrumentation handle cleanup
-//            $this->traceService->shutdown();
-        }
+        return new JsonResponse($data);
     }
 
     #[Route('/api/slow', name: 'api_slow')]
@@ -196,51 +176,35 @@ class TestController
         }
     }
 
-    #[Route('/api/error', name: 'api_error')]
-    public function apiError(): JsonResponse
-    {
-        $tracer = $this->traceService->getTracer('test-controller');
-
-        $span = $tracer->spanBuilder('error_operation')
-            ->setSpanKind(SpanKind::KIND_SERVER)
-            ->startSpan();
-
-        $scope = $span->activate();
-
-        try {
-            $span->addEvent('Starting operation that will fail');
-            $span->setAttribute('operation.type', 'error_simulation');
-
-            usleep(100000);
-
-            throw new Exception('This is a test error for tracing');
-        } catch (Exception $e) {
-            $span->recordException($e);
-            $span->setStatus(StatusCode::STATUS_ERROR, $e->getMessage());
-
-            return new JsonResponse([
-                'error' => true,
-                'message' => $e->getMessage(),
-                'trace_id' => $span->getContext()->getTraceId(),
-            ], 500);
-        } finally {
-            $scope->detach();
-            $span->end();
-        }
-    }
-
     #[Route('/api/pdo-test', name: 'api_pdo_test')]
     public function apiPdoTest(): JsonResponse
     {
-        $pdo = new \PDO('sqlite::memory:');
+        $pdo = new PDO('sqlite::memory:');
 
         $stmt = $pdo->query('SELECT 1 as test_value, "Hello from PDO" as message');
-        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return new JsonResponse([
             'message' => 'PDO query test completed',
             'pdo_result' => $result,
             'note' => 'Check traces for ExampleHookInstrumentation spans',
         ]);
+    }
+
+    #[Route('/api/exception-test', name: 'api_exception_test')]
+    public function apiExceptionTest(): JsonResponse
+    {
+        $tracer = $this->traceService->getTracer('test-controller');
+
+        $span = $tracer->spanBuilder('exception_test_operation')
+            ->setSpanKind(SpanKind::KIND_SERVER)
+            ->startSpan();
+
+        $span->addEvent('Starting exception test operation');
+        $span->setAttribute('operation.type', 'exception_test');
+        $span->setAttribute('test.scenario', 'auto_close_spans');
+
+        usleep(100000); // 100ms
+        throw new Exception('Test exception for tracing');
     }
 }

@@ -37,6 +37,8 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+          -v ${{ github.workspace }}/docker/tempo/tempo.yaml:/etc/tempo.yaml
+          --entrypoint="tempo -config.file=/etc/tempo.yaml"
 
     steps:
       - name: Checkout
@@ -52,6 +54,12 @@ jobs:
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --ignore-platform-req=ext-opentelemetry --ignore-platform-req=ext-protobuf
+
+      - name: Prepare Tempo directories
+        run: |
+          mkdir -p /tmp/tempo/traces
+          mkdir -p /tmp/tempo/wal
+          mkdir -p /tmp/tempo/blocks
 
       - name: Start test application
         run: |

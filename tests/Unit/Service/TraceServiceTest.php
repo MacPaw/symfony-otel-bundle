@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Service;
+namespace Macpaw\SymfonyOtelBundle\Tests\Unit\Service;
 
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\TracerInterface;
@@ -14,24 +14,44 @@ class TraceServiceTest extends TestCase
 {
     private TracerProviderInterface&MockObject $tracerProvider;
     private TraceService $traceService;
+    private string $serviceName = 'test-service';
+    private string $tracerName = 'test-tracer';
 
     protected function setUp(): void
     {
         $this->tracerProvider = $this->createMock(TracerProviderInterface::class);
-        $this->traceService = new TraceService($this->tracerProvider);
+        $this->traceService = new TraceService(
+            $this->tracerProvider,
+            $this->serviceName,
+            $this->tracerName
+        );
     }
 
-    public function testGetTracer(): void
+    public function testGetTracerWithCustomName(): void
     {
-        $tracerName = 'test-tracer';
+        $customTracerName = 'custom-tracer';
         $expectedTracer = $this->createMock(TracerInterface::class);
 
         $this->tracerProvider->expects($this->once())
             ->method('getTracer')
-            ->with($tracerName)
+            ->with($customTracerName)
             ->willReturn($expectedTracer);
 
-        $result = $this->traceService->getTracer($tracerName);
+        $result = $this->traceService->getTracer($customTracerName);
+
+        $this->assertSame($expectedTracer, $result);
+    }
+
+    public function testGetTracerWithDefaultName(): void
+    {
+        $expectedTracer = $this->createMock(TracerInterface::class);
+
+        $this->tracerProvider->expects($this->once())
+            ->method('getTracer')
+            ->with($this->tracerName)
+            ->willReturn($expectedTracer);
+
+        $result = $this->traceService->getTracer();
 
         $this->assertSame($expectedTracer, $result);
     }
@@ -66,6 +86,18 @@ class TraceServiceTest extends TestCase
         $result = $this->traceService->getTracer($tracerName);
 
         $this->assertSame($expectedTracer, $result);
+    }
+
+    public function testGetServiceName(): void
+    {
+        $result = $this->traceService->getServiceName();
+        $this->assertEquals($this->serviceName, $result);
+    }
+
+    public function testGetTracerName(): void
+    {
+        $result = $this->traceService->getTracerName();
+        $this->assertEquals($this->tracerName, $result);
     }
 
     public function testShutdown(): void
@@ -104,5 +136,19 @@ class TraceServiceTest extends TestCase
 
         $this->assertSame($expectedTracer1, $result1);
         $this->assertSame($expectedTracer2, $result2);
+    }
+
+    public function testGetTracerWithNullName(): void
+    {
+        $expectedTracer = $this->createMock(TracerInterface::class);
+
+        $this->tracerProvider->expects($this->once())
+            ->method('getTracer')
+            ->with($this->tracerName)
+            ->willReturn($expectedTracer);
+
+        $result = $this->traceService->getTracer(null);
+
+        $this->assertSame($expectedTracer, $result);
     }
 }

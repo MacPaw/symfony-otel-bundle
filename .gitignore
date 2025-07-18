@@ -5,3 +5,5 @@ composer.lock
 /.phpunit.result.cache
 /.phpcs-cache
 /var/cache
+.idea
+.history

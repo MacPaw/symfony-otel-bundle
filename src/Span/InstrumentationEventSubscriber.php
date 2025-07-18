@@ -33,7 +33,7 @@ class InstrumentationEventSubscriber implements EventSubscriberInterface
     {
         return [
             KernelEvents::REQUEST => [
-                ['onKernelRequestExecutionTime', -PHP_INT_MAX],
+                ['onKernelRequestExecutionTime', -PHP_INT_MAX + 2],
             ],
             KernelEvents::TERMINATE => [
                 ['onKernelTerminateExecutionTime', PHP_INT_MAX],

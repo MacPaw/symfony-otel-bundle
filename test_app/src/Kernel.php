@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App;
 
-use Macpaw\SymfonyOtelBundle\DependencyInjection\SymfonyOtelCompilerPass;
 use Macpaw\SymfonyOtelBundle\SymfonyOtelBundle;
 use OpenTelemetry\Contrib\Symfony\OtelBundle\OtelBundle;
 use OpenTelemetry\Contrib\Symfony\OtelSdkBundle\OtelSdkBundle;
@@ -32,8 +31,6 @@ class Kernel extends BaseKernel
     protected function build(ContainerBuilder $container): void
     {
         parent::build($container);
-
-        $container->addCompilerPass(new SymfonyOtelCompilerPass());
     }
 
     protected function configureContainer(ContainerConfigurator $container): void
@@ -44,6 +41,7 @@ class Kernel extends BaseKernel
         $container->import(__DIR__ . '/../../Resources/config/otel_bundle.yml');
         $container->import(__DIR__ . '/../../Resources/config/services.yml');
         $container->import('../config/services.yaml');
+        $container->import('../config/packages/otel_bundle.yml');
 
         $container->extension('framework', [
             'secret' => 'test-secret-key',

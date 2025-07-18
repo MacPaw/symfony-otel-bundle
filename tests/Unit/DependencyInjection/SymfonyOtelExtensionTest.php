@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\DependencyInjection;
 
-use Macpaw\SymfonyOtelBundle\DependencyInjection\Configuration;
 use Macpaw\SymfonyOtelBundle\DependencyInjection\SymfonyOtelExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -20,173 +19,103 @@ class SymfonyOtelExtensionTest extends TestCase
         $this->container = new ContainerBuilder();
     }
 
-    public function testLoad(): void
+    public function testLoadWithDefaultConfiguration(): void
     {
-        $configs = [
-            [
-                'tracer_name' => 'test-tracer',
-                'service_name' => 'test-service',
-                'span_tracers' => [
-                    [
-                        'class' => 'App\\Span\\CustomTracer',
-                        'tag' => 'kernel.event_subscriber',
-                    ],
-                ],
-            ],
-        ];
-
-        // @phpstan-ignore-next-line
-        $this->extension->load($configs, $this->container);
+        $this->extension->load([], $this->container);
 
         $this->assertTrue($this->container->hasParameter('otel_bundle.tracer_name'));
-        $this->assertTrue($this->container->hasParameter('otel_bundle.span_tracers'));
+        $this->assertTrue($this->container->hasParameter('otel_bundle.service_name'));
+        $this->assertTrue($this->container->hasParameter('otel_bundle.instrumentations'));
 
-        $this->assertEquals('test-tracer', $this->container->getParameter('otel_bundle.tracer_name'));
-        $this->assertEquals([
-            [
-                'class' => 'App\\Span\\CustomTracer',
-                'tag' => 'kernel.event_subscriber',
-            ],
-        ], $this->container->getParameter('otel_bundle.span_tracers'));
+        $this->assertEquals('symfony-tracer', $this->container->getParameter('otel_bundle.tracer_name'));
+        $this->assertEquals('symfony-app', $this->container->getParameter('otel_bundle.service_name'));
+        $this->assertEquals([], $this->container->getParameter('otel_bundle.instrumentations'));
     }
 
-    public function testLoadWithDefaultValues(): void
+    public function testLoadWithCustomConfiguration(): void
     {
-        $configs = [[]];
-
-        // @phpstan-ignore-next-line
-        $this->extension->load($configs, $this->container);
-
-        $this->assertEquals('test-template', $this->container->getParameter('otel_bundle.tracer_name'));
-        $this->assertEquals([], $this->container->getParameter('otel_bundle.span_tracers'));
-    }
-
-    public function testLoadWithEmptyConfigs(): void
-    {
-        $configs = [];
-
-        $this->extension->load($configs, $this->container);
-
-        $this->assertEquals('test-template', $this->container->getParameter('otel_bundle.tracer_name'));
-        $this->assertEquals([], $this->container->getParameter('otel_bundle.span_tracers'));
-    }
-
-    public function testLoadWithMultipleConfigs(): void
-    {
-        $configs = [
-            [
-                'tracer_name' => 'first-tracer',
-                'span_tracers' => [
-                    [
-                        'class' => 'App\\Span\\FirstTracer',
-                        'tag' => 'kernel.event_subscriber',
-                    ],
-                ],
-            ],
-            [
-                'tracer_name' => 'second-tracer',
-                'span_tracers' => [
-                    [
-                        'class' => 'App\\Span\\SecondTracer',
-                        'tag' => 'doctrine.event_subscriber',
-                    ],
-                ],
+        $config = [
+            'tracer_name' => 'custom_tracer',
+            'service_name' => 'custom_service',
+            'instrumentations' => [
+                'App\Instrumentation\CustomInstrumentation',
             ],
         ];
 
-        // @phpstan-ignore-next-line
-        $this->extension->load($configs, $this->container);
+        $this->extension->load([$config], $this->container);
 
-        // Second config should override first
-        $this->assertEquals('second-tracer', $this->container->getParameter('otel_bundle.tracer_name'));
-        $this->assertEquals([
-            [
-                'class' => 'App\Span\FirstTracer',
-                'tag' => 'kernel.event_subscriber',
-            ],
-            [
-                'class' => 'App\\Span\\SecondTracer',
-                'tag' => 'doctrine.event_subscriber',
-            ],
-        ], $this->container->getParameter('otel_bundle.span_tracers'));
+        $this->assertEquals('custom_tracer', $this->container->getParameter('otel_bundle.tracer_name'));
+        $this->assertEquals('custom_service', $this->container->getParameter('otel_bundle.service_name'));
+        $this->assertEquals(['App\Instrumentation\CustomInstrumentation'], $this->container->getParameter('otel_bundle.instrumentations'));
     }
 
-    public function testGetConfiguration(): void
+    public function testLoadWithMultipleConfigurations(): void
     {
-        $config = [];
-        $configuration = $this->extension->getConfiguration($config, $this->container);
+        $config1 = [
+            'tracer_name' => 'first_tracer',
+            'service_name' => 'first_service',
+        ];
 
-        $this->assertInstanceOf(Configuration::class, $configuration);
-    }
+        $config2 = [
+            'tracer_name' => 'second_tracer',
+            'service_name' => 'second_service',
+            'instrumentations' => [
+                'App\Instrumentation\SecondInstrumentation',
+            ],
+        ];
 
-    public function testGetConfigurationWithNonEmptyConfig(): void
-    {
-        $config = ['tracer_name' => 'test'];
-        $configuration = $this->extension->getConfiguration($config, $this->container);
+        $this->extension->load([$config1, $config2], $this->container);
 
-        $this->assertInstanceOf(Configuration::class, $configuration);
+        $this->assertEquals('second_tracer', $this->container->getParameter('otel_bundle.tracer_name'));
+        $this->assertEquals('second_service', $this->container->getParameter('otel_bundle.service_name'));
+        $this->assertEquals(['App\Instrumentation\SecondInstrumentation'], $this->container->getParameter('otel_bundle.instrumentations'));
     }
 
     public function testGetAlias(): void
     {
-        $alias = $this->extension->getAlias();
-
-        $this->assertEquals('otel_bundle', $alias);
-        $this->assertEquals(SymfonyOtelExtension::NAME, $alias);
+        $this->assertEquals('otel_bundle', $this->extension->getAlias());
     }
 
-    public function testNameConstant(): void
+    public function testLoadWithEmptyConfiguration(): void
     {
-        $this->assertEquals('otel_bundle', SymfonyOtelExtension::NAME);
+        $this->extension->load([], $this->container);
+
+        $this->assertTrue($this->container->hasParameter('otel_bundle.tracer_name'));
+        $this->assertTrue($this->container->hasParameter('otel_bundle.service_name'));
+        $this->assertTrue($this->container->hasParameter('otel_bundle.instrumentations'));
     }
 
-    public function testLoadWithSpecialCharactersInTracerName(): void
+    public function testLoadWithPartialConfiguration(): void
     {
-        $configs = [
-            [
-                'tracer_name' => 'test-tracer_with-special.chars123',
+        $config = [
+            'tracer_name' => 'partial_tracer',
+        ];
+
+        $this->extension->load([$config], $this->container);
+
+        $this->assertEquals('partial_tracer', $this->container->getParameter('otel_bundle.tracer_name'));
+        $this->assertEquals('symfony-app', $this->container->getParameter('otel_bundle.service_name'));
+        $this->assertEquals([], $this->container->getParameter('otel_bundle.instrumentations'));
+    }
+
+    public function testLoadWithComplexInstrumentations(): void
+    {
+        $config = [
+            'instrumentations' => [
+                'App\Instrumentation\FirstInstrumentation',
+                'App\Instrumentation\SecondInstrumentation',
+                'App\Instrumentation\ThirdInstrumentation',
             ],
         ];
 
-        // @phpstan-ignore-next-line
-        $this->extension->load($configs, $this->container);
+        $this->extension->load([$config], $this->container);
 
-        $this->assertEquals(
-            'test-tracer_with-special.chars123',
-            $this->container->getParameter('otel_bundle.tracer_name'),
-        );
-    }
-
-    public function testLoadWithComplexSpanTracersConfiguration(): void
-    {
-        $configs = [
-            [
-                'span_tracers' => [
-                    [
-                        'class' => 'Namespace\\With\\Backslashes\\TracerClass',
-                        'tag' => 'custom.tag.with.dots',
-                    ],
-                    [
-                        'class' => 'Another\\Tracer\\Class',
-                        'tag' => 'another_tag_with_underscores',
-                    ],
-                ],
-            ],
+        $expectedInstrumentations = [
+            'App\Instrumentation\FirstInstrumentation',
+            'App\Instrumentation\SecondInstrumentation',
+            'App\Instrumentation\ThirdInstrumentation',
         ];
 
-        // @phpstan-ignore-next-line
-        $this->extension->load($configs, $this->container);
-
-        /** @var array<int|string, array<string, string>> $spanTracers */
-        $spanTracers = $this->container->getParameter('otel_bundle.span_tracers');
-        /** @var array<string, mixed> $firstTracer */
-        $firstTracer = $spanTracers[0];
-        /** @var array<string, mixed> $firstTracer */
-        $secondTracer = $spanTracers[1];
-        $this->assertCount(2, $spanTracers);
-        $this->assertEquals('Namespace\\With\\Backslashes\\TracerClass', $firstTracer['class']);
-        $this->assertEquals('custom.tag.with.dots', $firstTracer['tag']);
-        $this->assertEquals('Another\\Tracer\\Class', $secondTracer['class']);
-        $this->assertEquals('another_tag_with_underscores', $secondTracer['tag']);
+        $this->assertEquals($expectedInstrumentations, $this->container->getParameter('otel_bundle.instrumentations'));
     }
 }

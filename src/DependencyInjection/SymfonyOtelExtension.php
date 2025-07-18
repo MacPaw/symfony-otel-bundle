@@ -27,13 +27,16 @@ class SymfonyOtelExtension extends Extension
         $configuration = $this->getConfiguration($configs, $container);
         $configs = $this->processConfiguration($configuration, $configs);
 
+        /** @var string $serviceName */
+        $serviceName = $configs['service_name'];
         /** @var string $tracerName */
         $tracerName = $configs['tracer_name'];
-        /** @var array<int|string, array<int, mixed>> $spanTracers */
-        $spanTracers = $configs['span_tracers'];
+        /** @var array<int, string> $instrumentations */
+        $instrumentations = $configs['instrumentations'];
 
+        $container->setParameter('otel_bundle.service_name', $serviceName);
         $container->setParameter('otel_bundle.tracer_name', $tracerName);
-        $container->setParameter('otel_bundle.span_tracers', $spanTracers);
+        $container->setParameter('otel_bundle.instrumentations', $instrumentations);
     }
 
     /**

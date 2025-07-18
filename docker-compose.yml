@@ -25,27 +25,6 @@ services:
     networks:
       - otel-network
 
-  # PHP application for testing
-  php-app:
-    user: root
-    build:
-      context: .
-      dockerfile: docker/php/Dockerfile
-    container_name: symfony-otel-app
-    volumes:
-      - .:/var/www/html:rw
-      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:rw
-    environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4318
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-      - OTEL_SERVICE_NAME=symfony-otel-test
-      - OTEL_TRACER_NAME=symfony-otel-bundle
-      - OTEL_RESOURCE_ATTRIBUTES=service.name=symfony-otel-test,service.version=1.0.0
-      - OTEL_PROPAGATORS=tracecontext,baggage
-    depends_on:
-      - tempo
-    networks:
-      - otel-network
 
   # OpenTelemetry Collector (optional - for more advanced setups)
   otel-collector:
@@ -59,10 +38,34 @@ services:
     networks:
       - otel-network
 
+  # PHP application for testing
+  php-app:
+    user: root
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+#    container_name: symfony-otel-app
+    volumes:
+      - .:/var/www/html:rw
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:rw
+    environment:
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_SERVICE_NAME: symfony-otel-app
+      OTEL_TRACER_NAME: symfony-otel-bundle
+      OTEL_RESOURCE_ATTRIBUTES: service.name=symfony-otel-app
+      OTEL_PROPAGATORS: tracecontext,baggage
+      OTEL_LOG_LEVEL: debug
+    depends_on:
+      - tempo
+    networks:
+      - otel-network
+
 volumes:
   tempo-data:
   grafana-data:
 
 networks:
   otel-network:
-    driver: bridge 
+    driver: bridge

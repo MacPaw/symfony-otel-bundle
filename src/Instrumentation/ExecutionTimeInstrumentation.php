@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Macpaw\SymfonyOtelBundle\Instrumentation;
 
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
+use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Common\Time\ClockInterface;
 use OpenTelemetry\API\Trace\Span;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\TracerInterface;
+use OpenTelemetry\Context\Context;
+use OpenTelemetry\Context\ContextInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
 
 final class ExecutionTimeInstrumentation extends AbstractInstrumentation
 {
@@ -28,7 +32,8 @@ final class ExecutionTimeInstrumentation extends AbstractInstrumentation
         InstrumentationRegistry $instrumentationRegistry,
         TracerInterface $tracer,
         TextMapPropagatorInterface $propagator,
-        private readonly ClockInterface $clock,
+        private ClockInterface $clock,
+        private TraceService $traceService
     ) {
         parent::__construct($instrumentationRegistry, $tracer, $propagator);
     }
@@ -51,25 +56,30 @@ final class ExecutionTimeInstrumentation extends AbstractInstrumentation
     {
         $this->startTime = $this->clock->now();
 
-        $spanContext = null;
-        if (count($this->headers) > 0) {
-            $context = $this->propagator->extract($this->headers);
-            $spanContext = Span::fromContext($context)->getContext();
-        }
+        $context = $this->checkTraceInjectionValidity();
 
-        $usedContext = $spanContext?->isValid() ? $spanContext : null;
+        $this->initSpan($context);
+    }
 
-        $this->initSpan($usedContext);
+    //@todo rename this method to something more appropriate
+    protected function checkTraceInjectionValidity(): ?ContextInterface
+    {
+        $context = $this->propagator->extract($this->headers);
+        $spanInjectedContext = Span::fromContext($context)->getContext();
+
+        return $spanInjectedContext->isValid() ? $context : Context::getCurrent();
     }
 
     public function post(): void
     {
-        $this->span->addEvent(
-            sprintf('Execution time (in nanoseconds): %d', $this->clock->now() - $this->startTime),
-        );
+        $executionTime = $this->clock->now() - $this->startTime;
 
-        $this->closeScope($this->scope);
-        $this->closeSpan($this->span);
+        if ($this->span !== null) {
+            $this->span->addEvent(
+                sprintf('Execution time (in nanoseconds): %d', $executionTime),
+            );
+            $this->closeSpan($this->span);
+        }
     }
 
     public function getName(): string

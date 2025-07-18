@@ -30,7 +30,7 @@
         "symfony/dependency-injection": "^6.4|^7.0",
         "symfony/config": "^6.4|^7.0",
         "symfony/yaml": "^6.4|^7.0",
-        "open-telemetry/symfony-sdk-bundle": "^0.0.25",
+        "open-telemetry/symfony-sdk-bundle": "^0.0.28",
         "symfony/http-client": "^6.4|^7.0",
         "nyholm/psr7": "^1.8",
         "guzzlehttp/promises": "^2.0",

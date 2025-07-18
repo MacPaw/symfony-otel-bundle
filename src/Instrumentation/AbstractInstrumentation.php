@@ -36,12 +36,11 @@ abstract class AbstractInstrumentation implements InstrumentationInterface
         }
         $context ??= Context::getCurrent();
 
-        $this->instrumentationRegistry->initContext($context);
+        $this->instrumentationRegistry->setContext($context);
 
         $this->context = $this->instrumentationRegistry->getContext();
-        $this->scope = $this->instrumentationRegistry->getScope();
 
-        $spanBuilder = $this->tracer->spanBuilder($this->getName());
+        $spanBuilder = $this->tracer->spanBuilder($this->getName())->setParent($context);
 
         $this->span = $this->buildSpan($spanBuilder);
 

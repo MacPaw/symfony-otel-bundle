@@ -17,17 +17,21 @@ final class InstrumentationRegistry
      */
     private array $spans = [];
 
-    private ?ScopeInterface $scope;
+    private ?ScopeInterface $scope = null;
 
     public function addSpan(SpanInterface $span, string $name): void
     {
         $this->spans[$name] = $span;
     }
 
-    public function initContext(ContextInterface $context): void
+    public function setContext(ContextInterface $context): void
     {
         $this->context = $context;
-        $this->scope = $context->activate();
+    }
+
+    public function setScope(ScopeInterface $scope): void
+    {
+        $this->scope = $scope;
     }
 
     public function getScope(): ?ScopeInterface
@@ -54,18 +58,13 @@ final class InstrumentationRegistry
             return;
         }
 
-        $this->spans[$spanName] = null;
         unset($this->spans[$spanName]);
     }
 
     public function __destruct()
     {
         foreach ($this->spans as $span) {
-            if ($span->isRecording()) {
-                $span->end();
-            }
+            $span->end();
         }
-
-        $this->scope?->detach();
     }
 }

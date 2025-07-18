@@ -50,6 +50,9 @@ class TestController
                 <div class="endpoint">
                     <strong>GET <a href="/api/error">/api/error</a></strong> - Error endpoint (for testing error traces)
                 </div>
+                <div class="endpoint">
+                    <strong>GET <a href="/api/pdo-test">/api/pdo-test</a></strong> - PDO query test (for testing ExampleHookInstrumentation)
+                </div>
                 
                 <h2>Trace Viewing:</h2>
                 <div class="endpoint">
@@ -68,21 +71,21 @@ class TestController
         return new Response($html);
     }
 
-    #[Route('/api/test', name: 'api_test')]
+    #[Route('/api/test')]
     public function apiTest(): JsonResponse
     {
-        $tracer = $this->traceService->getTracer('test-controller');
-
-        $span = $tracer->spanBuilder('api_test_operation')
-            ->setSpanKind(SpanKind::KIND_SERVER)
-            ->startSpan();
-
-        $scope = $span->activate();
+//        $tracer = $this->traceService->getTracer('test-controller');
+//
+//        $span = $tracer->spanBuilder('api_test_operation')
+//            ->setSpanKind(SpanKind::KIND_SERVER)
+//            ->startSpan();
+//
+//        $scope = $span->activate();
 
         try {
-            $span->addEvent('Processing API test request');
-            $span->setAttribute('http.method', 'GET');
-            $span->setAttribute('http.route', '/api/test');
+//            $span->addEvent('Processing API test request');
+//            $span->setAttribute('http.method', 'GET');
+//            $span->setAttribute('http.route', '/api/test');
 
             // Simulate some work
             usleep(100000); // 100ms
@@ -90,16 +93,18 @@ class TestController
             $data = [
                 'message' => 'Hello from Symfony OpenTelemetry Bundle!',
                 'timestamp' => time(),
-                'trace_id' => $span->getContext()->getTraceId(),
-                'span_id' => $span->getContext()->getSpanId(),
+                // 'trace_id' => $span->getContext()->getTraceId(),
+                // 'span_id' => $span->getContext()->getSpanId(),
             ];
 
-            $span->addEvent('API test completed successfully');
+//            $span->addEvent('API test completed successfully');
 
             return new JsonResponse($data);
         } finally {
-            $scope->detach();
-            $span->end();
+//           $scope->detach();
+//           $span->end();
+//            // Don't call shutdown here - let the instrumentation handle cleanup
+//            $this->traceService->shutdown();
         }
     }
 
@@ -118,7 +123,6 @@ class TestController
             $span->addEvent('Starting slow operation');
             $span->setAttribute('operation.type', 'slow');
 
-            // Simulate slow processing
             sleep(2);
 
             $span->addEvent('Slow operation completed');
@@ -148,7 +152,6 @@ class TestController
         try {
             $rootSpan->addEvent('Starting nested operations');
 
-            // First nested operation
             $childSpan1 = $tracer->spanBuilder('database_query_simulation')
                 ->setSpanKind(SpanKind::KIND_CLIENT)
                 ->startSpan();
@@ -164,7 +167,6 @@ class TestController
                 $childSpan1->end();
             }
 
-            // Second nested operation
             $childSpan2 = $tracer->spanBuilder('external_api_call_simulation')
                 ->setSpanKind(SpanKind::KIND_CLIENT)
                 ->startSpan();
@@ -190,6 +192,7 @@ class TestController
         } finally {
             $rootScope->detach();
             $rootSpan->end();
+            $this->traceService->shutdown();
         }
     }
 
@@ -208,8 +211,7 @@ class TestController
             $span->addEvent('Starting operation that will fail');
             $span->setAttribute('operation.type', 'error_simulation');
 
-            // Simulate some work before error
-            usleep(100000); // 100ms
+            usleep(100000);
 
             throw new Exception('This is a test error for tracing');
         } catch (Exception $e) {
@@ -226,4 +228,19 @@ class TestController
             $span->end();
         }
     }
-} 
+
+    #[Route('/api/pdo-test', name: 'api_pdo_test')]
+    public function apiPdoTest(): JsonResponse
+    {
+        $pdo = new \PDO('sqlite::memory:');
+
+        $stmt = $pdo->query('SELECT 1 as test_value, "Hello from PDO" as message');
+        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return new JsonResponse([
+            'message' => 'PDO query test completed',
+            'pdo_result' => $result,
+            'note' => 'Check traces for ExampleHookInstrumentation spans',
+        ]);
+    }
+}

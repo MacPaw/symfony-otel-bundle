@@ -17,7 +17,7 @@ interface InstrumentationInterface
     public function post(): void;
 
     /**
-     * Span name.
+     * @return  non-empty-string
      */
     public function getName(): string;
 }

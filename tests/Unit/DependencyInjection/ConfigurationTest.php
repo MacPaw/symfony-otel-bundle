@@ -25,9 +25,9 @@ class ConfigurationTest extends TestCase
 
         $config = $processor->processConfiguration($this->configuration, []);
 
-        $this->assertEquals('test-template', $config['tracer_name']);
-        $this->assertEquals('test-service', $config['service_name']);
-        $this->assertEquals([], $config['span_tracers']);
+        $this->assertEquals('symfony-tracer', $config['tracer_name']);
+        $this->assertEquals('symfony-app', $config['service_name']);
+        $this->assertEquals([], $config['instrumentations']);
     }
 
     public function testCustomConfiguration(): void
@@ -37,25 +37,23 @@ class ConfigurationTest extends TestCase
             SymfonyOtelExtension::NAME => [
                 'tracer_name' => 'custom-tracer',
                 'service_name' => 'custom-service',
-                'span_tracers' => [
-                    [
-                        'class' => 'App\\Span\\CustomTracer',
-                        'tag' => 'kernel.event_subscriber',
-                    ],
+                'instrumentations' => [
+                    'App\Instrumentation\CustomInstrumentation',
+                    'App\Instrumentation\HookInstrumentation',
                 ],
             ],
         ];
 
         /** @var array<int|string, mixed> $config */
         $config = $processor->processConfiguration($this->configuration, $inputConfig);
-        /** @var array<int, array<int|string, mixed>> $tracers */
-        $tracers = $config['span_tracers'];
+        /** @var array<int, string> $instrumentations */
+        $instrumentations = $config['instrumentations'];
 
         $this->assertEquals('custom-tracer', $config['tracer_name']);
         $this->assertEquals('custom-service', $config['service_name']);
-        $this->assertCount(1, $tracers);
-        $this->assertEquals('App\\Span\\CustomTracer', $tracers[0]['class']);
-        $this->assertEquals('kernel.event_subscriber', $tracers[0]['tag']);
+        $this->assertCount(2, $instrumentations);
+        $this->assertEquals('App\Instrumentation\CustomInstrumentation', $instrumentations[0]);
+        $this->assertEquals('App\Instrumentation\HookInstrumentation', $instrumentations[1]);
     }
 
     public function testEmptyTracerNameThrowsException(): void
@@ -86,17 +84,15 @@ class ConfigurationTest extends TestCase
         $processor->processConfiguration($this->configuration, $inputConfig);
     }
 
-    public function testSpanTracerWithoutClassThrowsException(): void
+    public function testEmptyInstrumentationThrowsException(): void
     {
         $this->expectException(InvalidConfigurationException::class);
 
         $processor = new Processor();
         $inputConfig = [
             SymfonyOtelExtension::NAME => [
-                'span_tracers' => [
-                    [
-                        'tag' => 'kernel.event_subscriber',
-                    ],
+                'instrumentations' => [
+                    '',
                 ],
             ],
         ];
@@ -104,49 +100,65 @@ class ConfigurationTest extends TestCase
         $processor->processConfiguration($this->configuration, $inputConfig);
     }
 
-    public function testSpanTracerWithoutTagThrowsException(): void
-    {
-        $this->expectException(InvalidConfigurationException::class);
-
-        $processor = new Processor();
-        $inputConfig = [
-            SymfonyOtelExtension::NAME => [
-                'span_tracers' => [
-                    [
-                        'class' => 'App\\Span\\CustomTracer',
-                    ],
-                ],
-            ],
-        ];
-
-        $processor->processConfiguration($this->configuration, $inputConfig);
-    }
-
-    public function testMultipleSpanTracers(): void
+    public function testMultipleInstrumentations(): void
     {
         $processor = new Processor();
         $inputConfig = [
             SymfonyOtelExtension::NAME => [
-                'span_tracers' => [
-                    [
-                        'class' => 'App\\Span\\TracerOne',
-                        'tag' => 'kernel.event_subscriber',
-                    ],
-                    [
-                        'class' => 'App\\Span\\TracerTwo',
-                        'tag' => 'doctrine.event_subscriber',
-                    ],
+                'instrumentations' => [
+                    'App\Instrumentation\FirstInstrumentation',
+                    'App\Instrumentation\SecondInstrumentation',
+                    'App\Instrumentation\ThirdInstrumentation',
                 ],
             ],
         ];
 
         /** @var array<int|string, mixed> $config */
         $config = $processor->processConfiguration($this->configuration, $inputConfig);
-        /** @var array<int, array<int|string, mixed>> $tracers */
-        $tracers = $config['span_tracers'];
+        /** @var array<int, string> $instrumentations */
+        $instrumentations = $config['instrumentations'];
 
-        $this->assertCount(2, $tracers);
-        $this->assertEquals('App\\Span\\TracerOne', $tracers[0]['class']);
-        $this->assertEquals('App\\Span\\TracerTwo', $tracers[1]['class']);
+        $this->assertCount(3, $instrumentations);
+        $this->assertEquals('App\Instrumentation\FirstInstrumentation', $instrumentations[0]);
+        $this->assertEquals('App\Instrumentation\SecondInstrumentation', $instrumentations[1]);
+        $this->assertEquals('App\Instrumentation\ThirdInstrumentation', $instrumentations[2]);
+    }
+
+    public function testPartialConfiguration(): void
+    {
+        $processor = new Processor();
+        $inputConfig = [
+            SymfonyOtelExtension::NAME => [
+                'service_name' => 'partial-service',
+            ],
+        ];
+
+        /** @var array<int|string, mixed> $config */
+        $config = $processor->processConfiguration($this->configuration, $inputConfig);
+
+        $this->assertEquals('partial-service', $config['service_name']);
+        $this->assertEquals('symfony-tracer', $config['tracer_name']);
+        $this->assertEquals([], $config['instrumentations']);
+    }
+
+    public function testConfigurationWithSpecialCharacters(): void
+    {
+        $processor = new Processor();
+        $inputConfig = [
+            SymfonyOtelExtension::NAME => [
+                'tracer_name' => 'tracer-with-special-chars_123',
+                'service_name' => 'service-with-special-chars_123',
+                'instrumentations' => [
+                    'Namespace\With\Backslashes\InstrumentationClass',
+                ],
+            ],
+        ];
+
+        /** @var array<int|string, mixed> $config */
+        $config = $processor->processConfiguration($this->configuration, $inputConfig);
+
+        $this->assertEquals('tracer-with-special-chars_123', $config['tracer_name']);
+        $this->assertEquals('service-with-special-chars_123', $config['service_name']);
+        $this->assertEquals(['Namespace\With\Backslashes\InstrumentationClass'], $config['instrumentations']);
     }
 }

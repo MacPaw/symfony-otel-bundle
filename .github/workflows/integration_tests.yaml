@@ -38,7 +38,8 @@ jobs:
           --health-timeout=5s
           --health-retries=5
           -v ${{ github.workspace }}/docker/tempo/tempo.yaml:/etc/tempo.yaml
-          --entrypoint="tempo -config.file=/etc/tempo.yaml"
+          --entrypoint=tempo
+          --cmd="-config.file=/etc/tempo.yaml"
 
     steps:
       - name: Checkout

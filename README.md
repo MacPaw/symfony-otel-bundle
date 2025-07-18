@@ -29,7 +29,7 @@ When specific listener need to be configured, you need to add it to `span_tracer
     namespace Macpaw\SymfonyOtelBundle\Span;
 
     use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-    use OpenTelemetry\API\Trace\Span;
+    use OpenTelemetry\API\Trace\Spane
 
     class CustomSpanTracer implements EventSubscriberInterface
     {
@@ -243,6 +243,7 @@ class MyController
 
 * Use one kind per span.
 * Create a `CLIENT` span before injecting context into headers.
+* On the client, start a CLIENT span and inject the trace headers (traceparent/tracestate) into the outgoing request. On the backend, the OpenTelemetry SDK automatically extracts this context and creates a SERVER span that continues the same trace. (traceparent/tracestate) into outgoing request headers; on the backend, extract and link that context to a SERVER span so the downstream flow matches the original trace.
 * In messaging flows, pair `PRODUCER` and `CONSUMER` spans.
 
 ---

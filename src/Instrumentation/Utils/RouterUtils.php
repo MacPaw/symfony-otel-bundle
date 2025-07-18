@@ -40,6 +40,15 @@ final readonly class RouterUtils
 
         $routeParams = $request?->attributes->get('_route_params');
 
-        return is_array($routeParams) === true ? $routeParams : null;
+        if (!is_array($routeParams)) {
+            return null;
+        }
+
+        $result = [];
+        foreach ($routeParams as $key => $value) {
+            $result[(string) $key] = $value;
+        }
+
+        return $result;
     }
 }

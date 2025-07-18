@@ -32,8 +32,12 @@ class InstrumentationIntegrationTest extends TestCase
         $this->container->setParameter('otel_bundle.tracer_name', 'test-tracer');
 
         $this->container->compile();
-        $this->traceService = $this->container->get(TraceService::class);
-        $this->registry = $this->container->get(InstrumentationRegistry::class);
+        /** @var TraceService $traceService */
+        $traceService = $this->container->get(TraceService::class);
+        $this->traceService = $traceService;
+        /** @var InstrumentationRegistry $registry */
+        $registry = $this->container->get(InstrumentationRegistry::class);
+        $this->registry = $registry;
     }
 
     public function testInstrumentationRegistryCanManageSpans(): void
@@ -50,15 +54,16 @@ class InstrumentationIntegrationTest extends TestCase
     public function testExecutionTimeInstrumentationCanCreateSpans(): void
     {
         $tracer = $this->traceService->getTracer('test-tracer');
+        /** @var TextMapPropagatorInterface $propagator */
         $propagator = $this->container->get(TextMapPropagatorInterface::class);
+        /** @var ClockInterface $clock */
         $clock = $this->container->get(ClockInterface::class);
 
         $instrumentation = new ExecutionTimeInstrumentation(
             $this->registry,
             $tracer,
             $propagator,
-            $clock,
-            $this->traceService
+            $clock
         );
 
         $instrumentation->pre();
@@ -67,7 +72,7 @@ class InstrumentationIntegrationTest extends TestCase
 
         $instrumentation->post();
 
-        $this->assertTrue(true);
+        $this->assertCount(1, $this->registry->getSpans());
     }
 
     public function testInstrumentationRegistryCanRemoveSpans(): void
@@ -101,15 +106,16 @@ class InstrumentationIntegrationTest extends TestCase
     public function testInstrumentationCanHandleExceptions(): void
     {
         $tracer = $this->traceService->getTracer('test-tracer');
+        /** @var TextMapPropagatorInterface $propagator */
         $propagator = $this->container->get(TextMapPropagatorInterface::class);
+        /** @var ClockInterface $clock */
         $clock = $this->container->get(ClockInterface::class);
 
         $instrumentation = new ExecutionTimeInstrumentation(
             $this->registry,
             $tracer,
             $propagator,
-            $clock,
-            $this->traceService
+            $clock
         );
 
         $instrumentation->pre();

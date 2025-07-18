@@ -7,6 +7,7 @@ namespace Tests\Unit;
 use Macpaw\SymfonyOtelBundle\SymfonyOtelBundle;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 
 class SymfonyOtelBundleTest extends TestCase
@@ -44,14 +45,14 @@ class SymfonyOtelBundleTest extends TestCase
         $container = new ContainerBuilder();
         $this->bundle->build($container);
 
-        $this->assertTrue(true);
+        $this->assertInstanceOf(ContainerBuilder::class, $container);
     }
 
     public function testGetContainerExtension(): void
     {
         $extension = $this->bundle->getContainerExtension();
 
-        $this->assertNotNull($extension);
+        $this->assertInstanceOf(ExtensionInterface::class, $extension);
         $this->assertEquals('otel_bundle', $extension->getAlias());
     }
 }

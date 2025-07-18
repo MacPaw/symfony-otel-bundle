@@ -27,6 +27,7 @@
     "require": {
         "php": "^8.2",
         "ext-opentelemetry": "*",
+        "ext-protobuf": "*",
         "symfony/dependency-injection": "^6.4|^7.0",
         "symfony/config": "^6.4|^7.0",
         "symfony/yaml": "^6.4|^7.0",
@@ -81,6 +82,7 @@
         ]
     },
     "suggest": {
+        "ext-protobuf": "For protobuf support in OpenTelemetry (required for OTLP exporters)",
         "ext-grpc": "For gRPC transport support in OpenTelemetry",
         "open-telemetry/transport-grpc": "For gRPC transport support in OpenTelemetry"
     }

@@ -34,6 +34,7 @@ class SymfonyOtelExtensionTest extends TestCase
 
     public function testLoadWithCustomConfiguration(): void
     {
+        /** @var array<string, mixed> $config */
         $config = [
             'tracer_name' => 'custom_tracer',
             'service_name' => 'custom_service',
@@ -42,7 +43,9 @@ class SymfonyOtelExtensionTest extends TestCase
             ],
         ];
 
-        $this->extension->load([$config], $this->container);
+        /** @var array<int, array<string, mixed>> $configs */
+        $configs = [$config];
+        $this->extension->load($configs, $this->container);
 
         $this->assertEquals('custom_tracer', $this->container->getParameter('otel_bundle.tracer_name'));
         $this->assertEquals('custom_service', $this->container->getParameter('otel_bundle.service_name'));
@@ -54,11 +57,13 @@ class SymfonyOtelExtensionTest extends TestCase
 
     public function testLoadWithMultipleConfigurations(): void
     {
+        /** @var array<string, mixed> $config1 */
         $config1 = [
             'tracer_name' => 'first_tracer',
             'service_name' => 'first_service',
         ];
 
+        /** @var array<string, mixed> $config2 */
         $config2 = [
             'tracer_name' => 'second_tracer',
             'service_name' => 'second_service',
@@ -67,7 +72,9 @@ class SymfonyOtelExtensionTest extends TestCase
             ],
         ];
 
-        $this->extension->load([$config1, $config2], $this->container);
+        /** @var array<int, array<string, mixed>> $configs */
+        $configs = [$config1, $config2];
+        $this->extension->load($configs, $this->container);
 
         $this->assertEquals('second_tracer', $this->container->getParameter('otel_bundle.tracer_name'));
         $this->assertEquals('second_service', $this->container->getParameter('otel_bundle.service_name'));
@@ -93,11 +100,14 @@ class SymfonyOtelExtensionTest extends TestCase
 
     public function testLoadWithPartialConfiguration(): void
     {
+        /** @var array<string, mixed> $config */
         $config = [
             'tracer_name' => 'partial_tracer',
         ];
 
-        $this->extension->load([$config], $this->container);
+        /** @var array<int, array<string, mixed>> $configs */
+        $configs = [$config];
+        $this->extension->load($configs, $this->container);
 
         $this->assertEquals('partial_tracer', $this->container->getParameter('otel_bundle.tracer_name'));
         $this->assertEquals('symfony-app', $this->container->getParameter('otel_bundle.service_name'));
@@ -106,6 +116,7 @@ class SymfonyOtelExtensionTest extends TestCase
 
     public function testLoadWithComplexInstrumentations(): void
     {
+        /** @var array<string, mixed> $config */
         $config = [
             'instrumentations' => [
                 'App\Instrumentation\FirstInstrumentation',
@@ -114,7 +125,9 @@ class SymfonyOtelExtensionTest extends TestCase
             ],
         ];
 
-        $this->extension->load([$config], $this->container);
+        /** @var array<int, array<string, mixed>> $configs */
+        $configs = [$config];
+        $this->extension->load($configs, $this->container);
 
         $expectedInstrumentations = [
             'App\Instrumentation\FirstInstrumentation',

@@ -76,17 +76,13 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
     }
 
     /**
-     * @return array<string, array<string|int>>
+     * @return array<string, array<int|string>>
      */
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST => [
-                ['onKernelRequest', PHP_INT_MAX],
-            ],
-            KernelEvents::TERMINATE => [
-                ['onKernelTerminate', PHP_INT_MAX],
-            ],
+            KernelEvents::REQUEST => ['onKernelRequest', PHP_INT_MAX],
+            KernelEvents::TERMINATE => ['onKernelTerminate', PHP_INT_MAX],
         ];
     }
 }

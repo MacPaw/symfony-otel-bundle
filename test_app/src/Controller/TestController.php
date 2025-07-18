@@ -182,6 +182,9 @@ class TestController
         $pdo = new PDO('sqlite::memory:');
 
         $stmt = $pdo->query('SELECT 1 as test_value, "Hello from PDO" as message');
+        if ($stmt === false) {
+            throw new Exception('Failed to execute PDO query');
+        }
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return new JsonResponse([

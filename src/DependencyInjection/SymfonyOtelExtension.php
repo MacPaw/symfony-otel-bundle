@@ -15,7 +15,7 @@ class SymfonyOtelExtension extends Extension
     public const NAME = 'otel_bundle';
 
     /**
-     * @param array<string, mixed> $configs
+     * @param array<int, array<string, mixed>> $configs
      *
      * @throws Exception
      */
@@ -40,7 +40,7 @@ class SymfonyOtelExtension extends Extension
     }
 
     /**
-     * @param array<string, mixed> $config
+     * @param array<int, array<string, mixed>> $config
      */
     public function getConfiguration(array $config, ContainerBuilder $container): Configuration
     {

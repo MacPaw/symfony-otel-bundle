@@ -34,14 +34,14 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.3
-          extensions: opentelemetry, grcp
+          extensions: opentelemetry, protobuf, grpc
           coverage: pcov
           tools: composer:v2
 
       - name: Install dependencies
         run: |
-          composer install --prefer-dist --no-progress --ignore-platform-req=ext-opentelemetry
-          composer require --dev infection/infection --ignore-platform-req=ext-opentelemetry
+          composer install --prefer-dist --no-progress --ignore-platform-req=ext-opentelemetry --ignore-platform-req=ext-protobuf
+          composer require --dev infection/infection --ignore-platform-req=ext-opentelemetry --ignore-platform-req=ext-protobuf
 
       - name: Run Infection mutation testing
         run: |

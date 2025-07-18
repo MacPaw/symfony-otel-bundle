@@ -33,6 +33,6 @@ class SymfonyOtelBundle extends Bundle
     public function boot(): void
     {
         parent::boot();
-        $this->container->get(HookManagerService::class);
+        $this->container?->get(HookManagerService::class);
     }
 }

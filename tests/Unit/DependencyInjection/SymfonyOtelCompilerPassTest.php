@@ -9,6 +9,7 @@ use Macpaw\SymfonyOtelBundle\Span\InstrumentationEventSubscriber;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException;
 
 class SymfonyOtelCompilerPassTest extends TestCase
 {
@@ -27,7 +28,7 @@ class SymfonyOtelCompilerPassTest extends TestCase
 
         $this->compilerPass->process($this->container);
 
-        $this->assertTrue(true);
+        $this->assertFalse($this->container->hasDefinition('App\Instrumentation\CustomInstrumentation'));
     }
 
     public function testProcessWithSingleInstrumentation(): void
@@ -130,7 +131,7 @@ class SymfonyOtelCompilerPassTest extends TestCase
 
     public function testProcessWithEmptyContainer(): void
     {
-        $this->expectException(\Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException::class);
+        $this->expectException(ParameterNotFoundException::class);
         $this->compilerPass->process($this->container);
     }
 
@@ -141,6 +142,6 @@ class SymfonyOtelCompilerPassTest extends TestCase
 
         $this->compilerPass->process($this->container);
 
-        $this->assertTrue(true);
+        $this->assertFalse($this->container->hasDefinition('App\Instrumentation\CustomInstrumentation'));
     }
 }

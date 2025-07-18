@@ -8,6 +8,7 @@ use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Service\HookManagerService;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use Macpaw\SymfonyOtelBundle\SymfonyOtelBundle;
+use OpenTelemetry\API\Trace\TracerInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
@@ -44,7 +45,7 @@ class BundleIntegrationTest extends TestCase
         $traceService = $this->container->get(TraceService::class);
 
         $this->assertInstanceOf(TraceService::class, $traceService);
-        $this->assertNotNull($traceService->getTracer('test'));
+        $this->assertInstanceOf(TracerInterface::class, $traceService->getTracer('test'));
     }
 
     public function testBundleConfiguration(): void

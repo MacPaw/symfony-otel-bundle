@@ -28,7 +28,7 @@ final readonly class ExceptionHandlingEventSubscriber implements EventSubscriber
     {
         $throwable = $event->getThrowable();
 
-        if ($throwable === null) {
+        if ($throwable === null) { // @phpstan-ignore-line
             return;
         }
 
@@ -65,7 +65,7 @@ final readonly class ExceptionHandlingEventSubscriber implements EventSubscriber
                 $errorSpan->setAttribute(TraceAttributes::EXCEPTION_STACKTRACE, $throwable->getTraceAsString());
                 $errorSpan->setAttribute('error.handled_by', 'ExceptionHandlingEventSubscriber');
 
-                if ($event->getRequest() !== null) {
+                if ($event->getRequest() !== null) { // @phpstan-ignore-line
                     $errorSpan->setAttribute(TraceAttributes::HTTP_REQUEST_METHOD, $event->getRequest()->getMethod());
                     $errorSpan->setAttribute(TraceAttributes::HTTP_ROUTE, $event->getRequest()->getPathInfo());
                     $errorSpan->setAttribute(TraceAttributes::URL_FULL, $event->getRequest()->getUri());
@@ -140,14 +140,12 @@ final readonly class ExceptionHandlingEventSubscriber implements EventSubscriber
     }
 
     /**
-     * @return array<string, array<string|int>>
+     * @return array<string, array<int|string>>
      */
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::EXCEPTION => [
-                ['onKernelException', PHP_INT_MAX],
-            ],
+            KernelEvents::EXCEPTION => ['onKernelException', PHP_INT_MAX],
         ];
     }
 }

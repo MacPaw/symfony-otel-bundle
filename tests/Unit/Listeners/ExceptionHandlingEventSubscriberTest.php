@@ -90,6 +90,11 @@ class ExceptionHandlingEventSubscriberTest extends TestCase
 
         $this->registry->addSpan($span, 'test_span');
 
+        // Змушуємо TraceService викинути виняток при створенні span
+        $this->traceService->expects($this->once())
+            ->method('getTracer')
+            ->willThrowException(new RuntimeException('Failed to get tracer'));
+
         $this->subscriber->onKernelException($event);
     }
 
@@ -135,6 +140,6 @@ class ExceptionHandlingEventSubscriberTest extends TestCase
         $events = ExceptionHandlingEventSubscriber::getSubscribedEvents();
 
         $this->assertArrayHasKey('kernel.exception', $events);
-        $this->assertEquals([['onKernelException', PHP_INT_MAX]], $events['kernel.exception']);
+        $this->assertEquals(['onKernelException', PHP_INT_MAX], $events['kernel.exception']);
     }
 }

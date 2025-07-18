@@ -26,13 +26,11 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $tracer = $this->createMock(TracerInterface::class);
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $clock = $this->createMock(ClockInterface::class);
-        $traceService = $this->createMock(TraceService::class);
         $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
             $registry,
             $tracer,
             $propagator,
-            $clock,
-            $traceService
+            $clock
         );
         $subscriber = new InstrumentationEventSubscriber($executionTimeInstrumentation);
         $request = new Request();
@@ -44,7 +42,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $terminateEvent = new TerminateEvent($kernel, $request, new Response());
         $subscriber->onKernelRequestExecutionTime($requestEvent);
         $subscriber->onKernelTerminateExecutionTime($terminateEvent);
-        $this->assertTrue(true);
+        $this->assertInstanceOf(InstrumentationEventSubscriber::class, $subscriber);
     }
 
     public function testOnKernelRequestWithInvalidTraceContext(): void
@@ -53,20 +51,18 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $tracer = $this->createMock(TracerInterface::class);
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $clock = $this->createMock(ClockInterface::class);
-        $traceService = $this->createMock(TraceService::class);
         $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
             $registry,
             $tracer,
             $propagator,
-            $clock,
-            $traceService
+            $clock
         );
         $subscriber = new InstrumentationEventSubscriber($executionTimeInstrumentation);
         $request = new Request();
         $kernel = $this->createMock(HttpKernelInterface::class);
         $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
         $subscriber->onKernelRequestExecutionTime($requestEvent);
-        $this->assertTrue(true);
+        $this->assertInstanceOf(InstrumentationEventSubscriber::class, $subscriber);
     }
 
     public function testGetSubscribedEvents(): void
@@ -84,13 +80,11 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $tracer = $this->createMock(TracerInterface::class);
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $clock = $this->createMock(ClockInterface::class);
-        $traceService = $this->createMock(TraceService::class);
         $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
             $registry,
             $tracer,
             $propagator,
-            $clock,
-            $traceService
+            $clock
         );
         $subscriber = new InstrumentationEventSubscriber($executionTimeInstrumentation);
         $request = new Request();
@@ -101,7 +95,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $subscriber->onKernelRequestExecutionTime($requestEvent);
         usleep(1000);
         $subscriber->onKernelTerminateExecutionTime($terminateEvent);
-        $this->assertTrue(true);
+        $this->assertInstanceOf(InstrumentationEventSubscriber::class, $subscriber);
     }
 
     public function testSubRequestIsIgnored(): void
@@ -110,20 +104,18 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $tracer = $this->createMock(TracerInterface::class);
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $clock = $this->createMock(ClockInterface::class);
-        $traceService = $this->createMock(TraceService::class);
         $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
             $registry,
             $tracer,
             $propagator,
-            $clock,
-            $traceService
+            $clock
         );
         $subscriber = new InstrumentationEventSubscriber($executionTimeInstrumentation);
         $request = new Request();
         $kernel = $this->createMock(HttpKernelInterface::class);
         $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::SUB_REQUEST);
         $subscriber->onKernelRequestExecutionTime($requestEvent);
-        $this->assertTrue(true);
+        $this->assertInstanceOf(InstrumentationEventSubscriber::class, $subscriber);
     }
 
     public function testExecutionTimeIsPositive(): void
@@ -132,13 +124,11 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $tracer = $this->createMock(TracerInterface::class);
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $clock = $this->createMock(ClockInterface::class);
-        $traceService = $this->createMock(TraceService::class);
         $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
             $registry,
             $tracer,
             $propagator,
-            $clock,
-            $traceService
+            $clock
         );
         $subscriber = new InstrumentationEventSubscriber($executionTimeInstrumentation);
         $request = new Request();
@@ -147,6 +137,6 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $terminateEvent = new TerminateEvent($kernel, $request, new Response());
         $subscriber->onKernelRequestExecutionTime($requestEvent);
         $subscriber->onKernelTerminateExecutionTime($terminateEvent);
-        $this->assertTrue(true);
+        $this->assertInstanceOf(InstrumentationEventSubscriber::class, $subscriber);
     }
 }

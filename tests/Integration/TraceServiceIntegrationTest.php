@@ -8,6 +8,7 @@ use Exception;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
+use OpenTelemetry\API\Trace\TracerInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
@@ -30,7 +31,9 @@ class TraceServiceIntegrationTest extends TestCase
         $this->loader->load('services.yml');
         $this->container->compile();
 
-        $this->traceService = $this->container->get(TraceService::class);
+        /** @var TraceService $traceService */
+        $traceService = $this->container->get(TraceService::class);
+        $this->traceService = $traceService;
     }
 
     public function testTraceServiceIsProperlyConfigured(): void
@@ -38,7 +41,7 @@ class TraceServiceIntegrationTest extends TestCase
         $this->assertInstanceOf(TraceService::class, $this->traceService);
 
         $tracer = $this->traceService->getTracer('test-tracer');
-        $this->assertNotNull($tracer);
+        $this->assertInstanceOf(TracerInterface::class, $tracer);
 
         $span = $tracer->spanBuilder('test_span')->startSpan();
         $this->assertTrue($span->getContext()->isValid());
@@ -172,7 +175,7 @@ class TraceServiceIntegrationTest extends TestCase
         $this->traceService->shutdown();
 
         $tracer = $this->traceService->getTracer('test-tracer');
-        $this->assertNotNull($tracer);
+        $this->assertInstanceOf(TracerInterface::class, $tracer);
     }
 
     public function testTraceServiceIsRegisteredInContainer(): void

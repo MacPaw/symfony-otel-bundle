@@ -24,7 +24,6 @@ jobs:
     name: Code Coverage
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [ code-quality, unit-tests ]
 
     steps:
       - name: Checkout
@@ -34,7 +33,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.3
-          extensions: opentelemetry, xdebug, grcp
+          extensions: opentelemetry, protobuf, xdebug, grpc
           coverage: xdebug
           tools: composer:v2
 
@@ -49,7 +48,7 @@ jobs:
           key: ${{ runner.os }}-composer-coverage-${{ hashFiles('**/composer.lock', '**/composer.json') }}
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --ignore-platform-req=ext-opentelemetry
+        run: composer install --prefer-dist --no-progress --ignore-platform-req=ext-opentelemetry --ignore-platform-req=ext-protobuf
 
       - name: Run tests with coverage
         run: |

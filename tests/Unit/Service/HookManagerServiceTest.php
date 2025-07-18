@@ -123,7 +123,7 @@ class HookManagerServiceTest extends TestCase
 
         $this->hookManager->expects($this->once())
             ->method('hook')
-            ->willReturnCallback(function ($class, $method, $preHook, $postHook) {
+            ->willReturnCallback(function (string $class, string $method, callable $preHook, callable $postHook) {
                 $preHook();
             });
 
@@ -158,7 +158,7 @@ class HookManagerServiceTest extends TestCase
 
         $this->hookManager->expects($this->once())
             ->method('hook')
-            ->willReturnCallback(function ($class, $method, $preHook, $postHook) {
+            ->willReturnCallback(function (string $class, string $method, callable $preHook, callable $postHook) {
                 $postHook();
             });
 
@@ -218,7 +218,8 @@ class HookManagerServiceTest extends TestCase
 
         $this->hookManager->expects($this->exactly(2))
             ->method('hook')
-            ->willReturnCallback(function ($class, $method, $preHook, $postHook) {
+            ->willReturnCallback(function (?string $class, string $method, callable $preHook, callable $postHook) {
+                /** @var int $callCount */
                 static $callCount = 0;
                 $callCount++;
 

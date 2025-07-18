@@ -39,7 +39,7 @@ final class InstrumentationRegistry
         return $this->scope;
     }
 
-    public function getContext(): ContextInterface
+    public function getContext(): ?ContextInterface
     {
         return $this->context;
     }

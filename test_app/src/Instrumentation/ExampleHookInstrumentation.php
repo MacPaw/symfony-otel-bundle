@@ -8,8 +8,10 @@ use Macpaw\SymfonyOtelBundle\Instrumentation\AbstractHookInstrumentation;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
 use OpenTelemetry\API\Trace\SpanInterface;
+use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\TracerInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use PDO;
 
 final class ExampleHookInstrumentation extends AbstractHookInstrumentation
 {
@@ -26,9 +28,12 @@ final class ExampleHookInstrumentation extends AbstractHookInstrumentation
         return 'example_hook_instrumentation';
     }
 
-    public function getClass(): ?string
+    /**
+     * @return string|null
+     */
+    public function getClass(): ?string //@phpstan-ignore-line
     {
-        return \PDO::class;
+        return PDO::class;
     }
 
     public function getMethod(): string
@@ -39,7 +44,7 @@ final class ExampleHookInstrumentation extends AbstractHookInstrumentation
     protected function buildSpan(SpanBuilderInterface $spanBuilder): SpanInterface
     {
         return $spanBuilder
-            ->setSpanKind(\OpenTelemetry\API\Trace\SpanKind::KIND_CLIENT)
+            ->setSpanKind(SpanKind::KIND_CLIENT)
             ->setAttribute('db.system', 'sql')
             ->setAttribute('db.operation', 'query')
             ->startSpan();

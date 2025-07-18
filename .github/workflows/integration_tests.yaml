@@ -46,12 +46,12 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.3
-          extensions: opentelemetry, grcp
+          extensions: opentelemetry, protobuf, grpc
           coverage: none
           tools: composer:v2
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --ignore-platform-req=ext-opentelemetry
+        run: composer install --prefer-dist --no-progress --ignore-platform-req=ext-opentelemetry --ignore-platform-req=ext-protobuf
 
       - name: Start test application
         run: |

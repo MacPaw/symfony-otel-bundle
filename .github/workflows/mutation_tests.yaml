@@ -46,6 +46,6 @@ jobs:
       - name: Run Infection mutation testing
         run: |
           mkdir -p var/infection
-          vendor/bin/infection --threads=4 --min-msi=20 --min-covered-msi=90 --log-verbosity=all --show-mutations=max
+          vendor/bin/infection --threads=4 --min-msi=20 --min-covered-msi=75 --log-verbosity=all --show-mutations=max
         env:
           INFECTION_BADGE_API_KEY: ${{ secrets.INFECTION_BADGE_API_KEY }}

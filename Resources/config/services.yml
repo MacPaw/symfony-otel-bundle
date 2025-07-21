@@ -32,8 +32,8 @@ services:
   Macpaw\SymfonyOtelBundle\Service\HookManagerService:
     public: true
     arguments:
-      $logger: '@?logger'
       $hookManager: '@OpenTelemetry\API\Instrumentation\AutoInstrumentation\ExtensionHookManager'
+      $logger: '@?logger'
     lazy: false
 
   OpenTelemetry\API\Instrumentation\AutoInstrumentation\ExtensionHookManager: ~

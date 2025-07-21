@@ -27,8 +27,8 @@ class HookManagerServiceTest extends TestCase
         $this->hookManager = $this->createMock(HookManagerInterface::class);
 
         $this->hookManagerService = new HookManagerService(
+            $this->hookManager,
             $this->logger,
-            $this->hookManager
         );
     }
 
@@ -161,7 +161,7 @@ class HookManagerServiceTest extends TestCase
 
     public function testRegisterHookWithNullLogger(): void
     {
-        $hookManagerService = new HookManagerService(null, $this->hookManager);
+        $hookManagerService = new HookManagerService($this->hookManager, null);
 
         $instrumentation = $this->createMock(HookInstrumentationInterface::class);
         $instrumentation->method('getClass')->willReturn('TestClass');

@@ -12,10 +12,13 @@ use Throwable;
 
 final readonly class HookManagerService
 {
+    private LoggerInterface $logger;
+
     public function __construct(
-        private ?LoggerInterface $logger,
         private HookManagerInterface $hookManager,
+        ?LoggerInterface $logger,
     ) {
+        $this->logger = $logger ?? new NullLogger();
     }
 
     public function registerHook(HookInstrumentationInterface $instrumentation): void
@@ -24,7 +27,7 @@ final readonly class HookManagerService
         $method = $instrumentation->getMethod();
 
         try {
-            $logger = $this->logger ?? new NullLogger();
+            $logger = $this->logger;
             $preHook = static function () use ($instrumentation, $logger, $class, $method) {
                 try {
                     $instrumentation->pre();
@@ -48,13 +51,13 @@ final readonly class HookManagerService
 
             $this->hookManager->hook($class, $method, $preHook, $postHook);
 
-            $this->logger?->debug('Successfully registered hook for {class}::{method}', [
+            $this->logger->debug('Successfully registered hook for {class}::{method}', [
                 'class' => $class,
                 'method' => $method,
                 'instrumentation' => $instrumentation->getName(),
             ]);
         } catch (Throwable $e) {
-            $this->logger?->error('Failed to register hook for {class}::{method}: {error}', [
+            $this->logger->error('Failed to register hook for {class}::{method}: {error}', [
                 'class' => $class,
                 'method' => $method,
                 'instrumentation' => $instrumentation->getName(),

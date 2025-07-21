@@ -31,6 +31,8 @@ final readonly class HookManagerService
                     $logger->debug("Successfully executed pre hook for {$class}::{$method}");
                 } catch (Throwable $e) {
                     $logger->error("Error in hook pre(): {error}", ['error' => $e->getMessage()]);
+
+                    throw $e;
                 }
             };
             $postHook = static function () use ($instrumentation, $logger, $class, $method) {
@@ -39,6 +41,8 @@ final readonly class HookManagerService
                     $logger->debug("Successfully executed post hook for {$class}::{$method}");
                 } catch (Throwable $e) {
                     $logger->error("Error in hook post(): {error}", ['error' => $e->getMessage()]);
+
+                    throw $e;
                 }
             };
 

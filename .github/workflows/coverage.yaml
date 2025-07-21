@@ -1,4 +1,4 @@
-name: Security checks
+name: Code Coverage
 
 on:
   pull_request:

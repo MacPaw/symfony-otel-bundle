@@ -97,18 +97,6 @@ final readonly class ExceptionHandlingEventSubscriber implements EventSubscriber
 
     private function cleanupSpansAndScope(): void
     {
-        $scope = $this->instrumentationRegistry->getScope();
-        if ($scope !== null) {
-            try {
-                $scope->detach();
-                $this->logger?->debug('Detached scope due to exception');
-            } catch (Throwable $e) {
-                $this->logger?->error('Failed to detach scope', [
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
-
         foreach ($this->instrumentationRegistry->getSpans() as $spanName => $span) {
             try {
                 $span->end();

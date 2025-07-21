@@ -99,7 +99,6 @@ class InstrumentationIntegrationTest extends TestCase
         $this->assertNotNull($this->registry->getContext());
         $this->assertSame($scope, $this->registry->getScope());
 
-        $scope->detach();
         $span->end();
     }
 

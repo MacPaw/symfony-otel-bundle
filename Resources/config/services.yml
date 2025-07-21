@@ -17,7 +17,7 @@ services:
   Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry:
     public: true
 
-  Macpaw\SymfonyOtelBundle\Span\InstrumentationEventSubscriber:
+  Macpaw\SymfonyOtelBundle\Listeners\InstrumentationEventSubscriber:
     tags:
       - { name: 'kernel.event_subscriber' }
 

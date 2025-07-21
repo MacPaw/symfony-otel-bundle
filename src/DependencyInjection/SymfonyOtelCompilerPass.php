@@ -6,10 +6,10 @@ namespace Macpaw\SymfonyOtelBundle\DependencyInjection;
 
 use Macpaw\SymfonyOtelBundle\Instrumentation\HookInstrumentationInterface;
 use Macpaw\SymfonyOtelBundle\Service\HookManagerService;
-use Macpaw\SymfonyOtelBundle\Span\InstrumentationEventSubscriber;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class SymfonyOtelCompilerPass implements CompilerPassInterface
@@ -53,7 +53,7 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
 
             foreach ($hookServices as $serviceId => $tags) {
                 $hookManagerDefinition->addMethodCall('registerHook', [
-                    new \Symfony\Component\DependencyInjection\Reference($serviceId)
+                    new Reference($serviceId)
                 ]);
             }
         }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Macpaw\SymfonyOtelBundle\Span;
+namespace Macpaw\SymfonyOtelBundle\Listeners;
 
 use Macpaw\SymfonyOtelBundle\Instrumentation\ExecutionTimeInstrumentation;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;

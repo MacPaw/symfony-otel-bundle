@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\DependencyInjection;
 
 use Macpaw\SymfonyOtelBundle\DependencyInjection\SymfonyOtelCompilerPass;
-use Macpaw\SymfonyOtelBundle\Span\InstrumentationEventSubscriber;
+use Macpaw\SymfonyOtelBundle\Listeners\InstrumentationEventSubscriber;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;

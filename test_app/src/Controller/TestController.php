@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Command\DummyCommand;
+use App\Handler\DummyHandler;
 use Exception;
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
@@ -55,6 +57,9 @@ class TestController
                 </div>
                 <div class="endpoint">
                     <strong>GET <a href="/api/exception-test">/api/exception-test</a></strong> - Exception test (for testing auto-close spans functionality)
+                </div>
+                <div class="endpoint">
+                    <strong>GET <a href="/api/cqrs-test">/api/cqrs-test</a></strong> - AAAAAAA 🤔
                 </div>
                 
                 <h2>Trace Viewing:</h2>
@@ -209,5 +214,20 @@ class TestController
 
         usleep(100000); // 100ms
         throw new Exception('Test exception for tracing');
+    }
+
+    #[Route('/api/cqrs-test', name: 'api_cqrs_exception_test')]
+    public function apiCqrsTest(): JsonResponse
+    {
+        $cmd = new DummyCommand();
+        $handler = new DummyHandler();
+
+        $handler($cmd);
+
+        $data = [
+            'message' => 'Check CQRS execution',
+            'timestamp' => time(),
+        ];
+        return new JsonResponse($data);
     }
 }

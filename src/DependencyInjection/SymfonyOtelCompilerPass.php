@@ -18,6 +18,8 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
     {
         /** @var ?array<int, string> $instrumentations */
         $instrumentations = $container->getParameter('otel_bundle.instrumentations');
+        /** @var array<int, Definition> $hookInstrumentations */
+        $hookInstrumentations = [];
 
         if (is_array($instrumentations) && count($instrumentations) > 0) {
             foreach ($instrumentations as $instrumentationClass) {
@@ -25,6 +27,7 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
                     $container->getDefinition($instrumentationClass) : new Definition($instrumentationClass);
 
                 $definition->setAutowired(true);
+                $definition->setAutoconfigured(true);
 
                 if (is_subclass_of($instrumentationClass, EventSubscriberInterface::class)) {
                     $definition->addTag('kernel.event_subscriber');
@@ -32,28 +35,23 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
 
                 if (is_subclass_of($instrumentationClass, HookInstrumentationInterface::class)) {
                     $definition->addTag('otel.hook_instrumentation');
+                    $hookInstrumentations[] = $definition;
                 }
 
                 $container->setDefinition($instrumentationClass, $definition);
             }
         }
 
-        $hookServices = $container->findTaggedServiceIds('otel.hook_instrumentation');
+        $hookManagerDefinition = $container->getDefinition(HookManagerService::class);
+        $hookManagerDefinition->setLazy(false);
 
-        if (count($hookServices) > 0) {
-            if (!$container->hasDefinition(HookManagerService::class)) {
-                $hookManagerDefinition = new Definition(HookManagerService::class);
-                $hookManagerDefinition->setAutowired(true);
-                $hookManagerDefinition->setPublic(true);
-                $container->setDefinition(HookManagerService::class, $hookManagerDefinition);
-            } else {
-                $hookManagerDefinition = $container->getDefinition(HookManagerService::class);
-                $hookManagerDefinition->setPublic(true);
-            }
 
-            foreach ($hookServices as $serviceId => $tags) {
+        if (count($hookInstrumentations) > 0) {
+            $hookManagerDefinition->setPublic(true);
+
+            foreach ($hookInstrumentations as $nextDefinition) {
                 $hookManagerDefinition->addMethodCall('registerHook', [
-                    new Reference($serviceId)
+                    new Reference((string) $nextDefinition->getClass()),
                 ]);
             }
         }

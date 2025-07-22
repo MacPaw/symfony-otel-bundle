@@ -4,6 +4,7 @@ namespace Macpaw\SymfonyOtelBundle\Instrumentation;
 
 use App\Infrastructure\MessageBus\QueryBus;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
+use OpenTelemetry\API\Common\Time\ClockInterface;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\SpanKind;
@@ -12,12 +13,15 @@ use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 
 final class SyncQueryBusHookInstrumentation extends AbstractHookInstrumentation
 {
+    private int $startTime = 0;
+
     public function __construct(
         InstrumentationRegistry $instrumentationRegistry,
         TracerInterface $tracer,
         TextMapPropagatorInterface $propagator,
+        private ClockInterface $clock,
     ) {
-        parent::__construct(...func_get_args());
+        parent::__construct($instrumentationRegistry, $tracer, $propagator);
     }
 
     protected function buildSpan(SpanBuilderInterface $spanBuilder): SpanInterface
@@ -26,6 +30,8 @@ final class SyncQueryBusHookInstrumentation extends AbstractHookInstrumentation
             ->setSpanKind(SpanKind::KIND_SERVER)
             ->setAttribute('query_bus.system', 'symfony')
             ->setAttribute('query_bus.operation', 'query')
+            ->setAttribute('messaging.system', 'symfony_messenger')
+            ->setAttribute('messaging.operation', 'process')
             ->startSpan();
     }
 
@@ -41,14 +47,30 @@ final class SyncQueryBusHookInstrumentation extends AbstractHookInstrumentation
 
     public function pre(): void
     {
+        $this->startTime = $this->clock->now();
         $this->initSpan(null);
+        
         $this->span->setAttribute('query_bus.class', $this->getClass());
-        $this->span->addEvent('Query bus execution started');
+        $this->span->setAttribute('query_bus.method', $this->getMethod());
+        $this->span->setAttribute('query_bus.start_time', $this->startTime);
+        $this->span->addEvent('Query bus execution started', [
+            'query_bus.operation_type' => 'sync_query',
+            'timestamp' => $this->startTime,
+        ]);
     }
 
     public function post(): void
     {
-        $this->span->addEvent('Query bus execution completed');
+        $executionTime = $this->clock->now() - $this->startTime;
+        
+        $this->span->setAttribute('query_bus.execution_time_ns', $executionTime);
+        $this->span->setAttribute('query_bus.execution_time_ms', round($executionTime / 1_000_000, 2));
+        $this->span->addEvent('Query bus execution completed', [
+            'query_bus.operation_type' => 'sync_query',
+            'execution_time_ns' => $executionTime,
+            'execution_time_ms' => round($executionTime / 1_000_000, 2),
+        ]);
+        
         $this->closeSpan($this->span);
     }
 

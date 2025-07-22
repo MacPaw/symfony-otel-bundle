@@ -1,9 +1,5 @@
 parameters:
     base_bus_config: &base_bus_config
-#        middleware:
-#            - doctrine_ping_connection
-#            - Macpaw\SymfonyMessengerBundle\Middleware\AddSyncCommandStampMiddleware
-#            - Macpaw\SymfonyMessengerBundle\Middleware\DoctrineTransactionMiddleware
 
 framework:
     messenger:

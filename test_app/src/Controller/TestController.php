@@ -221,13 +221,18 @@ class TestController
     #[Route('/api/cqrs-test', name: 'api_cqrs_exception_test')]
     public function apiCqrsTest(): JsonResponse
     {
+        // Execute CQRS operations - these will be automatically tracked by hook instrumentations
         $this->queryBus->query(new DummyCommand());
         $this->queryBus->dispatch(new DummyCommand());
 
-        $data = [
-            'message' => 'Check CQRS execution',
+        return new JsonResponse([
+            'message' => 'CQRS operations completed successfully',
             'timestamp' => time(),
-        ];
-        return new JsonResponse($data);
+            'operations' => [
+                'query' => DummyCommand::class,
+                'dispatch' => DummyCommand::class,
+            ],
+            'note' => 'Check traces in Grafana for detailed execution information',
+        ]);
     }
 }

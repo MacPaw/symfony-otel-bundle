@@ -2,7 +2,7 @@
 
 namespace Macpaw\SymfonyOtelBundle\Instrumentation;
 
-use App\Handler\DummyHandler;
+use App\Infrastructure\MessageBus\QueryBus;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
 use OpenTelemetry\API\Trace\SpanInterface;
@@ -10,7 +10,7 @@ use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\TracerInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 
-final class CQRSHookInstrumentation extends AbstractHookInstrumentation
+final class AsyncQueryBusHookInstrumentation extends AbstractHookInstrumentation
 {
     public function __construct(
         InstrumentationRegistry $instrumentationRegistry,
@@ -24,36 +24,36 @@ final class CQRSHookInstrumentation extends AbstractHookInstrumentation
     {
         return $spanBuilder
             ->setSpanKind(SpanKind::KIND_SERVER)
-            ->setAttribute('cqrs.system', 'aaa')
-            ->setAttribute('cqrs.operation', 'bbb')
+            ->setAttribute('query_bus.system', 'symfony')
+            ->setAttribute('query_bus.operation', 'dispatch')
             ->startSpan();
     }
 
     public function getClass(): ?string
     {
-        return DummyHandler::class;
+        return QueryBus::class;
     }
 
     public function getMethod(): string
     {
-        return '__invoke';
+        return 'dispatch';
     }
 
     public function pre(): void
     {
         $this->initSpan(null);
-        $this->span->setAttribute('cqrs.handler', $this->getClass());
-        $this->span->addEvent('CQRS handler execution started');
+        $this->span->setAttribute('query_bus.class', $this->getClass());
+        $this->span->addEvent('Query bus execution started');
     }
 
     public function post(): void
     {
-        $this->span->addEvent('CQRS handler execution completed');
+        $this->span->addEvent('Query bus execution completed');
         $this->closeSpan($this->span);
     }
 
     public function getName(): string
     {
-        return 'EXAMPLE SPAN NAME';
+        return 'query_bus.dispatch';
     }
 }

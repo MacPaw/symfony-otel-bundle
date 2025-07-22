@@ -3,5 +3,3 @@ otel_bundle:
   service_name: '%env(OTEL_SERVICE_NAME)%'
   instrumentations:
     - 'App\Instrumentation\ExampleHookInstrumentation'
-    - 'Macpaw\SymfonyOtelBundle\Instrumentation\SyncQueryBusHookInstrumentation'
-    - 'Macpaw\SymfonyOtelBundle\Instrumentation\AsyncQueryBusHookInstrumentation' 

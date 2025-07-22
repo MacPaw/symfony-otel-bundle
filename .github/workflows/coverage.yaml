@@ -1,4 +1,4 @@
-name: Security checks
+name: Code Coverage
 
 on:
   pull_request:
@@ -33,7 +33,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.3
-          extensions: opentelemetry, protobuf, xdebug, grpc
+          extensions: xdebug
           coverage: xdebug
           tools: composer:v2
 

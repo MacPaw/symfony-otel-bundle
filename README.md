@@ -142,50 +142,5 @@ The collector configuration ```docker/otel-collector/otel-collector-config.yaml`
 
 For a complete list and detailed descriptions, please refer to the [OpenTelemetry SDK Environment Variables documentation](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/).
 
-## Data Management
-
-The bundle includes convenient commands for managing trace data during development and testing:
-
-### Clear Trace Data
-
-```bash
-# Clear all spans data from Tempo and Grafana (quick fresh start)
-make clear-data
-
-# Clear only Tempo spans data (keep Grafana dashboards)
-make clear-tempo
-
-# Complete reset - rebuild everything with clean state
-make reset-all
-
-# Check current data volume status and trace count
-make data-status
-```
-
-### Example Usage
-
-```bash
-# Start testing
-make up
-make test
-
-# View traces in Grafana
-make grafana
-
-# Clear data for fresh testing
-make clear-data
-
-# Generate new test data
-make test
-
-# Check status
-make data-status
-```
-
-These commands are essential for development workflows where you need to:
-
-- Test trace collection from a clean state
-- Clear accumulated test data
-- Verify trace export functionality
-- Debug trace storage issues
-
+## Usage
+see [docs](docs/start-and-test.md)

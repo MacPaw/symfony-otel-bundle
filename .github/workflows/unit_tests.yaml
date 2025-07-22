@@ -81,11 +81,11 @@ jobs:
 
       - name: Install dependencies (highest)
         if: matrix.dependencies == 'highest'
-        run: composer update --prefer-dist --no-progress --ignore-platform-req=ext-opentelemetry --ignore-platform-req=ext-protobuf
+        run: composer update --prefer-dist --no-progress
 
       - name: Install dependencies (lowest)
         if: matrix.dependencies == 'lowest'
-        run: composer update --prefer-dist --no-progress --prefer-lowest --ignore-platform-req=ext-opentelemetry --ignore-platform-req=ext-protobuf
+        run: composer update --prefer-dist --no-progress --prefer-lowest
 
       - name: Add PHPUnit matcher
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"

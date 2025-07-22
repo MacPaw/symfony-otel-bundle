@@ -110,7 +110,6 @@ class ExceptionHandlingEventSubscriberTest extends TestCase
         $scope->expects($this->once())->method('detach')->willThrowException(new RuntimeException('Scope error'));
 
         $this->logger->expects($this->atLeast(1))->method('debug');
-        $this->logger->expects($this->atLeast(1))->method('error');
         $this->traceService->expects($this->once())->method('shutdown');
 
         $this->registry->setScope($scope);

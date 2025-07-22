@@ -7,17 +7,18 @@ namespace Macpaw\SymfonyOtelBundle\Registry;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\Context\ContextInterface;
 use OpenTelemetry\Context\ScopeInterface;
+use Throwable;
 
 final class InstrumentationRegistry
 {
     private ?ContextInterface $context = null;
 
+    private ?ScopeInterface $scope = null;
+
     /**
      * @var SpanInterface[]
      */
     private array $spans = [];
-
-    private ?ScopeInterface $scope = null;
 
     public function addSpan(SpanInterface $span, string $name): void
     {
@@ -66,8 +67,20 @@ final class InstrumentationRegistry
         $this->spans = [];
     }
 
+    public function detachScope(): void
+    {
+        if ($this->scope) {
+            try {
+                $this->scope->detach();
+            } catch (Throwable $e) {
+                // Scope already detached or invalid
+            }
+        }
+    }
+
     public function clearScope(): void
     {
+        $this->detachScope();
         $this->scope = null;
     }
 
@@ -76,5 +89,7 @@ final class InstrumentationRegistry
         foreach ($this->spans as $span) {
             $span->end();
         }
+
+        $this->clearScope();
     }
 }

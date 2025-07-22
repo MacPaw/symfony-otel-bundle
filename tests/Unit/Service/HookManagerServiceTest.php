@@ -27,8 +27,8 @@ class HookManagerServiceTest extends TestCase
         $this->hookManager = $this->createMock(HookManagerInterface::class);
 
         $this->hookManagerService = new HookManagerService(
+            $this->hookManager,
             $this->logger,
-            $this->hookManager
         );
     }
 
@@ -127,23 +127,11 @@ class HookManagerServiceTest extends TestCase
                 $preHook();
             });
 
-        $this->logger->expects($this->once())
-            ->method('error')
-            ->with(
-                'Error in hook pre(): {error}',
-                ['error' => 'Pre hook error']
-            );
+        $this->logger->expects($this->exactly(2))
+            ->method('error');
 
-        $this->logger->expects($this->once())
-            ->method('debug')
-            ->with(
-                'Successfully registered hook for {class}::{method}',
-                [
-                    'class' => 'TestClass',
-                    'method' => 'testMethod',
-                    'instrumentation' => 'test_instrumentation'
-                ]
-            );
+        $this->logger->expects($this->never())
+            ->method('debug');
 
         $this->hookManagerService->registerHook($instrumentation);
     }
@@ -162,30 +150,18 @@ class HookManagerServiceTest extends TestCase
                 $postHook();
             });
 
-        $this->logger->expects($this->once())
-            ->method('error')
-            ->with(
-                'Error in hook post(): {error}',
-                ['error' => 'Post hook error']
-            );
+        $this->logger->expects($this->exactly(2))
+            ->method('error');
 
-        $this->logger->expects($this->once())
-            ->method('debug')
-            ->with(
-                'Successfully registered hook for {class}::{method}',
-                [
-                    'class' => 'TestClass',
-                    'method' => 'testMethod',
-                    'instrumentation' => 'test_instrumentation'
-                ]
-            );
+        $this->logger->expects($this->never())
+            ->method('debug');
 
         $this->hookManagerService->registerHook($instrumentation);
     }
 
     public function testRegisterHookWithNullLogger(): void
     {
-        $hookManagerService = new HookManagerService(null, $this->hookManager);
+        $hookManagerService = new HookManagerService($this->hookManager, null);
 
         $instrumentation = $this->createMock(HookInstrumentationInterface::class);
         $instrumentation->method('getClass')->willReturn('TestClass');

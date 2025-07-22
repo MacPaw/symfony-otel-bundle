@@ -6,6 +6,8 @@ namespace Tests\Unit\DependencyInjection;
 
 use Macpaw\SymfonyOtelBundle\DependencyInjection\SymfonyOtelCompilerPass;
 use Macpaw\SymfonyOtelBundle\Listeners\InstrumentationEventSubscriber;
+use Macpaw\SymfonyOtelBundle\Service\HookManagerService;
+use OpenTelemetry\API\Instrumentation\AutoInstrumentation\ExtensionHookManager;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -20,6 +22,14 @@ class SymfonyOtelCompilerPassTest extends TestCase
     {
         $this->container = new ContainerBuilder();
         $this->compilerPass = new SymfonyOtelCompilerPass();
+        $this->container->register(HookManagerService::class)
+            ->setPublic(true)
+            ->setArguments([
+                '@?logger',
+                '@OpenTelemetry\API\Instrumentation\AutoInstrumentation\ExtensionHookManager'
+            ]);
+
+        $this->container->register(ExtensionHookManager::class);
     }
 
     public function testProcessWithEmptyInstrumentations(): void

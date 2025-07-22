@@ -15,7 +15,7 @@ class SymfonyOtelExtension extends Extension
     public const NAME = 'otel_bundle';
 
     /**
-     * @param array<string, mixed> $configs
+     * @param array<int, array<string, mixed>> $configs
      *
      * @throws Exception
      */
@@ -27,13 +27,20 @@ class SymfonyOtelExtension extends Extension
         $configuration = $this->getConfiguration($configs, $container);
         $configs = $this->processConfiguration($configuration, $configs);
 
-        $container->setParameter('otel_bundle.tracer_name', $configs['tracer_name']);
-        $container->setParameter('otel_bundle.tracer_name', $configs['tracer_name']);
-        $container->setParameter('otel_bundle.span_tracers', $configs['span_tracers']);
+        /** @var string $serviceName */
+        $serviceName = $configs['service_name'];
+        /** @var string $tracerName */
+        $tracerName = $configs['tracer_name'];
+        /** @var array<int, string> $instrumentations */
+        $instrumentations = $configs['instrumentations'];
+
+        $container->setParameter('otel_bundle.service_name', $serviceName);
+        $container->setParameter('otel_bundle.tracer_name', $tracerName);
+        $container->setParameter('otel_bundle.instrumentations', $instrumentations);
     }
 
     /**
-     * @param array<string, mixed> $config
+     * @param array<int, array<string, mixed>> $config
      */
     public function getConfiguration(array $config, ContainerBuilder $container): Configuration
     {

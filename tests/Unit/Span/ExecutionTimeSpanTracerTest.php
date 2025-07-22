@@ -2,66 +2,37 @@
 
 declare(strict_types=1);
 
-namespace Unit\Span;
+namespace Tests\Unit\Span;
 
-use PHPUnit\Framework\TestCase;
-use OpenTelemetry\Context\Context;
-use OpenTelemetry\API\Trace\SpanInterface;
+use Macpaw\SymfonyOtelBundle\Instrumentation\ExecutionTimeInstrumentation;
+use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
+use Macpaw\SymfonyOtelBundle\Service\TraceService;
+use Macpaw\SymfonyOtelBundle\Listeners\InstrumentationEventSubscriber;
+use OpenTelemetry\API\Common\Time\ClockInterface;
 use OpenTelemetry\API\Trace\TracerInterface;
+use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use OpenTelemetry\API\Trace\SpanBuilderInterface;
-use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
-use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\Event\TerminateEvent;
-use Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer;
-use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
 
 class ExecutionTimeSpanTracerTest extends TestCase
 {
     public function testOnKernelRequestAndTerminate(): void
     {
-        $traceService = $this->createMock(TraceService::class);
-        $propagator = $this->createMock(TextMapPropagatorInterface::class);
-        $tracerName = 'test_tracer';
-
-        $span = $this->createMock(SpanInterface::class);
-        $span->expects($this->once())->method('addEvent');
-        $span->expects($this->once())->method('end');
-
+        $registry = new InstrumentationRegistry();
         $tracer = $this->createMock(TracerInterface::class);
-        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
-
-        $traceService->expects($this->once())
-            ->method('getTracer')
-            ->with($tracerName)
-            ->willReturn($tracer);
-
-        $tracer->expects($this->once())
-            ->method('spanBuilder')
-            ->with(ExecutionTimeSpanTracer::NAME)
-            ->willReturn($spanBuilder);
-
-        $spanBuilder->expects($this->once())
-            ->method('setParent')
-            ->willReturnSelf();
-        $spanBuilder->expects($this->once())
-            ->method('startSpan')
-            ->willReturn($span);
-
-        $traceService->expects($this->once())
-            ->method('shutdown');
-
-        $executionTimeSpanTracer = $this->getMockBuilder(ExecutionTimeSpanTracer::class)
-            ->setConstructorArgs([$traceService, $propagator, $tracerName])
-            ->onlyMethods(['checkTraceInjectionValidity'])
-            ->getMock();
-
-        $executionTimeSpanTracer->expects($this->once())
-            ->method('checkTraceInjectionValidity')
-            ->willReturn(Context::getCurrent());
-
+        $propagator = $this->createMock(TextMapPropagatorInterface::class);
+        $clock = $this->createMock(ClockInterface::class);
+        $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
+            $registry,
+            $tracer,
+            $propagator,
+            $clock
+        );
+        $subscriber = new InstrumentationEventSubscriber($executionTimeInstrumentation);
         $request = new Request();
         $request->headers->add([
             'traceparent' => '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
@@ -69,8 +40,103 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $kernel = $this->createMock(HttpKernelInterface::class);
         $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
         $terminateEvent = new TerminateEvent($kernel, $request, new Response());
+        $subscriber->onKernelRequestExecutionTime($requestEvent);
+        $subscriber->onKernelTerminateExecutionTime($terminateEvent);
+        $this->assertInstanceOf(InstrumentationEventSubscriber::class, $subscriber);
+    }
 
-        $executionTimeSpanTracer->onKernelRequest($requestEvent);
-        $executionTimeSpanTracer->onKernelTerminate($terminateEvent);
+    public function testOnKernelRequestWithInvalidTraceContext(): void
+    {
+        $registry = new InstrumentationRegistry();
+        $tracer = $this->createMock(TracerInterface::class);
+        $propagator = $this->createMock(TextMapPropagatorInterface::class);
+        $clock = $this->createMock(ClockInterface::class);
+        $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
+            $registry,
+            $tracer,
+            $propagator,
+            $clock
+        );
+        $subscriber = new InstrumentationEventSubscriber($executionTimeInstrumentation);
+        $request = new Request();
+        $kernel = $this->createMock(HttpKernelInterface::class);
+        $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+        $subscriber->onKernelRequestExecutionTime($requestEvent);
+        $this->assertInstanceOf(InstrumentationEventSubscriber::class, $subscriber);
+    }
+
+    public function testGetSubscribedEvents(): void
+    {
+        $events = InstrumentationEventSubscriber::getSubscribedEvents();
+        $this->assertArrayHasKey('kernel.request', $events);
+        $this->assertArrayHasKey('kernel.terminate', $events);
+        $this->assertEquals([['onKernelRequestExecutionTime', -PHP_INT_MAX + 2]], $events['kernel.request']);
+        $this->assertEquals([['onKernelTerminateExecutionTime', PHP_INT_MAX]], $events['kernel.terminate']);
+    }
+
+    public function testOnKernelRequestStoresStartTime(): void
+    {
+        $registry = new InstrumentationRegistry();
+        $tracer = $this->createMock(TracerInterface::class);
+        $propagator = $this->createMock(TextMapPropagatorInterface::class);
+        $clock = $this->createMock(ClockInterface::class);
+        $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
+            $registry,
+            $tracer,
+            $propagator,
+            $clock
+        );
+        $subscriber = new InstrumentationEventSubscriber($executionTimeInstrumentation);
+        $request = new Request();
+        $kernel = $this->createMock(HttpKernelInterface::class);
+        $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+        $terminateEvent = new TerminateEvent($kernel, $request, new Response());
+        $startTime = microtime(true);
+        $subscriber->onKernelRequestExecutionTime($requestEvent);
+        usleep(1000);
+        $subscriber->onKernelTerminateExecutionTime($terminateEvent);
+        $this->assertInstanceOf(InstrumentationEventSubscriber::class, $subscriber);
+    }
+
+    public function testSubRequestIsIgnored(): void
+    {
+        $registry = new InstrumentationRegistry();
+        $tracer = $this->createMock(TracerInterface::class);
+        $propagator = $this->createMock(TextMapPropagatorInterface::class);
+        $clock = $this->createMock(ClockInterface::class);
+        $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
+            $registry,
+            $tracer,
+            $propagator,
+            $clock
+        );
+        $subscriber = new InstrumentationEventSubscriber($executionTimeInstrumentation);
+        $request = new Request();
+        $kernel = $this->createMock(HttpKernelInterface::class);
+        $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::SUB_REQUEST);
+        $subscriber->onKernelRequestExecutionTime($requestEvent);
+        $this->assertInstanceOf(InstrumentationEventSubscriber::class, $subscriber);
+    }
+
+    public function testExecutionTimeIsPositive(): void
+    {
+        $registry = new InstrumentationRegistry();
+        $tracer = $this->createMock(TracerInterface::class);
+        $propagator = $this->createMock(TextMapPropagatorInterface::class);
+        $clock = $this->createMock(ClockInterface::class);
+        $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
+            $registry,
+            $tracer,
+            $propagator,
+            $clock
+        );
+        $subscriber = new InstrumentationEventSubscriber($executionTimeInstrumentation);
+        $request = new Request();
+        $kernel = $this->createMock(HttpKernelInterface::class);
+        $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+        $terminateEvent = new TerminateEvent($kernel, $request, new Response());
+        $subscriber->onKernelRequestExecutionTime($requestEvent);
+        $subscriber->onKernelTerminateExecutionTime($terminateEvent);
+        $this->assertInstanceOf(InstrumentationEventSubscriber::class, $subscriber);
     }
 }

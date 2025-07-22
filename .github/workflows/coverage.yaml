@@ -1,0 +1,90 @@
+name: Code Coverage
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+  schedule:
+    # Run daily at 2 AM UTC to catch dependency issues
+    - cron: '0 2 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  COMPOSER_ROOT_VERSION: "1.0.0"
+
+jobs:
+  # =====================================================
+  # Code Coverage
+  # =====================================================
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          extensions: xdebug
+          coverage: xdebug
+          tools: composer:v2
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-coverage-${{ hashFiles('**/composer.lock', '**/composer.json') }}
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --ignore-platform-req=ext-opentelemetry --ignore-platform-req=ext-protobuf
+
+      - name: Run tests with coverage
+        run: |
+          mkdir -p var/coverage
+          vendor/bin/phpunit --coverage-html var/coverage/html --coverage-clover var/coverage/clover.xml --coverage-text
+
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(php -r "
+            \$xml = simplexml_load_file('var/coverage/clover.xml');
+            \$metrics = \$xml->project->metrics;
+            \$covered = (float) \$metrics['coveredstatements'];
+            \$total = (float) \$metrics['statements'];
+            \$percentage = \$total > 0 ? (\$covered / \$total) * 100 : 0;
+            echo number_format(\$percentage, 2);
+          ")
+          echo "Coverage: ${COVERAGE}%"
+          if (( $(echo "$COVERAGE < 95.0" | bc -l) )); then
+            echo "❌ Coverage ${COVERAGE}% is below required 95%"
+            exit 1
+          else
+            echo "✅ Coverage ${COVERAGE}% meets requirement"
+          fi
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: var/coverage/clover.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Upload coverage reports to Codacy
+        if: github.event_name != 'pull_request'
+        uses: codacy/codacy-coverage-reporter-action@v1
+        with:
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          coverage-reports: var/coverage/clover.xml

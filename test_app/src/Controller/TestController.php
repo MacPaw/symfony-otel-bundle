@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Command\DummyCommand;
 use App\Handler\DummyHandler;
+use App\Infrastructure\MessageBus\QueryBus;
 use Exception;
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
@@ -15,11 +16,12 @@ use PDO;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 class TestController
 {
-    public function __construct(private readonly TraceService $traceService)
+    public function __construct(private readonly TraceService $traceService, private readonly QueryBus $queryBus)
     {
     }
 
@@ -219,10 +221,8 @@ class TestController
     #[Route('/api/cqrs-test', name: 'api_cqrs_exception_test')]
     public function apiCqrsTest(): JsonResponse
     {
-        $cmd = new DummyCommand();
-        $handler = new DummyHandler();
-
-        $handler($cmd);
+        $this->queryBus->query(new DummyCommand());
+        $this->queryBus->dispatch(new DummyCommand());
 
         $data = [
             'message' => 'Check CQRS execution',

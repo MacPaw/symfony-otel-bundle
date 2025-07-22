@@ -3,4 +3,5 @@ otel_bundle:
   service_name: '%otel_service_name%'
   instrumentations:
     - 'Macpaw\SymfonyOtelBundle\Instrumentation\ExecutionTimeInstrumentation'
-    - 'Macpaw\SymfonyOtelBundle\Instrumentation\CQRSHookInstrumentation'
+    - 'Macpaw\SymfonyOtelBundle\Instrumentation\SyncQueryBusHookInstrumentation'
+    - 'Macpaw\SymfonyOtelBundle\Instrumentation\AsyncQueryBusHookInstrumentation'

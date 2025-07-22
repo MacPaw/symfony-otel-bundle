@@ -2,7 +2,9 @@
 
 namespace App\Command;
 
-class DummyCommand
+use App\Infrastructure\MessageBus\QueryMessageInterface;
+
+class DummyCommand implements QueryMessageInterface
 {
 
 }

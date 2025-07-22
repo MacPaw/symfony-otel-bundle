@@ -62,6 +62,8 @@ services:
 
   Macpaw\SymfonyOtelBundle\Instrumentation\ExecutionTimeInstrumentation: ~
 
-  Macpaw\SymfonyOtelBundle\Instrumentation\CQRSHookInstrumentation: ~
+  Macpaw\SymfonyOtelBundle\Instrumentation\SyncQueryBusInstrumentation: ~
+
+  Macpaw\SymfonyOtelBundle\Instrumentation\AsyncQueryBusInstrumentation: ~
 
   Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils: ~

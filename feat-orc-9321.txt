@@ -1,0 +1,3 @@
+- Pass command params
+- Track execution time
+- Tests

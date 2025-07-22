@@ -1,0 +1,21 @@
+parameters:
+    base_bus_config: &base_bus_config
+#        middleware:
+#            - doctrine_ping_connection
+#            - Macpaw\SymfonyMessengerBundle\Middleware\AddSyncCommandStampMiddleware
+#            - Macpaw\SymfonyMessengerBundle\Middleware\DoctrineTransactionMiddleware
+
+framework:
+    messenger:
+        default_bus: command.bus
+
+        buses:
+            command.bus: *base_bus_config
+            query.bus: ~
+
+        transports:
+            sync: 'sync://'
+
+        routing:
+            App\Infrastructure\MessageBus\CommandMessageInterface: sync
+            App\Infrastructure\MessageBus\QueryMessageInterface: sync

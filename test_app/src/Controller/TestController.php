@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Command\DummyCommand;
-use App\Handler\DummyHandler;
+use App\Infrastructure\MessageBus\CommandBus;
 use App\Infrastructure\MessageBus\QueryBus;
+use App\Query\DummyQuery;
 use Exception;
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
@@ -21,8 +22,11 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class TestController
 {
-    public function __construct(private readonly TraceService $traceService, private readonly QueryBus $queryBus)
-    {
+    public function __construct(
+        private readonly TraceService $traceService, 
+        private readonly QueryBus $queryBus,
+        private readonly CommandBus $commandBus,
+    ) {
     }
 
     #[Route('/', name: 'homepage')]
@@ -221,16 +225,17 @@ class TestController
     #[Route('/api/cqrs-test', name: 'api_cqrs_exception_test')]
     public function apiCqrsTest(): JsonResponse
     {
-        // Execute CQRS operations - these will be automatically tracked by hook instrumentations
-        $this->queryBus->query(new DummyCommand());
-        $this->queryBus->dispatch(new DummyCommand());
+        $this->queryBus->query(new DummyQuery());
+
+        $this->queryBus->dispatch(new DummyQuery());
+        $this->commandBus->dispatch(new DummyCommand());
 
         return new JsonResponse([
             'message' => 'CQRS operations completed successfully',
             'timestamp' => time(),
             'operations' => [
-                'query' => DummyCommand::class,
-                'dispatch' => DummyCommand::class,
+                'query' => DummyQuery::class,
+                'command' => DummyCommand::class,
             ],
             'note' => 'Check traces in Grafana for detailed execution information',
         ]);

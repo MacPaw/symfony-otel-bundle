@@ -21,10 +21,7 @@ final class ClassHookInstrumentation extends AbstractHookInstrumentation impleme
 
     private int $endTime = 0;
 
-    /**
-     * @var ClassHookInstrumentationSpanMiddlewareInterface[]
-     */
-    private array $spanMiddlewares = [];
+    private array $spanMiddlewares;
 
     public function __construct(
         InstrumentationRegistry $instrumentationRegistry,
@@ -33,15 +30,10 @@ final class ClassHookInstrumentation extends AbstractHookInstrumentation impleme
         private readonly ClockInterface $clock,
         private readonly string $className,
         private readonly string $methodName,
+        ClassHookInstrumentationSpanMiddlewareInterface ...$spanMiddlewares,
     ) {
+        $this->spanMiddlewares = $spanMiddlewares;
         parent::__construct($instrumentationRegistry, $tracer, $propagator);
-    }
-
-    public function addMiddleware(ClassHookInstrumentationSpanMiddlewareInterface $middleware): self
-    {
-        $this->spanMiddlewares[] = $middleware;
-
-        return $this;
     }
 
     public function getClass(): ?string

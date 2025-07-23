@@ -19,22 +19,22 @@ services:
     arguments:
       $className: 'App\Infrastructure\MessageBus\QueryBus'
       $methodName: 'query'
-    calls:
-      - [ 'addMiddleware', ['@App\Middleware\ExampleAttributesSpanMiddleware'] ]
-      - [ 'addMiddleware', ['@App\Middleware\ExampleEventsSpanMiddleware'] ]
+      $spanMiddlewares:
+        - '@App\Middleware\ExampleAttributesSpanMiddleware'
+        - '@App\Middleware\ExampleEventsSpanMiddleware'
 
   querybus.dispatch.instrumentation:
     class: Macpaw\SymfonyOtelBundle\Instrumentation\ClassHookInstrumentation
     arguments:
       $className: 'App\Infrastructure\MessageBus\QueryBus'
       $methodName: 'dispatch'
-    calls:
-      - [ 'addMiddleware', ['@App\Middleware\ExampleLogsSpanMiddleware'] ]
+      $spanMiddlewares:
+        - '@App\Middleware\ExampleLogsSpanMiddleware'
 
   commandbus.dispatch.instrumentation:
     class: Macpaw\SymfonyOtelBundle\Instrumentation\ClassHookInstrumentation
     arguments:
       $className: 'App\Infrastructure\MessageBus\CommandBus'
       $methodName: 'dispatch'
-    calls:
-      - [ 'addMiddleware', ['@App\Middleware\ExampleAttributesSpanMiddleware'] ]
+      $spanMiddlewares:
+        - '@App\Middleware\ExampleAttributesSpanMiddleware'

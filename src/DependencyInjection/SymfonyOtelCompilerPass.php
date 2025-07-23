@@ -23,12 +23,12 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
         $hookInstrumentations = [];
 
         foreach ($instrumentations as $instrumentation) {
-            if (self::isServiceId($container, $instrumentation)) {
+            if ($this->isServiceId($container, $instrumentation)) {
                 $this->handleAsService($instrumentation, $container, $hookInstrumentations);
                 continue;
             }
 
-            if (self::isClassName($container, $instrumentation)) {
+            if ($this->isClassName($container, $instrumentation)) {
                 $this->handleAsClass($instrumentation, $container, $hookInstrumentations);
                 continue;
             }
@@ -86,7 +86,7 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
         }
     }
 
-    private static function isClassName(ContainerBuilder $container, string $className): bool
+    private function isClassName(ContainerBuilder $container, string $className): bool
     {
         if ($container->hasDefinition($className)) {
             return $container->getDefinition($className)->getClass() === $className;
@@ -95,7 +95,7 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
         throw new \Exception(sprintf('Class name not found: %s', $className));
     }
 
-    private static function isServiceId(ContainerBuilder $container, string $serviceId): bool
+    private function isServiceId(ContainerBuilder $container, string $serviceId): bool
     {
         if ($container->hasDefinition($serviceId)) {
             return $container->getDefinition($serviceId)->getClass() !== $serviceId;

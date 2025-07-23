@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Span;
 
-use Macpaw\SymfonyOtelBundle\Instrumentation\ExecutionTimeInstrumentation;
+use Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use Macpaw\SymfonyOtelBundle\Listeners\InstrumentationEventSubscriber;

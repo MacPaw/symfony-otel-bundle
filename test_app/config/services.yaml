@@ -14,6 +14,19 @@ services:
     resource: '../src/Controller/'
     tags: [ 'controller.service_arguments' ]
 
-  App\Listeners\ExceptionHandlingEventSubscriber:
-    tags:
-      - { name: 'kernel.event_subscriber' }
+  querybus.query.instrumentation:
+    class: Macpaw\SymfonyOtelBundle\Instrumentation\ClassHookInstrumentation
+    arguments:
+      $className: 'App\Infrastructure\MessageBus\QueryBus'
+      $methodName: 'query'
+    calls:
+      - [ 'addMiddleware', ['@App\Decorator\ExampleAttributesSpanMiddleware'] ]
+      - [ 'addMiddleware', ['@App\Decorator\ExampleEventsSpanMiddleware'] ]
+
+  querybus.dispatch.instrumentation:
+    class: Macpaw\SymfonyOtelBundle\Instrumentation\ClassHookInstrumentation
+    arguments:
+      $className: 'App\Infrastructure\MessageBus\QueryBus'
+      $methodName: 'dispatch'
+    calls:
+      - [ 'addMiddleware', ['@App\Decorator\ExampleLogsSpanMiddleware'] ]

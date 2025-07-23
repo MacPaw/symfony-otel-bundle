@@ -8,13 +8,7 @@ use OpenTelemetry\API\Trace\SpanInterface;
 
 interface ClassHookInstrumetationSpanDecoratorInterface
 {
-    /**
-     * Init span.
-     */
-    public function decorateSpanInit(SpanInterface $spanBuilder): void;
+    public function pre(SpanInterface $span, HookInstrumentationInterface&TimingInterface $instrumentation): void;
 
-    /**
-     * Finish span.
-     */
-    public function postSpanDecoration(SpanInterface $spanBuilder): void;
+    public function post(SpanInterface $span, HookInstrumentationInterface&TimingInterface $instrumentation): void;
 }

@@ -16,44 +16,91 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
+        // todo: тут треба розібратись з тайп хінтом
         /** @var ?array<int, string> $instrumentations */
-        $instrumentations = $container->getParameter('otel_bundle.instrumentations');
+        $instrumentations = $container->getParameter('otel_bundle.instrumentations') ?? [];
         /** @var array<int, Definition> $hookInstrumentations */
         $hookInstrumentations = [];
 
-        if (is_array($instrumentations) && count($instrumentations) > 0) {
-            foreach ($instrumentations as $instrumentationClass) {
-                $definition = $container->hasDefinition($instrumentationClass) ?
-                    $container->getDefinition($instrumentationClass) : new Definition($instrumentationClass);
-
-                $definition->setAutowired(true);
-                $definition->setAutoconfigured(true);
-
-                if (is_subclass_of($instrumentationClass, EventSubscriberInterface::class)) {
-                    $definition->addTag('kernel.event_subscriber');
-                }
-
-                if (is_subclass_of($instrumentationClass, HookInstrumentationInterface::class)) {
-                    $definition->addTag('otel.hook_instrumentation');
-                    $hookInstrumentations[] = $definition;
-                }
-
-                $container->setDefinition($instrumentationClass, $definition);
+        foreach ($instrumentations as $instrumentation) {
+            if (self::isServiceId($container, $instrumentation)) {
+                $this->handleAsService($instrumentation, $container, $hookInstrumentations);
+                continue;
             }
+
+            if (self::isClassName($container, $instrumentation)) {
+                $this->handleAsClass($instrumentation, $container, $hookInstrumentations);
+                continue;
+            }
+
+            throw new \InvalidArgumentException(sprintf(
+                'Instrumentation "%s" is neither a valid service id nor an existing class.',
+                $instrumentation
+            ));
         }
 
         $hookManagerDefinition = $container->getDefinition(HookManagerService::class);
         $hookManagerDefinition->setLazy(false);
+        $hookManagerDefinition->setPublic(count($hookInstrumentations) > 0);
 
-
-        if (count($hookInstrumentations) > 0) {
-            $hookManagerDefinition->setPublic(true);
-
-            foreach ($hookInstrumentations as $nextDefinition) {
-                $hookManagerDefinition->addMethodCall('registerHook', [
-                    new Reference((string) $nextDefinition->getClass()),
-                ]);
-            }
+        foreach ($hookInstrumentations as $alias => $nextDefinition) {
+            $hookManagerDefinition->addMethodCall('registerHook', [
+                new Reference($alias),
+            ]);
         }
+    }
+
+    private function handleAsClass(string $className, ContainerBuilder $container, array &$hookInstrumentations): void
+    {
+        $definition = $container->hasDefinition($className)
+            ? $container->getDefinition($className)
+            : new Definition($className);
+
+        $definition->setAutowired(true);
+        $definition->setAutoconfigured(true);
+
+        if (is_subclass_of($className, EventSubscriberInterface::class)) {
+            $definition->addTag('kernel.event_subscriber');
+        }
+
+        if (is_subclass_of($className, HookInstrumentationInterface::class)) {
+            $definition->addTag('otel.hook_instrumentation');
+            $hookInstrumentations[$definition->getClass()] = $definition;
+        }
+
+        $container->setDefinition($className, $definition);;
+    }
+
+    private function handleAsService(string $serviceId, ContainerBuilder $container, array &$hookInstrumentations): void
+    {
+        $definition = $container->getDefinition($serviceId);
+        $className = $definition->getClass();
+
+        if ($className && is_subclass_of($className, HookInstrumentationInterface::class)) {
+            $definition->addTag('otel.hook_instrumentation');
+            $hookInstrumentations[$serviceId] = $definition;
+        }
+
+        if ($className && is_subclass_of($className, EventSubscriberInterface::class)) {
+            $definition->addTag('kernel.event_subscriber');
+        }
+    }
+
+    private static function isClassName(ContainerBuilder $container, string $className): bool
+    {
+        if ($container->hasDefinition($className)) {
+            return $container->getDefinition($className)->getClass() === $className;
+        }
+
+        throw new \Exception(sprintf('Class name not found: %s', $className));
+    }
+
+    private static function isServiceId(ContainerBuilder $container, string $serviceId): bool
+    {
+        if ($container->hasDefinition($serviceId)) {
+            return $container->getDefinition($serviceId)->getClass() !== $serviceId;
+        }
+
+        throw new \Exception(sprintf('Service ID not found: %s', $serviceId));
     }
 }

@@ -2,6 +2,4 @@ otel_bundle:
   tracer_name:  '%otel_tracer_name%'
   service_name: '%otel_service_name%'
   instrumentations:
-    - 'Macpaw\SymfonyOtelBundle\Instrumentation\ExecutionTimeInstrumentation'
-    - 'Macpaw\SymfonyOtelBundle\Instrumentation\SyncQueryBusHookInstrumentation'
-    - 'Macpaw\SymfonyOtelBundle\Instrumentation\AsyncQueryBusHookInstrumentation'
+    - 'Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation'

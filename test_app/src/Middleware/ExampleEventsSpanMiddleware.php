@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Decorator;
+namespace App\Middleware;
 
-use Macpaw\SymfonyOtelBundle\Instrumentation\ClassHookInstrumetationSpanDecoratorInterface;
 use Macpaw\SymfonyOtelBundle\Instrumentation\HookInstrumentationInterface;
 use Macpaw\SymfonyOtelBundle\Instrumentation\TimingInterface;
+use Macpaw\SymfonyOtelBundle\Middleware\ClassHookInstrumentationSpanMiddlewareInterface;
 use OpenTelemetry\API\Trace\SpanInterface;
 
-final class ExampleEventsSpanMiddleware implements ClassHookInstrumetationSpanDecoratorInterface
+final class ExampleEventsSpanMiddleware implements ClassHookInstrumentationSpanMiddlewareInterface
 {
     public function pre(SpanInterface $span, HookInstrumentationInterface&TimingInterface $instrumentation): void
     {

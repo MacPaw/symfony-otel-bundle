@@ -60,13 +60,13 @@ final class ClassHookInstrumentation extends AbstractHookInstrumentation impleme
 
     public function post(): void
     {
-        $this->endTime = $this->clock->now();
-
         foreach ($this->spanMiddlewares as $spanMiddleware) {
             $spanMiddleware->post($this->span, $this);
         }
 
         $this->closeSpan($this->span);
+
+        $this->endTime = $this->clock->now();
     }
 
     public function getName(): string

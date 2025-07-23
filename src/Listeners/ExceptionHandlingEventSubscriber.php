@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Macpaw\SymfonyOtelBundle\Listeners;
 
+use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\SpanKind;
@@ -20,6 +21,7 @@ final readonly class ExceptionHandlingEventSubscriber implements EventSubscriber
     public function __construct(
         private InstrumentationRegistry $instrumentationRegistry,
         private TraceService $traceService,
+        private RouterUtils $routerUtils,
         private ?LoggerInterface $logger = null
     ) {
     }
@@ -66,8 +68,12 @@ final readonly class ExceptionHandlingEventSubscriber implements EventSubscriber
                 $errorSpan->setAttribute('error.handled_by', 'ExceptionHandlingEventSubscriber');
 
                 if ($event->getRequest() !== null) { // @phpstan-ignore-line
+                    $request = $event->getRequest();
+                    $routeName = $this->routerUtils->getRouteName();
+                    $rootSpan = $this->instrumentationRegistry->getSpans()['root_span'] ?? null;
+                    $rootSpan?->updateName(sprintf('%s %s', $request->getMethod(), $routeName));
+
                     $errorSpan->setAttribute(TraceAttributes::HTTP_REQUEST_METHOD, $event->getRequest()->getMethod());
-                    $errorSpan->setAttribute(TraceAttributes::HTTP_ROUTE, $event->getRequest()->getPathInfo());
                     $errorSpan->setAttribute(TraceAttributes::URL_FULL, $event->getRequest()->getUri());
                     $errorSpan->setAttribute(
                         TraceAttributes::USER_AGENT_ORIGINAL,

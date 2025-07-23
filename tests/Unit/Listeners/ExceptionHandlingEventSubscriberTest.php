@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Macpaw\SymfonyOtelBundle\Tests\Unit\Listeners;
 
 use Exception;
+use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Listeners\ExceptionHandlingEventSubscriber;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
@@ -16,6 +17,7 @@ use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Throwable;
@@ -24,6 +26,8 @@ class ExceptionHandlingEventSubscriberTest extends TestCase
 {
     private InstrumentationRegistry $registry;
     private TraceService&MockObject $traceService;
+    private RequestStack&MockObject $requestStack;
+    private RouterUtils $routerUtils;
     private LoggerInterface&MockObject $logger;
     private ExceptionHandlingEventSubscriber $subscriber;
 
@@ -31,10 +35,13 @@ class ExceptionHandlingEventSubscriberTest extends TestCase
     {
         $this->registry = new InstrumentationRegistry();
         $this->traceService = $this->createMock(TraceService::class);
+        $this->requestStack = $this->createMock(RequestStack::class);
+        $this->routerUtils = new RouterUtils($this->requestStack);
         $this->logger = $this->createMock(LoggerInterface::class);
         $this->subscriber = new ExceptionHandlingEventSubscriber(
             $this->registry,
             $this->traceService,
+            $this->routerUtils,
             $this->logger
         );
     }

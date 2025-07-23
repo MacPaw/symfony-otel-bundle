@@ -9,9 +9,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 class DummyQueryHandler
 {
-    public function __invoke(DummyQuery $query): ?string
+    public function __invoke(DummyQuery $query): void
     {
-        // Simulate some query processing
-        return 'Query result for ' . DummyQuery::class;
     }
-} 
+}

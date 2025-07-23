@@ -7,7 +7,7 @@ namespace App\Command;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]
-class DummyHandler
+class DummyCommandHandler
 {
     public function __invoke(DummyCommand $command): void
     {

@@ -16,10 +16,10 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        // todo: тут треба розібратись з тайп хінтом
-        /** @var ?array<int, string> $instrumentations */
+        /** @var array<int, string> $instrumentations */
         $instrumentations = $container->getParameter('otel_bundle.instrumentations') ?? [];
-        /** @var array<int, Definition> $hookInstrumentations */
+
+        /** @var array<string, Definition> $hookInstrumentations */
         $hookInstrumentations = [];
 
         foreach ($instrumentations as $instrumentation) {

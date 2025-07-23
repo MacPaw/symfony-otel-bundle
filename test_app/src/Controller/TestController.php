@@ -65,7 +65,7 @@ class TestController
                     <strong>GET <a href="/api/exception-test">/api/exception-test</a></strong> - Exception test (for testing auto-close spans functionality)
                 </div>
                 <div class="endpoint">
-                    <strong>GET <a href="/api/cqrs-test">/api/cqrs-test</a></strong> - AAAAAAA 🤔
+                    <strong>GET <a href="/api/cqrs-test">/api/cqrs-test</a></strong> - CQRS query/command test
                 </div>
                 
                 <h2>Trace Viewing:</h2>
@@ -222,7 +222,7 @@ class TestController
         throw new Exception('Test exception for tracing');
     }
 
-    #[Route('/api/cqrs-test', name: 'api_cqrs_exception_test')]
+    #[Route('/api/cqrs-test', name: 'api_cqrs_test')]
     public function apiCqrsTest(): JsonResponse
     {
         $this->queryBus->query(new DummyQuery());

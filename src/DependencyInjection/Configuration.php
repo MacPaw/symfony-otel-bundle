@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Macpaw\SymfonyOtelBundle\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
@@ -7,7 +9,6 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 class Configuration implements ConfigurationInterface
 {
-
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $tree = new TreeBuilder(SymfonyOtelExtension::NAME);
@@ -15,21 +16,18 @@ class Configuration implements ConfigurationInterface
 
         $rootNode
             ->children()
-                ->scalarNode('tracer_name')
-                    ->cannotBeEmpty()
-                    ->defaultValue('test-template')
-                ->end()
                 ->scalarNode('service_name')
                     ->cannotBeEmpty()
-                    ->defaultValue('test-service')
+                    ->defaultValue('symfony-app')
                 ->end()
-                ->arrayNode('span_tracers')
-                ->defaultValue([])
-                    ->arrayPrototype()
-                        ->children()
-                            ->scalarNode('class')->isRequired()->end()
-                            ->scalarNode('tag')->isRequired()->end()
-                        ->end()
+                ->scalarNode('tracer_name')
+                    ->cannotBeEmpty()
+                    ->defaultValue('symfony-tracer')
+                ->end()
+                ->arrayNode('instrumentations')
+                    ->defaultValue([])
+                    ->scalarPrototype()
+                        ->cannotBeEmpty()
                     ->end()
                 ->end()
             ->end();

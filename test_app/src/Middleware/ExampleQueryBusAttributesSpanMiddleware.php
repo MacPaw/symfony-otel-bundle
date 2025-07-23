@@ -10,7 +10,7 @@ use Macpaw\SymfonyOtelBundle\Middleware\ClassHookInstrumentationSpanMiddlewareIn
 use OpenTelemetry\API\Common\Time\ClockInterface;
 use OpenTelemetry\API\Trace\SpanInterface;
 
-final class ExampleAttributesSpanMiddleware implements ClassHookInstrumentationSpanMiddlewareInterface
+final class ExampleQueryBusAttributesSpanMiddleware implements ClassHookInstrumentationSpanMiddlewareInterface
 {
     public function __construct(private readonly ClockInterface $clock)
     {
@@ -24,7 +24,7 @@ final class ExampleAttributesSpanMiddleware implements ClassHookInstrumentationS
 
     public function post(SpanInterface $span, HookInstrumentationInterface&TimingInterface $instrumentation): void
     {
-        $executionTime = $this->clock->now() - $instrumentation->getStartTime();
+        $executionTime = $this->clock->now();
 
         $span->setAttribute('query_bus.execution_time_ns', $executionTime);
     }

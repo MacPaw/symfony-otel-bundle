@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Command;
 
-use App\Infrastructure\MessageBus\QueryMessageInterface;
+use App\Infrastructure\MessageBus\CommandMessageInterface;
 
-class DummyCommand implements QueryMessageInterface
+class DummyCommand implements CommandMessageInterface
 {
-
 }

@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Handler;
+declare(strict_types=1);
 
-use App\Command\DummyCommand;
+namespace App\Command;
+
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]
 class DummyHandler
 {
-    public function __invoke(DummyCommand $command)
+    public function __invoke(DummyCommand $command): void
     {
     }
 }

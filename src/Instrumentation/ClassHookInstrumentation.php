@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Macpaw\SymfonyOtelBundle\Instrumentation;
 
+use Macpaw\SymfonyOtelBundle\Middleware\ClassHookInstrumentationSpanMiddlewareInterface;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use OpenTelemetry\API\Common\Time\ClockInterface;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
@@ -21,7 +22,7 @@ final class ClassHookInstrumentation extends AbstractHookInstrumentation impleme
     private int $endTime = 0;
 
     /**
-     * @var ClassHookInstrumetationSpanDecoratorInterface[]
+     * @var ClassHookInstrumentationSpanMiddlewareInterface[]
      */
     private array $spanMiddlewares = [];
 
@@ -36,7 +37,7 @@ final class ClassHookInstrumentation extends AbstractHookInstrumentation impleme
         parent::__construct($instrumentationRegistry, $tracer, $propagator);
     }
 
-    public function addMiddleware(ClassHookInstrumetationSpanDecoratorInterface $middleware): self
+    public function addMiddleware(ClassHookInstrumentationSpanMiddlewareInterface $middleware): self
     {
         $this->spanMiddlewares[] = $middleware;
 
@@ -47,6 +48,7 @@ final class ClassHookInstrumentation extends AbstractHookInstrumentation impleme
     {
         return $this->className;
     }
+
     public function getMethod(): string
     {
         return $this->methodName;

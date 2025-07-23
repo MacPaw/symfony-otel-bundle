@@ -5,3 +5,4 @@ otel_bundle:
     - 'App\Instrumentation\ExampleHookInstrumentation'
     - 'querybus.query.instrumentation'
     - 'querybus.dispatch.instrumentation'
+    - 'commandbus.dispatch.instrumentation'

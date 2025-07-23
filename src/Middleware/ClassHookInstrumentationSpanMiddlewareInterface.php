@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Macpaw\SymfonyOtelBundle\Instrumentation;
+namespace Macpaw\SymfonyOtelBundle\Middleware;
 
+use Macpaw\SymfonyOtelBundle\Instrumentation\HookInstrumentationInterface;
+use Macpaw\SymfonyOtelBundle\Instrumentation\TimingInterface;
 use OpenTelemetry\API\Trace\SpanInterface;
 
-interface ClassHookInstrumetationSpanDecoratorInterface
+interface ClassHookInstrumentationSpanMiddlewareInterface
 {
     public function pre(SpanInterface $span, HookInstrumentationInterface&TimingInterface $instrumentation): void;
 

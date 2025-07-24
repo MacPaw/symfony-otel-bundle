@@ -16,19 +16,32 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        /** @var array<int, string> $instrumentations */
-        $instrumentations = $container->getParameter('otel_bundle.instrumentations') ?? [];
-
+        /** @var ?array<string, string> $instrumentations */
+        $instrumentations = $container->getParameter('otel_bundle.instrumentations');
         /** @var array<string, Definition> $hookInstrumentations */
         $hookInstrumentations = [];
 
-        foreach ($instrumentations as $instrumentation) {
-            if ($this->isServiceId($container, $instrumentation)) {
-                $this->handleAsService($instrumentation, $container, $hookInstrumentations);
-                continue;
-            }
+        if (is_array($instrumentations) && count($instrumentations) > 0) {
+            foreach ($instrumentations as $instrumentationClass) {
+                $definition = $container->hasDefinition($instrumentationClass) ?
+                    $container->getDefinition($instrumentationClass) : new Definition($instrumentationClass);
 
-            $this->handleAsClass($instrumentation, $container, $hookInstrumentations);
+                $definition->setAutowired(true);
+                $definition->setAutoconfigured(true);
+
+                $className = $definition->getClass();
+
+                if ($className && is_subclass_of($className, EventSubscriberInterface::class)) {
+                    $definition->addTag('kernel.event_subscriber');
+                }
+
+                if ($className && is_subclass_of($className, HookInstrumentationInterface::class)) {
+                    $definition->addTag('otel.hook_instrumentation');
+                    $hookInstrumentations[$instrumentationClass] = $definition;
+                }
+
+                $container->setDefinition($instrumentationClass, $definition);
+            }
         }
 
         $hookManagerDefinition = $container->getDefinition(HookManagerService::class);
@@ -40,56 +53,5 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
                 new Reference($alias),
             ]);
         }
-    }
-
-    /**
-     * @param array<string, Definition> $hookInstrumentations
-     */
-    private function handleAsClass(string $className, ContainerBuilder $container, array &$hookInstrumentations): void
-    {
-        $definition = $container->hasDefinition($className)
-            ? $container->getDefinition($className)
-            : new Definition($className);
-
-        $definition->setAutowired(true);
-        $definition->setAutoconfigured(true);
-
-        if (is_subclass_of($className, EventSubscriberInterface::class)) {
-            $definition->addTag('kernel.event_subscriber');
-        }
-
-        if (is_subclass_of($className, HookInstrumentationInterface::class)) {
-            $definition->addTag('otel.hook_instrumentation');
-            $hookInstrumentations[$definition->getClass()] = $definition;
-        }
-
-        $container->setDefinition($className, $definition);
-    }
-
-    /**
-     * @param array<string, Definition> $hookInstrumentations
-     */
-    private function handleAsService(string $serviceId, ContainerBuilder $container, array &$hookInstrumentations): void
-    {
-        $definition = $container->getDefinition($serviceId);
-        $className = $definition->getClass();
-
-        if ($className && is_subclass_of($className, HookInstrumentationInterface::class)) {
-            $definition->addTag('otel.hook_instrumentation');
-            $hookInstrumentations[$serviceId] = $definition;
-        }
-
-        if ($className && is_subclass_of($className, EventSubscriberInterface::class)) {
-            $definition->addTag('kernel.event_subscriber');
-        }
-    }
-
-    private function isServiceId(ContainerBuilder $container, string $serviceId): bool
-    {
-        if ($container->hasDefinition($serviceId)) {
-            return $container->getDefinition($serviceId)->getClass() !== $serviceId;
-        }
-
-        return false;
     }
 }

@@ -81,7 +81,7 @@ This bundle supports the following OpenTelemetry SDK environment variables for c
 - `OTEL_METRICS_EXPORTER`: The exporter to be used for metrics.
 - `OTEL_LOGS_EXPORTER`: The exporter to be used for logs.
 - `OTEL_EXPORTER_OTLP_ENDPOINT`: The endpoint for the OTLP exporter.
-- `OTEL_EXPORTER_OTLP_PROTOCOL`: The protocol to be used for OTLP exporter.
+- `OTEL_EXPORTER_OTLP_PROTOCOL`: Specify the OTLP transport protocol (supported values: `grpc`, `http/protobuf`, `http/json`)
 - `OTEL_EXPORTER_OTLP_HEADERS`: Headers to be sent with each OTLP request.
 - `OTEL_EXPORTER_OTLP_TIMEOUT`: Timeout for OTLP requests.
 - `OTEL_PROPAGATORS`: Propagators to be used for context propagation.
@@ -140,7 +140,13 @@ The bundle includes a pre-configured OpenTelemetry Collector that can be deploye
 
 The collector configuration ```docker/otel-collector/otel-collector-config.yaml``` configured to use grpc and export to Tempo.
 
-For a complete list and detailed descriptions, please refer to the [OpenTelemetry SDK Environment Variables documentation](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/).
+> **Note:** This bundle does **not** declare any additional collector-access settings.  
+> To configure transports - use the [standard](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) OpenTelemetry SDK environment variables listed above.
+
+
+## Read next
+- For a basic intro in OpenTelementry, please refer to the [OpenTelemetry Basics](./docs/otel_basics.md).
+- For a complete list and detailed descriptions, please refer to the [OpenTelemetry SDK Environment Variables documentation](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/).
 
 ## Usage
 see [docs](docs/start-and-test.md)

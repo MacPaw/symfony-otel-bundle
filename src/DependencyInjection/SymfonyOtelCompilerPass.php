@@ -42,6 +42,9 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
         }
     }
 
+    /**
+     * @param array<string, Definition> $hookInstrumentations
+     */
     private function handleAsClass(string $className, ContainerBuilder $container, array &$hookInstrumentations): void
     {
         $definition = $container->hasDefinition($className)
@@ -63,6 +66,9 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
         $container->setDefinition($className, $definition);
     }
 
+    /**
+     * @param array<string, Definition> $hookInstrumentations
+     */
     private function handleAsService(string $serviceId, ContainerBuilder $container, array &$hookInstrumentations): void
     {
         $definition = $container->getDefinition($serviceId);

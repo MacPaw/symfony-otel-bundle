@@ -8,9 +8,6 @@ use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\HandleTrait;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-/**
- * @template T
- */
 class QueryBus implements MessageBusInterface
 {
     use HandleTrait;
@@ -20,9 +17,6 @@ class QueryBus implements MessageBusInterface
         $this->messageBus = $queryBus;
     }
 
-    /**
-     * @return T
-     */
     public function query(QueryMessageInterface $queryMessage): mixed
     {
         return $this->handle($queryMessage);

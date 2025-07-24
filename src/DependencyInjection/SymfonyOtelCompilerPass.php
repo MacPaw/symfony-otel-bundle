@@ -60,7 +60,7 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
             $hookInstrumentations[$definition->getClass()] = $definition;
         }
 
-        $container->setDefinition($className, $definition);;
+        $container->setDefinition($className, $definition);
     }
 
     private function handleAsService(string $serviceId, ContainerBuilder $container, array &$hookInstrumentations): void

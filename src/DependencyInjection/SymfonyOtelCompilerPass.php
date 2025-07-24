@@ -28,15 +28,7 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
                 continue;
             }
 
-            if ($this->isClassName($container, $instrumentation)) {
-                $this->handleAsClass($instrumentation, $container, $hookInstrumentations);
-                continue;
-            }
-
-            throw new \InvalidArgumentException(sprintf(
-                'Instrumentation "%s" is neither a valid service id nor an existing class.',
-                $instrumentation
-            ));
+            $this->handleAsClass($instrumentation, $container, $hookInstrumentations);
         }
 
         $hookManagerDefinition = $container->getDefinition(HookManagerService::class);
@@ -86,21 +78,12 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
         }
     }
 
-    private function isClassName(ContainerBuilder $container, string $className): bool
-    {
-        if ($container->hasDefinition($className)) {
-            return $container->getDefinition($className)->getClass() === $className;
-        }
-
-        throw new \Exception(sprintf('Class name not found: %s', $className));
-    }
-
     private function isServiceId(ContainerBuilder $container, string $serviceId): bool
     {
         if ($container->hasDefinition($serviceId)) {
             return $container->getDefinition($serviceId)->getClass() !== $serviceId;
         }
 
-        throw new \Exception(sprintf('Service ID not found: %s', $serviceId));
+        return false;
     }
 }

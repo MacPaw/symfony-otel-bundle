@@ -26,7 +26,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $tracer = $this->createMock(TracerInterface::class);
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $clock = $this->createMock(ClockInterface::class);
-        $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
+        $executionTimeInstrumentation = new RequestExecutionTimeInstrumentation(
             $registry,
             $tracer,
             $propagator,
@@ -51,7 +51,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $tracer = $this->createMock(TracerInterface::class);
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $clock = $this->createMock(ClockInterface::class);
-        $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
+        $executionTimeInstrumentation = new RequestExecutionTimeInstrumentation(
             $registry,
             $tracer,
             $propagator,
@@ -80,7 +80,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $tracer = $this->createMock(TracerInterface::class);
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $clock = $this->createMock(ClockInterface::class);
-        $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
+        $executionTimeInstrumentation = new RequestExecutionTimeInstrumentation(
             $registry,
             $tracer,
             $propagator,
@@ -104,7 +104,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $tracer = $this->createMock(TracerInterface::class);
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $clock = $this->createMock(ClockInterface::class);
-        $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
+        $executionTimeInstrumentation = new RequestExecutionTimeInstrumentation(
             $registry,
             $tracer,
             $propagator,
@@ -124,7 +124,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $tracer = $this->createMock(TracerInterface::class);
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $clock = $this->createMock(ClockInterface::class);
-        $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
+        $executionTimeInstrumentation = new RequestExecutionTimeInstrumentation(
             $registry,
             $tracer,
             $propagator,

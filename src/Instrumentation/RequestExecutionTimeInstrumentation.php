@@ -15,9 +15,9 @@ use OpenTelemetry\Context\Context;
 use OpenTelemetry\Context\ContextInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 
-final class ExecutionTimeInstrumentation extends AbstractInstrumentation
+final class RequestExecutionTimeInstrumentation extends AbstractInstrumentation
 {
-    public const NAME = 'execution_time';
+    public const NAME = 'request.execution_time';
 
     /**
      * @var array<string, mixed>

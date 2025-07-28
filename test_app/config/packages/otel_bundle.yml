@@ -2,4 +2,7 @@ otel_bundle:
   tracer_name: '%env(OTEL_TRACER_NAME)%'
   service_name: '%env(OTEL_SERVICE_NAME)%'
   instrumentations:
-    - 'App\Instrumentation\ExampleHookInstrumentation' 
+    - 'App\Instrumentation\ExampleHookInstrumentation'
+    - 'querybus.query.instrumentation'
+    - 'querybus.dispatch.instrumentation'
+    - 'commandbus.dispatch.instrumentation'

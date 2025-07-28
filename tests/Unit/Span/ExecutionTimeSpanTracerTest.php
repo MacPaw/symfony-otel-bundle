@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Span;
 
-use Macpaw\SymfonyOtelBundle\Instrumentation\ExecutionTimeInstrumentation;
+use Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Listeners\InstrumentationEventSubscriber;
 use OpenTelemetry\API\Common\Time\ClockInterface;
@@ -25,7 +25,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $tracer = $this->createMock(TracerInterface::class);
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $clock = $this->createMock(ClockInterface::class);
-        $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
+        $executionTimeInstrumentation = new RequestExecutionTimeInstrumentation(
             $registry,
             $tracer,
             $propagator,
@@ -50,7 +50,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $tracer = $this->createMock(TracerInterface::class);
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $clock = $this->createMock(ClockInterface::class);
-        $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
+        $executionTimeInstrumentation = new RequestExecutionTimeInstrumentation(
             $registry,
             $tracer,
             $propagator,
@@ -79,7 +79,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $tracer = $this->createMock(TracerInterface::class);
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $clock = $this->createMock(ClockInterface::class);
-        $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
+        $executionTimeInstrumentation = new RequestExecutionTimeInstrumentation(
             $registry,
             $tracer,
             $propagator,
@@ -103,7 +103,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $tracer = $this->createMock(TracerInterface::class);
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $clock = $this->createMock(ClockInterface::class);
-        $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
+        $executionTimeInstrumentation = new RequestExecutionTimeInstrumentation(
             $registry,
             $tracer,
             $propagator,
@@ -123,7 +123,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $tracer = $this->createMock(TracerInterface::class);
         $propagator = $this->createMock(TextMapPropagatorInterface::class);
         $clock = $this->createMock(ClockInterface::class);
-        $executionTimeInstrumentation = new ExecutionTimeInstrumentation(
+        $executionTimeInstrumentation = new RequestExecutionTimeInstrumentation(
             $registry,
             $tracer,
             $propagator,

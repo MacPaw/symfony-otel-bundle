@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Command\DummyCommand;
+use App\Infrastructure\MessageBus\CommandBus;
+use App\Infrastructure\MessageBus\QueryBus;
+use App\Query\DummyQuery;
 use Exception;
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
@@ -13,12 +17,16 @@ use PDO;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 class TestController
 {
-    public function __construct(private readonly TraceService $traceService)
-    {
+    public function __construct(
+        private readonly TraceService $traceService, 
+        private readonly QueryBus $queryBus,
+        private readonly CommandBus $commandBus,
+    ) {
     }
 
     #[Route('/', name: 'homepage')]
@@ -55,6 +63,9 @@ class TestController
                 </div>
                 <div class="endpoint">
                     <strong>GET <a href="/api/exception-test">/api/exception-test</a></strong> - Exception test (for testing auto-close spans functionality)
+                </div>
+                <div class="endpoint">
+                    <strong>GET <a href="/api/cqrs-test">/api/cqrs-test</a></strong> - CQRS query/command test
                 </div>
                 
                 <h2>Trace Viewing:</h2>
@@ -209,5 +220,24 @@ class TestController
 
         usleep(100000); // 100ms
         throw new Exception('Test exception for tracing');
+    }
+
+    #[Route('/api/cqrs-test', name: 'api_cqrs_test')]
+    public function apiCqrsTest(): JsonResponse
+    {
+        $this->queryBus->query(new DummyQuery());
+
+        $this->queryBus->dispatch(new DummyQuery());
+        $this->commandBus->dispatch(new DummyCommand());
+
+        return new JsonResponse([
+            'message' => 'CQRS operations completed successfully',
+            'timestamp' => time(),
+            'operations' => [
+                'query' => DummyQuery::class,
+                'command' => DummyCommand::class,
+            ],
+            'note' => 'Check traces in Grafana for detailed execution information',
+        ]);
     }
 }

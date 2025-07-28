@@ -8,16 +8,16 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Exception;
-use Macpaw\SymfonyOtelBundle\Instrumentation\ExecutionTimeInstrumentation;
+use Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Common\Time\ClockInterface;
 use OpenTelemetry\Context\Context;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
-use Symfony\Component\Config\FileLocator;
 
 class InstrumentationIntegrationTest extends TestCase
 {
@@ -66,7 +66,7 @@ class InstrumentationIntegrationTest extends TestCase
         /** @var ClockInterface $clock */
         $clock = $this->container->get(ClockInterface::class);
 
-        $instrumentation = new ExecutionTimeInstrumentation(
+        $instrumentation = new RequestExecutionTimeInstrumentation(
             $this->registry,
             $tracer,
             $propagator,
@@ -117,7 +117,7 @@ class InstrumentationIntegrationTest extends TestCase
         /** @var ClockInterface $clock */
         $clock = $this->container->get(ClockInterface::class);
 
-        $instrumentation = new ExecutionTimeInstrumentation(
+        $instrumentation = new RequestExecutionTimeInstrumentation(
             $this->registry,
             $tracer,
             $propagator,

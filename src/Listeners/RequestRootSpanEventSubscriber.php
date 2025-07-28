@@ -6,7 +6,7 @@ namespace Macpaw\SymfonyOtelBundle\Listeners;
 
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Registry\SpanNames;
-use Macpaw\SymfonyOtelBundle\Service\HttpMetadataPropagator;
+use Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\Span;
 use OpenTelemetry\Context\Context;
@@ -23,7 +23,7 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
         private InstrumentationRegistry $instrumentationRegistry,
         private TextMapPropagatorInterface $propagator,
         private TraceService $traceService,
-        private HttpMetadataPropagator $httpMetadataPropagator
+        private HttpMetadataAttacher $httpMetadataAttacher
     ) {
     }
 
@@ -47,7 +47,7 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
             ->setAttribute(TraceAttributes::URL_SCHEME, $request->getScheme())
             ->setAttribute(TraceAttributes::SERVER_ADDRESS, $request->getHost());
 
-        $this->httpMetadataPropagator->addHttpAttributes($spanBuilder, $request);
+        $this->httpMetadataAttacher->addHttpAttributes($spanBuilder, $request);
 
         $requestStartSpan = $spanBuilder->startSpan();
         $this->instrumentationRegistry->addSpan($requestStartSpan, SpanNames::REQUEST_START);

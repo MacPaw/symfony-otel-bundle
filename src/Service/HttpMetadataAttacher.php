@@ -8,7 +8,7 @@ use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
 use Symfony\Component\HttpFoundation\Request;
 
-final readonly class HttpMetadataPropagator
+final readonly class HttpMetadataAttacher
 {
     public const HEADER_REQUEST_ID = 'X-Request-Id';
     public const HEADER_TRACE_ID = 'X-Trace-Id';

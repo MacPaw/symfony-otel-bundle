@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Macpaw\SymfonyOtelBundle\Service;
 
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
-use Macpaw\SymfonyOtelBundle\Service\HttpMetadataPropagator;
+use Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher;
 use Macpaw\SymfonyOtelBundle\Service\RequestIdGenerator;
 use OpenTelemetry\Context\Context;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
@@ -32,13 +32,14 @@ class HttpClientDecorator implements HttpClientInterface
     public function request(string $method, string $url, array $options = []): ResponseInterface
     {
         $request = $this->routerUtils->getRequest();
-        $requestId = $request?->headers->get(HttpMetadataPropagator::HEADER_REQUEST_ID)
+        $requestId = $request?->headers->get(HttpMetadataAttacher::HEADER_REQUEST_ID)
             ?? RequestIdGenerator::generate();
 
         /** @var array<string, string> $headers */
         $headers = $options['headers'] ?? [];
-        $headers[HttpMetadataPropagator::HEADER_REQUEST_ID] = $requestId;
+        $headers[HttpMetadataAttacher::HEADER_REQUEST_ID] = $requestId;
 
+        // Inject OpenTelemetry headers - traceparent&tracestate
         $this->propagator->inject($headers, null, Context::getCurrent());
 
         $options['headers'] = $headers;

@@ -5,25 +5,25 @@ declare(strict_types=1);
 namespace Tests\Unit\Service;
 
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
-use Macpaw\SymfonyOtelBundle\Service\HttpMetadataPropagator;
+use Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher;
 use PHPUnit\Framework\TestCase;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
 use Symfony\Component\HttpFoundation\HeaderBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
-class HttpMetadataPropagatorTest extends TestCase
+class HttpMetadataAttacherTest extends TestCase
 {
     private const REQUEST_ID_PATTERN = '/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/';
 
     private RouterUtils $routerUtils;
-    private HttpMetadataPropagator $service;
+    private HttpMetadataAttacher $service;
 
     protected function setUp(): void
     {
         $requestStack = $this->createMock(RequestStack::class);
         $this->routerUtils = new RouterUtils($requestStack);
-        $this->service = new HttpMetadataPropagator($this->routerUtils);
+        $this->service = new HttpMetadataAttacher($this->routerUtils);
     }
 
     public function testAddHttpAttributesWithRequestId(): void
@@ -34,8 +34,8 @@ class HttpMetadataPropagatorTest extends TestCase
 
         $headers->method('get')
             ->willReturnMap([
-                [HttpMetadataPropagator::HEADER_REQUEST_ID, 'test-request-id'],
-                [HttpMetadataPropagator::HEADER_TRACE_ID, null]
+                [HttpMetadataAttacher::HEADER_REQUEST_ID, 'test-request-id'],
+                [HttpMetadataAttacher::HEADER_TRACE_ID, null]
             ]);
         $request->headers = $headers;
 
@@ -56,8 +56,8 @@ class HttpMetadataPropagatorTest extends TestCase
 
         $headers->method('get')
             ->willReturnMap([
-                [HttpMetadataPropagator::HEADER_REQUEST_ID, null],
-                [HttpMetadataPropagator::HEADER_TRACE_ID, 'test-trace-id']
+                [HttpMetadataAttacher::HEADER_REQUEST_ID, null],
+                [HttpMetadataAttacher::HEADER_TRACE_ID, 'test-trace-id']
             ]);
         $request->headers = $headers;
 
@@ -76,8 +76,8 @@ class HttpMetadataPropagatorTest extends TestCase
 
         $headers->method('get')
             ->willReturnMap([
-                [HttpMetadataPropagator::HEADER_REQUEST_ID, null],
-                [HttpMetadataPropagator::HEADER_TRACE_ID, null]
+                [HttpMetadataAttacher::HEADER_REQUEST_ID, null],
+                [HttpMetadataAttacher::HEADER_TRACE_ID, null]
             ]);
         $request->headers = $headers;
 
@@ -96,8 +96,8 @@ class HttpMetadataPropagatorTest extends TestCase
 
         $headers->method('get')
             ->willReturnMap([
-                [HttpMetadataPropagator::HEADER_REQUEST_ID, 'test-request-id'],
-                [HttpMetadataPropagator::HEADER_TRACE_ID, 'test-trace-id']
+                [HttpMetadataAttacher::HEADER_REQUEST_ID, 'test-request-id'],
+                [HttpMetadataAttacher::HEADER_TRACE_ID, 'test-trace-id']
             ]);
         $request->headers = $headers;
 
@@ -116,8 +116,8 @@ class HttpMetadataPropagatorTest extends TestCase
 
         $headers->method('get')
             ->willReturnMap([
-                [HttpMetadataPropagator::HEADER_REQUEST_ID, null],
-                [HttpMetadataPropagator::HEADER_TRACE_ID, null]
+                [HttpMetadataAttacher::HEADER_REQUEST_ID, null],
+                [HttpMetadataAttacher::HEADER_TRACE_ID, null]
             ]);
         $request->headers = $headers;
 

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Macpaw\SymfonyOtelBundle\Instrumentation;
 
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
-use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Common\Time\ClockInterface;
 use OpenTelemetry\API\Trace\Span;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
@@ -15,7 +14,6 @@ use OpenTelemetry\API\Trace\TracerInterface;
 use OpenTelemetry\Context\Context;
 use OpenTelemetry\Context\ContextInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
-use Symfony\Component\HttpKernel\Event\RequestEvent;
 
 final class ExecutionTimeInstrumentation extends AbstractInstrumentation
 {

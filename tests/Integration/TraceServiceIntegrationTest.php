@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Exception;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\SpanKind;
@@ -27,6 +30,10 @@ class TraceServiceIntegrationTest extends TestCase
 
         $this->container->setParameter('otel_bundle.service_name', 'test-service');
         $this->container->setParameter('otel_bundle.tracer_name', 'test-tracer');
+
+        $this->container->register('http_client', HttpClientInterface::class)
+            ->setClass(HttpClient::class);
+        $this->container->register('request_stack', RequestStack::class);
 
         $this->loader->load('services.yml');
         $this->container->compile();

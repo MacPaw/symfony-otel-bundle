@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Service\HookManagerService;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
@@ -23,6 +26,10 @@ class BundleIntegrationTest extends TestCase
     {
         $this->container = new ContainerBuilder();
         $this->loader = new YamlFileLoader($this->container, new FileLocator(__DIR__ . '/../../Resources/config'));
+
+        $this->container->register('http_client', HttpClientInterface::class)
+            ->setClass(HttpClient::class);
+        $this->container->register('request_stack', RequestStack::class);
     }
 
     public function testBundleCanBeLoaded(): void

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Instrumentation;
 
-use Macpaw\SymfonyOtelBundle\Instrumentation\AbstractInstrumentation;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
 use OpenTelemetry\API\Trace\SpanInterface;

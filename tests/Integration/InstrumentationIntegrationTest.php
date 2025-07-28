@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Exception;
 use Macpaw\SymfonyOtelBundle\Instrumentation\ExecutionTimeInstrumentation;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
@@ -26,11 +29,15 @@ class InstrumentationIntegrationTest extends TestCase
     {
         $this->container = new ContainerBuilder();
         $loader = new YamlFileLoader($this->container, new FileLocator(__DIR__ . '/../../Resources/config'));
-        $loader->load('services.yml');
 
         $this->container->setParameter('otel_bundle.service_name', 'test-service');
         $this->container->setParameter('otel_bundle.tracer_name', 'test-tracer');
 
+        $this->container->register('http_client', HttpClientInterface::class)
+            ->setClass(HttpClient::class);
+        $this->container->register('request_stack', RequestStack::class);
+
+        $loader->load('services.yml');
         $this->container->compile();
         /** @var TraceService $traceService */
         $traceService = $this->container->get(TraceService::class);

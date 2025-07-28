@@ -21,9 +21,14 @@ final readonly class RouterUtils
         $this->parentRequest = $requestStack->getParentRequest();
     }
 
+    public function getRequest(): ?Request
+    {
+        return $this->currentRequest ?? $this->mainRequest ?? $this->parentRequest;
+    }
+
     public function getRouteName(): ?string
     {
-        $request = $this->currentRequest ?? $this->mainRequest ?? $this->parentRequest;
+        $request = $this->getRequest();
 
         $routeName = $request?->attributes->get('_route');
         assert(is_string($routeName) || is_null($routeName));
@@ -36,7 +41,7 @@ final readonly class RouterUtils
      */
     public function getRouteParams(): ?array
     {
-        $request = $this->currentRequest ?? $this->mainRequest ?? $this->parentRequest;
+        $request = $this->getRequest();
 
         $routeParams = $request?->attributes->get('_route_params');
 

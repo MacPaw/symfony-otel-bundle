@@ -25,6 +25,11 @@ final class InstrumentationRegistry
         $this->spans[$name] = $span;
     }
 
+    public function getSpan(string $name): ?SpanInterface
+    {
+        return $this->spans[$name] ?? null;
+    }
+
     public function setContext(ContextInterface $context): void
     {
         $this->context = $context;

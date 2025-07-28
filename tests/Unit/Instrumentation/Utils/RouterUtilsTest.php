@@ -6,7 +6,6 @@ namespace Tests\Unit\Instrumentation\Utils;
 
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;

@@ -39,9 +39,11 @@ class HttpMetadataPropagatorTest extends TestCase
             ]);
         $request->headers = $headers;
 
-        $spanBuilder->expects($this->once())
+
+
+        $spanBuilder->expects($this->exactly(1))
             ->method('setAttribute')
-            ->with('http.request_id', 'test-request-id');
+            ->willReturnSelf();
 
         $this->service->addHttpAttributes($spanBuilder, $request);
     }

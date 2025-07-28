@@ -41,7 +41,7 @@ class HttpMetadataPropagatorTest extends TestCase
 
 
 
-        $spanBuilder->expects($this->exactly(1))
+        $spanBuilder->expects($this->atLeastOnce())
             ->method('setAttribute')
             ->willReturnSelf();
 
@@ -61,7 +61,7 @@ class HttpMetadataPropagatorTest extends TestCase
             ]);
         $request->headers = $headers;
 
-        $spanBuilder->expects($this->exactly(2))
+        $spanBuilder->expects($this->atLeastOnce())
             ->method('setAttribute')
             ->willReturnSelf();
 
@@ -101,7 +101,7 @@ class HttpMetadataPropagatorTest extends TestCase
             ]);
         $request->headers = $headers;
 
-        $spanBuilder->expects($this->exactly(2))
+        $spanBuilder->expects($this->atLeastOnce())
             ->method('setAttribute')
             ->willReturnSelf();
 

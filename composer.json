@@ -55,7 +55,8 @@
         "symfony/framework-bundle": "^6.4|^7.0",
         "rector/rector": "^2.1",
         "infection/infection": "^0.30.1",
-        "symfony/runtime": "^6.4|7.0"
+        "symfony/runtime": "^6.4|7.0",
+        "symfony/messenger": "^7.3"
     },
     "scripts": {
         "phpcs": "phpcs",

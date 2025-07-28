@@ -16,9 +16,9 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        /** @var ?array<int, string> $instrumentations */
+        /** @var ?array<string, string> $instrumentations */
         $instrumentations = $container->getParameter('otel_bundle.instrumentations');
-        /** @var array<int, Definition> $hookInstrumentations */
+        /** @var array<string, Definition> $hookInstrumentations */
         $hookInstrumentations = [];
 
         if (is_array($instrumentations) && count($instrumentations) > 0) {
@@ -29,13 +29,15 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
                 $definition->setAutowired(true);
                 $definition->setAutoconfigured(true);
 
-                if (is_subclass_of($instrumentationClass, EventSubscriberInterface::class)) {
+                $className = $definition->getClass();
+
+                if ($className && is_subclass_of($className, EventSubscriberInterface::class)) {
                     $definition->addTag('kernel.event_subscriber');
                 }
 
-                if (is_subclass_of($instrumentationClass, HookInstrumentationInterface::class)) {
+                if ($className && is_subclass_of($className, HookInstrumentationInterface::class)) {
                     $definition->addTag('otel.hook_instrumentation');
-                    $hookInstrumentations[] = $definition;
+                    $hookInstrumentations[$instrumentationClass] = $definition;
                 }
 
                 $container->setDefinition($instrumentationClass, $definition);
@@ -44,16 +46,12 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
 
         $hookManagerDefinition = $container->getDefinition(HookManagerService::class);
         $hookManagerDefinition->setLazy(false);
+        $hookManagerDefinition->setPublic(count($hookInstrumentations) > 0);
 
-
-        if (count($hookInstrumentations) > 0) {
-            $hookManagerDefinition->setPublic(true);
-
-            foreach ($hookInstrumentations as $nextDefinition) {
-                $hookManagerDefinition->addMethodCall('registerHook', [
-                    new Reference((string) $nextDefinition->getClass()),
-                ]);
-            }
+        foreach ($hookInstrumentations as $alias => $nextDefinition) {
+            $hookManagerDefinition->addMethodCall('registerHook', [
+                new Reference($alias),
+            ]);
         }
     }
 }

@@ -60,6 +60,6 @@ services:
     public: true
     class: OpenTelemetry\API\Common\Time\SystemClock
 
-  Macpaw\SymfonyOtelBundle\Instrumentation\ExecutionTimeInstrumentation: ~
+  Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation: ~
 
   Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils: ~

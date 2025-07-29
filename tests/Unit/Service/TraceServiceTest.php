@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Macpaw\SymfonyOtelBundle\Tests\Unit\Service;
+namespace Tests\Unit\Service;
 
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\TracerInterface;

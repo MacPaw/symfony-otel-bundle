@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Macpaw\SymfonyOtelBundle\Listeners;
 
-use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
+use Macpaw\SymfonyOtelBundle\Registry\SpanNames;
+use Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\Span;
 use OpenTelemetry\Context\Context;
@@ -22,7 +23,7 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
         private InstrumentationRegistry $instrumentationRegistry,
         private TextMapPropagatorInterface $propagator,
         private TraceService $traceService,
-        private RouterUtils $routerUtils
+        private HttpMetadataAttacher $httpMetadataAttacher
     ) {
     }
 
@@ -46,21 +47,20 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
             ->setAttribute(TraceAttributes::URL_SCHEME, $request->getScheme())
             ->setAttribute(TraceAttributes::SERVER_ADDRESS, $request->getHost());
 
-        $rootSpan = $spanBuilder->startSpan();
-        $this->instrumentationRegistry->addSpan($rootSpan, 'root_span');
+        $this->httpMetadataAttacher->addHttpAttributes($spanBuilder, $request);
 
-        $this->instrumentationRegistry->setScope($rootSpan->activate());
+        $requestStartSpan = $spanBuilder->startSpan();
+        $this->instrumentationRegistry->addSpan($requestStartSpan, SpanNames::REQUEST_START);
+
+        $this->instrumentationRegistry->setScope($requestStartSpan->activate());
     }
 
     public function onKernelTerminate(TerminateEvent $event): void
     {
-        $request = $event->getRequest();
-        $routeName = $this->routerUtils->getRouteName();
-        $rootSpan = $this->instrumentationRegistry->getSpans()['root_span'] ?? null;
-        if ($rootSpan !== null) {
+        $requestStartSpan = $this->instrumentationRegistry->getSpan(SpanNames::REQUEST_START);
+        if ($requestStartSpan !== null) {
             $response = $event->getResponse();
-            $rootSpan->updateName(sprintf('%s %s', $request->getMethod(), $routeName))
-                ->setAttribute(TraceAttributes::HTTP_RESPONSE_STATUS_CODE, $response->getStatusCode());
+            $requestStartSpan->setAttribute(TraceAttributes::HTTP_RESPONSE_STATUS_CODE, $response->getStatusCode());
         }
 
         $scope = $this->instrumentationRegistry->getScope();

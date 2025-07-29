@@ -11,8 +11,6 @@ use Macpaw\SymfonyOtelBundle\Service\HookManagerService;
 use OpenTelemetry\API\Instrumentation\AutoInstrumentation\HookManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Definition;
 use PHPUnit\Framework\MockObject\MockObject;
 
 class HookManagerServiceTest extends TestCase
@@ -123,7 +121,7 @@ class HookManagerServiceTest extends TestCase
 
         $this->hookManager->expects($this->once())
             ->method('hook')
-            ->willReturnCallback(function (string $class, string $method, callable $preHook, callable $postHook) {
+            ->willReturnCallback(function (string $class, string $method, callable $preHook, callable $postHook): void {
                 $preHook();
             });
 
@@ -146,7 +144,7 @@ class HookManagerServiceTest extends TestCase
 
         $this->hookManager->expects($this->once())
             ->method('hook')
-            ->willReturnCallback(function (string $class, string $method, callable $preHook, callable $postHook) {
+            ->willReturnCallback(function (string $class, string $method, callable $preHook, callable $postHook): void {
                 $postHook();
             });
 
@@ -194,19 +192,21 @@ class HookManagerServiceTest extends TestCase
 
         $this->hookManager->expects($this->exactly(2))
             ->method('hook')
-            ->willReturnCallback(function (?string $class, string $method, callable $preHook, callable $postHook) {
-                /** @var int $callCount */
-                static $callCount = 0;
-                $callCount++;
+            ->willReturnCallback(
+                function (?string $class, string $method, callable $preHook, callable $postHook): void {
+                    /** @var int $callCount */
+                    static $callCount = 0;
+                    $callCount++;
 
-                if ($callCount === 1) {
-                    $this->assertNull($class);
-                    $this->assertEquals('testFunction1', $method);
-                } else {
-                    $this->assertEquals('TestClass', $class);
-                    $this->assertEquals('testMethod', $method);
+                    if ($callCount === 1) {
+                        $this->assertNull($class);
+                        $this->assertEquals('testFunction1', $method);
+                    } else {
+                        $this->assertEquals('TestClass', $class);
+                        $this->assertEquals('testMethod', $method);
+                    }
                 }
-            });
+            );
 
         $this->logger->expects($this->exactly(2))
             ->method('debug');
@@ -239,7 +239,7 @@ class HookManagerServiceTest extends TestCase
 
         $this->hookManager->expects($this->exactly(2))
             ->method('hook')
-            ->willReturnCallback(function ($class, $method, $preHook, $postHook) {
+            ->willReturnCallback(function ($class, $method, $preHook, $postHook): void {
                 if ($class === 'TestClass1') {
                     throw new Exception('Hook 1 failed');
                 }

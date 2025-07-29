@@ -62,4 +62,20 @@ services:
 
   Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation: ~
 
-  Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils: ~
+  Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils:
+    arguments:
+      $requestStack: '@request_stack'
+
+  Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher:
+    arguments:
+      $routerUtils: '@Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils'
+
+  Macpaw\SymfonyOtelBundle\Service\HttpClientDecorator:
+    decorates: 'http_client'
+    arguments:
+      $httpClient: '@.inner'
+      $requestStack: '@request_stack'
+      $propagator: '@OpenTelemetry\Context\Propagation\TextMapPropagatorInterface'
+      $routerUtils: '@Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils'
+      $logger: '@?logger'
+    public: true

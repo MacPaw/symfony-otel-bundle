@@ -10,7 +10,6 @@ use Macpaw\SymfonyOtelBundle\Service\HookManagerService;
 use OpenTelemetry\API\Instrumentation\AutoInstrumentation\ExtensionHookManager;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException;
 
 class SymfonyOtelCompilerPassTest extends TestCase

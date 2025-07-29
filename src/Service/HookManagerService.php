@@ -28,7 +28,7 @@ final readonly class HookManagerService
 
         try {
             $logger = $this->logger;
-            $preHook = static function () use ($instrumentation, $logger, $class, $method) {
+            $preHook = static function () use ($instrumentation, $logger, $class, $method): void {
                 try {
                     $instrumentation->pre();
                     $logger->debug("Successfully executed pre hook for {$class}::{$method}");
@@ -38,7 +38,7 @@ final readonly class HookManagerService
                     throw $e;
                 }
             };
-            $postHook = static function () use ($instrumentation, $logger, $class, $method) {
+            $postHook = static function () use ($instrumentation, $logger, $class, $method): void {
                 try {
                     $instrumentation->post();
                     $logger->debug("Successfully executed post hook for {$class}::{$method}");

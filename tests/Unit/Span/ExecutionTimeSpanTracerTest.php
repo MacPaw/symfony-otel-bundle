@@ -6,7 +6,6 @@ namespace Tests\Unit\Span;
 
 use Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
-use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use Macpaw\SymfonyOtelBundle\Listeners\InstrumentationEventSubscriber;
 use OpenTelemetry\API\Common\Time\ClockInterface;
 use OpenTelemetry\API\Trace\TracerInterface;

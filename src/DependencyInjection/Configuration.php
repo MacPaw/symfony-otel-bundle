@@ -31,7 +31,9 @@ class Configuration implements ConfigurationInterface
                     ->end()
                 ->end()
                 ->arrayNode('header_mappings')
-                    ->defaultValue([])
+                    ->defaultValue([
+                        'http.request_id' => 'X-Request-Id',
+                    ])
                     ->info('Map span attribute names to HTTP header names')
                     ->example([
                         'http.request_id' => 'X-Request-Id',

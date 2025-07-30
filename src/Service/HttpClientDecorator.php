@@ -17,7 +17,7 @@ use Symfony\Contracts\HttpClient\ResponseStreamInterface;
 
 class HttpClientDecorator implements HttpClientInterface
 {
-    private const DEFAULT_REQUEST_ID_HEADER = 'X-Request-Id';
+    public const REQUEST_ID_HEADER = 'X-Request-Id';
 
     public function __construct(
         private readonly HttpClientInterface $httpClient,
@@ -34,12 +34,12 @@ class HttpClientDecorator implements HttpClientInterface
     public function request(string $method, string $url, array $options = []): ResponseInterface
     {
         $request = $this->routerUtils->getRequest();
-        $requestId = $request?->headers->get(self::DEFAULT_REQUEST_ID_HEADER)
+        $requestId = $request?->headers->get(self::REQUEST_ID_HEADER)
             ?? RequestIdGenerator::generate();
 
         /** @var array<string, string> $headers */
         $headers = $options['headers'] ?? [];
-        $headers[self::DEFAULT_REQUEST_ID_HEADER] = $requestId;
+        $headers[self::REQUEST_ID_HEADER] = $requestId;
 
         // Inject OpenTelemetry headers - traceparent&tracestate
         $this->propagator->inject($headers, null, Context::getCurrent());

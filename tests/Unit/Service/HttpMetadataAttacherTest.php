@@ -32,10 +32,14 @@ class HttpMetadataAttacherTest extends TestCase
         $headers = $this->createMock(HeaderBag::class);
 
         $headers->method('get')->willReturn(null);
+        $headers->method('has')->willReturn(false);
         $request->headers = $headers;
 
-        $spanBuilder->expects($this->never())
-            ->method('setAttribute');
+        // Expect one call for request ID generation
+        $spanBuilder->expects($this->once())
+            ->method('setAttribute')
+            ->with('http.request_id', $this->isType('string'))
+            ->willReturnSelf();
 
         $this->service->addHttpAttributes($spanBuilder, $request);
     }
@@ -59,8 +63,16 @@ class HttpMetadataAttacherTest extends TestCase
                 ['X-Client-Version', '1.2.3'],
                 ['X-Api-Key', null] // This header is not present, so request ID will be generated
             ]);
+        $headers->method('has')
+            ->willReturnMap([
+                ['X-User-Id', true],
+                ['X-Client-Version', true],
+                ['X-Api-Key', false],
+                ['X-Request-Id', false] // No existing request ID, so one will be generated
+            ]);
         $request->headers = $headers;
 
+        // Expect 3 calls: 2 for existing headers + 1 for request ID generation
         $spanBuilder->expects($this->exactly(3))
             ->method('setAttribute')
             ->willReturnSelf();
@@ -76,10 +88,14 @@ class HttpMetadataAttacherTest extends TestCase
         $headers = $this->createMock(HeaderBag::class);
 
         $headers->method('get')->willReturn(null);
+        $headers->method('has')->willReturn(false);
         $request->headers = $headers;
 
-        $spanBuilder->expects($this->never())
-            ->method('setAttribute');
+        // Expect one call for request ID generation
+        $spanBuilder->expects($this->once())
+            ->method('setAttribute')
+            ->with('http.request_id', $this->isType('string'))
+            ->willReturnSelf();
 
         $service->addHttpAttributes($spanBuilder, $request);
     }
@@ -100,6 +116,12 @@ class HttpMetadataAttacherTest extends TestCase
             ->willReturnMap([
                 ['X-Request-Id', 'test-request-id'],
                 ['X-Trace-Id', 'test-trace-id']
+            ]);
+        $headers->method('has')
+            ->willReturnMap([
+                ['X-Request-Id', true],
+                ['X-Trace-Id', true],
+                ['X-Request-Id', true] // Existing request ID, so no generation needed
             ]);
         $request->headers = $headers;
 

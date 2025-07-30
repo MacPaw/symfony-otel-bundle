@@ -25,22 +25,6 @@ services:
     networks:
       - otel-network
 
-
-  # OpenTelemetry Collector (optional - for more advanced setups)
-  # otel-collector:
-  #   image: otel/opentelemetry-collector-contrib:latest
-  #   container_name: otel-collector
-  #   command: [ "--config=/etc/otel-collector-config.yaml" ]
-  #   volumes:
-  #     - ./docker/otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml:rw
-  #   depends_on:
-  #     - tempo
-  #   networks:
-  #     - otel-network
-  #   ports:
-  #     - "14317:4317" # OTLP grpc receiver
-  #     - "14318:4318" # OTLP http receiver
-
   # PHP application for testing
   php-app:
     user: root

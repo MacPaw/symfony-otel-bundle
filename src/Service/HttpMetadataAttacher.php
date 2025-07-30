@@ -10,40 +10,24 @@ use Symfony\Component\HttpFoundation\Request;
 
 final readonly class HttpMetadataAttacher
 {
-    public const HEADER_REQUEST_ID = 'X-Request-Id';
-    public const HEADER_TRACE_ID = 'X-Trace-Id';
-
+    /**
+     * @param array<string, string> $headerMappings
+     */
     public function __construct(
         private RouterUtils $routerUtils,
+        private array $headerMappings = [],
     ) {
     }
 
     public function addHttpAttributes(SpanBuilderInterface $spanBuilder, Request $request): void
     {
-        $this->addRequestIdAttribute($spanBuilder, $request);
-        $this->addTraceIdAttribute($spanBuilder, $request);
-        $this->addRouteNameAttribute($spanBuilder);
-    }
-
-    private function addRequestIdAttribute(SpanBuilderInterface $spanBuilder, Request $request): void
-    {
-        $requestId = $request->headers->get(self::HEADER_REQUEST_ID);
-        if ($requestId === null) {
-            $requestId = RequestIdGenerator::generate();
-        }
-
-        $spanBuilder->setAttribute('http.request_id', $requestId);
-    }
-
-    private function addTraceIdAttribute(SpanBuilderInterface $spanBuilder, Request $request): void
-    {
-        $traceId = $request->headers->get(self::HEADER_TRACE_ID);
-        if ($traceId !== null) {
-            $spanBuilder->setAttribute('http.trace_id', $traceId);
+        foreach ($this->headerMappings as $spanAttributeName => $headerName) {
+            $headerValue = $request->headers->get($headerName) ?? RequestIdGenerator::generate();
+            $spanBuilder->setAttribute($spanAttributeName, $headerValue);
         }
     }
 
-    private function addRouteNameAttribute(SpanBuilderInterface $spanBuilder): void
+    public function addRouteNameAttribute(SpanBuilderInterface $spanBuilder): void
     {
         $routeName = $this->routerUtils->getRouteName();
         if ($routeName !== null) {

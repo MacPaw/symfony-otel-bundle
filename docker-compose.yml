@@ -63,27 +63,6 @@ services:
       - tempo
     networks:
       - otel-network
-  php-app-2:
-    user: root
-    build:
-      context: .
-      dockerfile: docker/php/Dockerfile # or docker/php/Dockerfile_grpc
-    volumes:
-      - .:/var/www/html:rw
-      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:rw
-    environment:
-      OTEL_TRACES_EXPORTER: otlp
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318 # Used tempo directly for simplicity, or you may use otel-collector - http://otel-collector:4317 (external ports: 14317/14318)
-      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf # or grpc
-      OTEL_SERVICE_NAME: symfony-otel-app
-      OTEL_TRACER_NAME: symfony-otel-bundle
-      OTEL_RESOURCE_ATTRIBUTES: service.name=symfony-otel-app
-      OTEL_PROPAGATORS: tracecontext,baggage
-      OTEL_LOG_LEVEL: debug
-    depends_on:
-      - tempo
-    networks:
-      - otel-network
 volumes:
   tempo-data:
   grafana-data:

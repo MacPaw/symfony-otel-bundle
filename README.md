@@ -71,6 +71,8 @@ OTEL_EXPORTER_OTLP_PROTOCOL=grpc
 - `http/protobuf` - Standard HTTP with protobuf encoding
 - `http/json` - HTTP with JSON encoding (slower)
 
+**Note:** Our bundle supports all transport protocols supported by the OpenTelemetry PHP SDK since we don't decorate the transport layer. For complete transport configuration options, see the [official OpenTelemetry PHP Exporters documentation](https://opentelemetry.io/docs/languages/php/exporters/).
+
 For detailed Docker setup and development environment configuration, see [Docker Development Guide](docs/docker.md).
 
 

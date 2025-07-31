@@ -210,6 +210,7 @@ php bin/console debug:config otel_bundle
 2. **Separate configurations** by environment
 3. **Validate configuration** in CI/CD pipelines
 4. **Document custom configurations** in your project
+5. **Use secrets for sensitive data**
 
 ### Performance Optimization
 

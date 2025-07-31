@@ -25,35 +25,19 @@ services:
     networks:
       - otel-network
 
-
-  # OpenTelemetry Collector (optional - for more advanced setups)
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    container_name: otel-collector
-    command: [ "--config=/etc/otel-collector-config.yaml" ]
-    volumes:
-      - ./docker/otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml:rw
-    depends_on:
-      - tempo
-    networks:
-      - otel-network
-    ports:
-      - "14317:4317" # OTLP grpc receiver
-      - "14318:4318" # OTLP http receiver
-
   # PHP application for testing
   php-app:
     user: root
     build:
       context: .
-      dockerfile: docker/php/Dockerfile # or docker/php/Dockerfile_grpc
+      dockerfile: docker/php/Dockerfile_grpc # or docker/php/Dockerfile_grpc
     volumes:
       - .:/var/www/html:rw
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:rw
     environment:
       OTEL_TRACES_EXPORTER: otlp
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4318 # Used tempo directly for simplicity, or you may use otel-collector - http://otel-collector:4317 (external ports: 14317/14318)
-      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf # or grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317 # Used tempo directly for simplicity, or you may use otel-collector - http://otel-collector:4317 (external ports: 14317/14318)
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc # or grpc
       OTEL_SERVICE_NAME: symfony-otel-app
       OTEL_TRACER_NAME: symfony-otel-bundle
       OTEL_RESOURCE_ATTRIBUTES: service.name=symfony-otel-app
@@ -63,7 +47,6 @@ services:
       - tempo
     networks:
       - otel-network
-
 volumes:
   tempo-data:
   grafana-data:

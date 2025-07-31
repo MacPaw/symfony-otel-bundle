@@ -46,7 +46,7 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
 
         $hookManagerDefinition = $container->getDefinition(HookManagerService::class);
         $hookManagerDefinition->setLazy(false);
-        $hookManagerDefinition->setPublic(count($hookInstrumentations) > 0);
+        $hookManagerDefinition->setPublic(true);
 
         foreach ($hookInstrumentations as $alias => $nextDefinition) {
             $hookManagerDefinition->addMethodCall('registerHook', [

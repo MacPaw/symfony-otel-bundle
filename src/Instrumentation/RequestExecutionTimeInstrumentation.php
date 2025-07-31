@@ -70,7 +70,7 @@ final class RequestExecutionTimeInstrumentation extends AbstractInstrumentation
     {
         $executionTime = $this->clock->now() - $this->startTime;
 
-        if ($this->span !== null) { // @phpstan-ignore-line
+        if ($this->isSpanSet === true) {
             $this->span->addEvent(
                 sprintf('Execution time (in nanoseconds): %d', $executionTime),
             );

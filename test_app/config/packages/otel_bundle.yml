@@ -6,3 +6,5 @@ otel_bundle:
     - 'querybus.query.instrumentation'
     - 'querybus.dispatch.instrumentation'
     - 'commandbus.dispatch.instrumentation'
+  header_mappings:
+    http.request_id: 'X-Request-Id'

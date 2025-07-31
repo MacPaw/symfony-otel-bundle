@@ -10,44 +10,42 @@ use Symfony\Component\HttpFoundation\Request;
 
 final readonly class HttpMetadataAttacher
 {
-    public const HEADER_REQUEST_ID = 'X-Request-Id';
-    public const HEADER_TRACE_ID = 'X-Trace-Id';
+    public const REQUEST_ID_ATTRIBUTE = 'http.request_id';
+    public const ROUTE_NAME_ATTRIBUTE = 'http.route_name';
 
+    /**
+     * @param array<string, string> $headerMappings
+     */
     public function __construct(
         private RouterUtils $routerUtils,
+        private array $headerMappings = [],
     ) {
     }
 
     public function addHttpAttributes(SpanBuilderInterface $spanBuilder, Request $request): void
     {
-        $this->addRequestIdAttribute($spanBuilder, $request);
-        $this->addTraceIdAttribute($spanBuilder, $request);
-        $this->addRouteNameAttribute($spanBuilder);
-    }
+        foreach ($this->headerMappings as $spanAttributeName => $headerName) {
+            if ($request->headers->has($headerName) === false) {
+                continue;
+            }
 
-    private function addRequestIdAttribute(SpanBuilderInterface $spanBuilder, Request $request): void
-    {
-        $requestId = $request->headers->get(self::HEADER_REQUEST_ID);
-        if ($requestId === null) {
+            $headerValue = (string)$request->headers->get($headerName);
+            $spanBuilder->setAttribute($spanAttributeName, $headerValue);
+        }
+
+        // W need to generate a request ID if it is not present in the request and pass it to the span.
+        if ($request->headers->has(HttpClientDecorator::REQUEST_ID_HEADER) === false) {
             $requestId = RequestIdGenerator::generate();
-        }
-
-        $spanBuilder->setAttribute('http.request_id', $requestId);
-    }
-
-    private function addTraceIdAttribute(SpanBuilderInterface $spanBuilder, Request $request): void
-    {
-        $traceId = $request->headers->get(self::HEADER_TRACE_ID);
-        if ($traceId !== null) {
-            $spanBuilder->setAttribute('http.trace_id', $traceId);
+            $request->headers->set(HttpClientDecorator::REQUEST_ID_HEADER, $requestId);
+            $spanBuilder->setAttribute(self::REQUEST_ID_ATTRIBUTE, $requestId);
         }
     }
 
-    private function addRouteNameAttribute(SpanBuilderInterface $spanBuilder): void
+    public function addRouteNameAttribute(SpanBuilderInterface $spanBuilder): void
     {
         $routeName = $this->routerUtils->getRouteName();
         if ($routeName !== null) {
-            $spanBuilder->setAttribute('http.route_name', $routeName);
+            $spanBuilder->setAttribute(self::ROUTE_NAME_ATTRIBUTE, $routeName);
         }
     }
 }

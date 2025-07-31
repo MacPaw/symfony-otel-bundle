@@ -69,6 +69,7 @@ services:
   Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher:
     arguments:
       $routerUtils: '@Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils'
+      $headerMappings: '%otel_bundle.header_mappings%'
 
   Macpaw\SymfonyOtelBundle\Service\HttpClientDecorator:
     decorates: 'http_client'

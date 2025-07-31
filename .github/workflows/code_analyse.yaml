@@ -1,5 +1,8 @@
 name: Code analyse
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     branches: [ main, develop ]

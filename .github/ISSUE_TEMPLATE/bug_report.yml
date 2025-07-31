@@ -89,8 +89,9 @@ body:
       placeholder: |
         otel_bundle:
           tracer_name: 'my-app'
-          span_tracers:
-            - { class: 'Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer', tag: 'kernel.event_subscriber' }
+          service_name: 'my-service'
+          instrumentations:
+            - 'Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation'
 
   - type: textarea
     id: logs

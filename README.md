@@ -1,152 +1,118 @@
-# Symfony OpenTelemetry client Bundle
-This bundle provides configured official otel bundle for Symfony application under the hood.
-In addition, it provides a general way to configure telemetry collection via configuration list of Kernel listeners.
+# Symfony OpenTelemetry Bundle
 
-## Setup bundle
-Enable bundle in your Symfony application:
-```php
-return [
-    Macpaw\SymfonyOtelBundle\SymfonyOtelBundle::class => ['all' => true],
-    // ...
-];
-```
+A comprehensive OpenTelemetry integration bundle for Symfony applications that provides automatic instrumentation, custom span creation, and distributed tracing capabilities.
 
-## Configuration understanding
-This bundle is a decoration under [https://github.com/opentelemetry-php/contrib-sdk-bundle](https://github.com/opentelemetry-php/contrib-sdk-bundle) to simplify integration with the official bundle and provide generic kernel listeners for data tracing.
-If you want to get more information about configuration, please refer to the official bundle documentation.
+## Features
 
-## Setup bundle
+- **Automatic Instrumentation** - Built-in instrumentations for HTTP requests, database operations, and more
+- **Custom Instrumentations** - Easy-to-use framework for creating custom instrumentations
+- **Middleware System** - Extensible middleware system for span customization
+- **Exception Handling** - Automatic span cleanup and error recording
+- **Docker Support** - Complete development environment with Tempo and Grafana
+- **Performance Optimized** - Support for both HTTP and gRPC transport protocols
+- **OpenTelemetry Compliant** - Follows OpenTelemetry specifications and semantic conventions
 
-## Kernel event listeners
-Example of kernel event listener implementation can be found in `Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer` class.
-When specific listener need to be configured, you need to add it to `span_tracers` list in configuration after implementation.
+## Quick Overview
 
-### Exception Handling
+This bundle provides a configured OpenTelemetry integration for Symfony applications, offering:
+- Automatic telemetry collection via kernel event listeners
+- Custom instrumentation framework for business logic
+- Built-in support for distributed tracing
+- Complete testing and development environment
 
-The bundle includes automatic exception handling via `ExceptionHandlingEventSubscriber` that:
+## Bundle Overview
 
-- **Automatically closes spans and scopes** when exceptions occur
-- **Records exceptions** in all active spans with error status
-- **Adds error attributes** for better debugging
-- **Prevents memory leaks** by proper cleanup
-- **Ensures trace export** even during exceptions
+This bundle is a wrapper around the [official OpenTelemetry PHP SDK bundle](https://github.com/opentelemetry-php/contrib-sdk-bundle) that simplifies integration and provides additional instrumentation capabilities for Symfony applications.
 
-For detailed documentation, see [Exception Handling Guide](docs/exception-handling.md).
+**Key characteristics:**
+- **Transport-agnostic** - Uses standard OpenTelemetry SDK environment variables for transport configuration
+- **Framework-focused** - Provides Symfony-specific instrumentation and middleware
+- **Extensible** - Easy to add custom instrumentations and span processors
 
-### Example
+## Built-in Features
 
-1. Create a custom span tracer class:
+- **Request Execution Time Tracking** - Automatic HTTP request timing
+- **Exception Handling** - Automatic span cleanup and error recording
+- **Custom Instrumentations** - Framework for creating custom telemetry collection
 
-    ```php
-    namespace Macpaw\SymfonyOtelBundle\Span;
+For detailed instrumentation guide, see [Instrumentation Guide](docs/instrumentation.md).
 
-    use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-    use OpenTelemetry\API\Trace\Span;
 
-    class CustomSpanTracer implements EventSubscriberInterface
-    {
-        public function onKernelRequest(RequestEvent $event): void
-        {
-            $span = Span::startSpan('custom_span');
-            // Add custom tracing logic here
-            $span->end();
-        }
-   
-        public static function getSubscribedEvents(): array
-        {
-            return [
-                KernelEvents::REQUEST => 'onKernelRequest',
-            ];
-        }
-    }
-    ```
-   
-2. Register the custom span tracer in the Symfony configuration:
-
-    ```yaml
-    # config/packages/symfony_otel.yaml
-    symfony_otel:
-        span_tracers:
-            - App\Span\CustomSpanTracer
-    ```
 
 ## Environment Variables
 
-This bundle supports the following OpenTelemetry SDK environment variables for configuration:
+The bundle supports all standard OpenTelemetry SDK environment variables. For complete configuration reference, see [Configuration Guide](docs/configuration.md).
 
-- `OTEL_RESOURCE_ATTRIBUTES`: Key-value pairs to be used as resource attributes.
-- `OTEL_SERVICE_NAME`: The name of the service.
-- `OTEL_TRACER_NAME`: The tracer name.
-- `OTEL_TRACES_EXPORTER`: The exporter to be used for traces.
-- `OTEL_METRICS_EXPORTER`: The exporter to be used for metrics.
-- `OTEL_LOGS_EXPORTER`: The exporter to be used for logs.
-- `OTEL_EXPORTER_OTLP_ENDPOINT`: The endpoint for the OTLP exporter.
-- `OTEL_EXPORTER_OTLP_PROTOCOL`: Specify the OTLP transport protocol (supported values: `grpc`, `http/protobuf`, `http/json`)
-- `OTEL_EXPORTER_OTLP_HEADERS`: Headers to be sent with each OTLP request.
-- `OTEL_EXPORTER_OTLP_TIMEOUT`: Timeout for OTLP requests.
-- `OTEL_PROPAGATORS`: Propagators to be used for context propagation.
-- `OTEL_TRACES_SAMPLER`: The sampler to be used for traces.
-- `OTEL_TRACES_SAMPLER_ARG`: Arguments for the trace sampler.
-- `OTEL_LOG_LEVEL`: Log level
+**Essential variables:**
+- `OTEL_SERVICE_NAME` - Your service name
+- `OTEL_TRACER_NAME` - Tracer name
+- `OTEL_EXPORTER_OTLP_ENDPOINT` - Collector endpoint
+- `OTEL_EXPORTER_OTLP_PROTOCOL` - Transport protocol (grpc/http/protobuf)
 
-### Recommended Transport Configuration
+### Transport Configuration
 
-**For production environments, we strongly recommend using gRPC transport instead of HTTP because HTTP has perfomance issues:**
+**Important:** This bundle is **transport-agnostic** - it doesn't handle transport configuration directly. All transport settings are managed through standard OpenTelemetry SDK environment variables.
 
+**Recommended for production:**
 ```bash
-# Install required packages
+# Install gRPC support
 composer require open-telemetry/transport-grpc
-# For PHP gRPC extension (recommended for better performance)
-pecl install grpc
+pecl install grpc # may take a time to compile - 30-40 minutes
 
 # Configure gRPC endpoint
 OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
-OTEL_EXPORTER_OTLP_PROTOCOL=grpc # instead http/protobuf
-```
-**Default HTTP endpoint (slower):** `http://collector:4318`
-**Recommended gRPC endpoint (faster):** `http://collector:4317`
-
-### Docker Examples
-
-This bundle includes ready-to-use Docker examples for different scenarios:
-
-#### PHP with gRPC Support
-For applications requiring gRPC transport, use Dockerfile - ```docker/php/Dockerfile_grpc```
-
-This Dockerfile includes:
-- PHP 8.2 with gRPC extension
-- OpenTelemetry extension
-- All necessary build dependencies
-
-#### OpenTelemetry Collector (Sidecar Pattern)
-The bundle includes a pre-configured OpenTelemetry Collector that can be deployed as a sidecar:
-
-```yaml
-# docker-compose.yml
-  otel-collector:
-     image: otel/opentelemetry-collector-contrib:latest
-     container_name: otel-collector
-     command: [ "--config=/etc/otel-collector-config.yaml" ]
-     volumes:
-        - ./docker/otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml:rw
-     depends_on:
-        - tempo
-     networks:
-        - otel-network
-     ports:
-        - "4317:4317" # OTLP grpc receiver
-        - "4318:4318" # OTLP http receiver
+OTEL_EXPORTER_OTLP_PROTOCOL=grpc
 ```
 
-The collector configuration ```docker/otel-collector/otel-collector-config.yaml``` configured to use grpc and export to Tempo.
+**Default HTTP endpoint:** `http://collector:4318`
 
-> **Note:** This bundle does **not** declare any additional collector-access settings.  
-> To configure transports - use the [standard](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) OpenTelemetry SDK environment variables listed above.
+**Transport protocols supported:**
+- `grpc` - High performance, recommended for production
+- `http/protobuf` - Standard HTTP with protobuf encoding
+- `http/json` - HTTP with JSON encoding (slower)
+
+For detailed Docker setup and development environment configuration, see [Docker Development Guide](docs/docker.md).
 
 
-## Read next
-- For a basic intro in OpenTelementry, please refer to the [OpenTelemetry Basics](./docs/otel_basics.md).
-- For a complete list and detailed descriptions, please refer to the [OpenTelemetry SDK Environment Variables documentation](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/).
+## Documentation
+
+- [Installation Guide](docs/installation.md) - Complete installation and setup instructions
+- [Configuration Reference](docs/configuration.md) - Bundle configuration and environment variables
+- [Instrumentation Guide](docs/instrumentation.md) - Built-in instrumentations and custom development
+- [Docker Development](docs/docker.md) - Local development environment setup
+- [Testing Guide](docs/testing.md) - Testing, trace visualization, and troubleshooting
+
+- [OpenTelemetry Basics](docs/otel_basics.md) - OpenTelemetry concepts and fundamentals
+- [Contributing Guide](CONTRIBUTING.md) - How to contribute to the project
+
+## Quick Start
+
+1. **Install the bundle:**
+   ```bash
+   composer require macpaw/symfony-otel-bundle
+   ```
+
+2. **Enable in your application:**
+   ```php
+   // config/bundles.php
+   return [
+       Macpaw\SymfonyOtelBundle\SymfonyOtelBundle::class => ['all' => true],
+   ];
+   ```
+
+3. **Configure environment variables:**
+   ```bash
+   OTEL_SERVICE_NAME=your-service-name
+   OTEL_TRACER_NAME=your-tracer-name
+   OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+   ```
+
+4. **Start testing:**
+   ```bash
+   make up
+   open http://localhost:8080
+   ```
 
 ## Usage
-see [docs](docs/start-and-test.md)
+
+For detailed usage instructions, see [Testing Guide](docs/testing.md).

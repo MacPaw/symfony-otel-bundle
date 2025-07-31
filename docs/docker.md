@@ -1,7 +1,6 @@
-# 🐳 Docker Setup for Symfony OpenTelemetry Bundle Testing
+# 🐳 Docker Development Environment
 
-This Docker Compose setup provides a complete environment for testing the Symfony OpenTelemetry bundle with Grafana
-Tempo for trace collection and Grafana for visualization.
+This guide covers setting up the complete Docker development environment for the Symfony OpenTelemetry Bundle, including performance optimization for gRPC compilation and troubleshooting common issues.
 
 ## 🏗️ Architecture
 
@@ -21,17 +20,22 @@ Tempo for trace collection and Grafana for visualization.
 
 1. **Start the environment:**
    ```bash
-   docker-compose up -d
+   make up
    ```
 
-2. **View the test application:**
-   - Open http://localhost:8080 in your browser
-   - This shows the test application with available endpoints
+2. **Check service health:**
+   ```bash
+   make health
+   ```
 
-3. **Access Grafana:**
-   - Open http://localhost:3000 in your browser
-   - Login: `admin` / `admin`
-   - Navigate to "Explore" → "Tempo" to view traces
+3. **Access services:**
+   - **Test Application:** http://localhost:8080
+   - **Grafana Dashboard:** http://localhost:3000 (admin/admin)
+   - **Tempo API:** http://localhost:3200
+
+4. **View traces in Grafana:**
+   - Navigate to "Explore" → "Tempo"
+   - Search for service: `symfony-otel-test`
 
 ## 📊 Services
 
@@ -53,7 +57,7 @@ Tempo for trace collection and Grafana for visualization.
 - **OpenTelemetry:** Configured to send traces to Tempo
 
 ### 📡 OpenTelemetry Collector (Optional)
-- **Ports:** 4319 (gRPC), 4320 (HTTP), 8889 (Metrics)
+- **Ports:** 4317 (gRPC), 4318 (HTTP)
 - **Purpose:** Advanced trace processing and routing
 - **Config:** `docker/otel-collector/otel-collector-config.yaml`
 
@@ -61,30 +65,28 @@ Tempo for trace collection and Grafana for visualization.
 
 ### Available Test Endpoints
 
-1. **Homepage (`/`)** - Overview and documentation
-2. **Simple API (`/api/test`)** - Basic tracing example
-3. **Slow Operation (`/api/slow`)** - Long-running operation tracing
-4. **Nested Spans (`/api/nested`)** - Complex trace with child spans
-5. **Error Handling (`/api/error`)** - Error and exception tracing
+| Endpoint | Description | Expected Behavior |
+|----------|-------------|-------------------|
+| `/` | Homepage | Basic request tracing |
+| `/api/test` | Simple API | Basic span creation |
+| `/api/slow` | Slow operation | Long-running span (2s) |
+| `/api/nested` | Nested spans | Complex trace hierarchy |
+| `/api/error` | Error handling | Exception tracing |
 
-### Example cURL Commands
+### Generate Test Data
 
 ```bash
-# Test basic tracing
+# Run basic tests
+make test
+
+# Generate load for testing
+make load-test
+
+# Or use individual cURL commands
 curl -X GET http://localhost:8080/api/test
-
-# Test slow operation (2 seconds)
 curl -X GET http://localhost:8080/api/slow
-
-# Test nested spans
 curl -X GET http://localhost:8080/api/nested
-
-# Test error tracing
 curl -X GET http://localhost:8080/api/error
-
-# Test with distributed tracing headers
-curl -X GET http://localhost:8080/api/test \
-  -H "traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
 ```
 
 ## 📋 Viewing Traces
@@ -113,6 +115,8 @@ curl -X GET http://localhost:8080/api/test \
 {service.name="symfony-otel-test" && http.method="GET"}
 ```
 
+For detailed trace visualization guide, see [Testing Guide](testing.md).
+
 ## 🛠️ Configuration
 
 ### Environment Variables
@@ -130,92 +134,132 @@ OTEL_PROPAGATORS=tracecontext,baggage
 
 ### Bundle Configuration
 
-The test application configures your bundle with:
+The test application configures the bundle with:
 
 ```yaml
 otel_bundle:
   tracer_name: '%env(OTEL_TRACER_NAME)%'
   service_name: '%env(OTEL_SERVICE_NAME)%'
-  span_tracers:
-    - { class: 'Macpaw\SymfonyOtelBundle\Span\ExecutionTimeSpanTracer', tag: 'kernel.event_subscriber' }
+  instrumentations:
+    - 'Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation'
+  header_mappings:
+    http.request_id: 'X-Request-Id'
+```
+
+## ⚡ Performance Optimization
+
+### gRPC Compilation Optimization
+
+The default `pecl install grpc` can take 30-40 minutes to compile. For faster builds, use the provided `Dockerfile_grpc` which compiles gRPC from source (version 1.63) in just 5-10 minutes.
+
+#### Build Time Comparison
+
+| Method | Time | Notes |
+|--------|------|-------|
+| `pecl install grpc` | 30-40 minutes | Default method, slow |
+| `Dockerfile_grpc` | 5-10 minutes | Optimized from source |
+| HTTP transport only | 2-3 minutes | No gRPC compilation needed |
+
+#### Development vs Production
+
+- **Development:** Use HTTP transport for faster builds
+- **Production:** Use gRPC transport for better performance
+- **CI/CD:** Use `Dockerfile_grpc` for optimized builds
+
+### Transport Protocol Selection
+
+```bash
+# HTTP Transport (faster builds)
+OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+
+# gRPC Transport (better performance)
+OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
+OTEL_EXPORTER_OTLP_PROTOCOL=grpc
 ```
 
 ## 🐛 Troubleshooting
 
 ### Check Service Status
 ```bash
-docker-compose ps
+make status
 ```
 
 ### View Logs
 ```bash
 # All services
-docker-compose logs -f
+make logs
 
 # Specific service
-docker-compose logs -f php-app
-docker-compose logs -f tempo
-docker-compose logs -f grafana
+make logs-php
+make logs-tempo
+make logs-grafana
 ```
 
 ### Debug OpenTelemetry
 ```bash
 # Check if traces are being exported
-docker-compose logs -f php-app | grep -i otel
+make logs-php | grep -i otel
 
 # Check Tempo ingestion
-docker-compose logs -f tempo | grep -i trace
+make logs-tempo | grep -i trace
 ```
 
 ### Common Issues
 
 1. **No traces in Grafana:**
-   - Check if the PHP app is sending traces: `docker-compose logs php-app`
-   - Verify Tempo is receiving traces: `docker-compose logs tempo`
+   - Check if the PHP app is sending traces: `make logs-php`
+   - Verify Tempo is receiving traces: `make logs-tempo`
    - Ensure correct OTLP endpoint configuration
 
 2. **Grafana connection issues:**
-   - Verify Tempo is running: `docker-compose ps tempo`
+   - Verify Tempo is running: `make status`
    - Check Grafana datasource configuration
-   - Try restarting Grafana: `docker-compose restart grafana`
+   - Try restarting Grafana: `make grafana-restart`
 
 3. **PHP application errors:**
-   - Check PHP logs: `docker-compose logs php-app`
+   - Check PHP logs: `make logs-php`
    - Verify OpenTelemetry extension is loaded
    - Check bundle configuration
+
+4. **Slow gRPC compilation:**
+   - Use `Dockerfile_grpc` for faster builds
+   - Consider HTTP transport for development
+   - Use pre-built images when possible
 
 ## 🧹 Cleanup
 
 ```bash
 # Stop all services
-docker-compose down
+make down
 
-# Remove volumes (will delete traces and Grafana data)
-docker-compose down -v
+# Clear all data (traces and Grafana data)
+make clear-data
 
-# Remove images
-docker-compose down --rmi all
+# Complete reset (remove volumes and images)
+make reset-all
 ```
 
 ## 🔧 Development
 
 ### Rebuild PHP Container
 ```bash
-docker-compose build php-app
-docker-compose up -d php-app
+make php-rebuild
 ```
 
 ### Update Bundle Code
 The bundle source code is mounted as a volume, so changes are reflected immediately.
 
-### Add Custom Tracers
-1. Create your tracer class in `src/Span/`
-2. Add it to the bundle configuration in `test_app/src/Kernel.php`
-3. Restart the container: `docker-compose restart php-app`
+### Add Custom Instrumentations
+1. Create your instrumentation class in `src/Instrumentation/`
+2. Add it to the bundle configuration in `test_app/config/packages/otel_bundle.yaml`
+3. Restart the container: `make php-restart`
 
 ## 📚 Resources
 
 - [OpenTelemetry PHP Documentation](https://opentelemetry.io/docs/instrumentation/php/)
 - [Grafana Tempo Documentation](https://grafana.com/docs/tempo/)
 - [TraceQL Documentation](https://grafana.com/docs/tempo/latest/traceql/)
-- [Symfony Bundle Best Practices](https://symfony.com/doc/current/bundles/best_practices.html) 
+- [Symfony Bundle Best Practices](https://symfony.com/doc/current/bundles/best_practices.html)
+- [Testing Guide](testing.md) - Detailed testing and trace visualization
+- [Configuration Guide](configuration.md) - Bundle configuration options 

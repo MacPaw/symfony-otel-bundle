@@ -1,0 +1,68 @@
+FROM php:8.2-fpm-alpine
+
+# Install system dependencies
+RUN apk add --no-cache \
+    git \
+    curl \
+    libpng-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    oniguruma-dev \
+    autoconf \
+    g++ \
+    bash
+
+# Install PHP extensions
+RUN docker-php-ext-install \
+    pdo_mysql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    xml
+
+# Install PECL, build tools, and GRPC dependencies
+RUN apk add --no-cache \
+      $PHPIZE_DEPS \
+      grpc \
+      protobuf-dev \
+      unzip \
+      libzip-dev \
+      libtool \
+      make \
+      openssl-dev \
+      zlib-dev
+
+# Install OpenTelemetry extension
+RUN pecl install opentelemetry-1.0.0
+
+
+RUN apk add --no-cache git grpc-cpp grpc-dev $PHPIZE_DEPS && \
+    GRPC_VERSION=$(apk info grpc -d | grep grpc | cut -d- -f2) && \
+    git clone --depth 1 -b v${GRPC_VERSION} https://github.com/grpc/grpc /tmp/grpc && \
+    cd /tmp/grpc/src/php/ext/grpc && \
+    phpize && \
+    ./configure && \
+    make && \
+    make install && \
+    rm -rf /tmp/grpc && \
+    apk del --no-cache git grpc-dev $PHPIZE_DEPS && \
+    echo "extension=grpc.so" > /usr/local/etc/php/conf.d/grpc.ini
+
+# Install Xdebug for code coverage
+RUN apk add --no-cache linux-headers autoconf dpkg-dev dpkg file g++ gcc libc-dev make \
+    && pecl install xdebug-3.3.1 \
+    && docker-php-ext-enable xdebug
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Expose port
+EXPOSE 8080
+
+CMD ["php", "-S", "0.0.0.0:8080", "-t", "test_app/public"]

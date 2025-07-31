@@ -1,0 +1,82 @@
+parameters:
+  otel_service_name: '%env(OTEL_SERVICE_NAME)%'
+  otel_tracer_name: '%env(OTEL_TRACER_NAME)%'
+
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+
+  Macpaw\SymfonyOtelBundle\Service\TraceService:
+    public: true
+    arguments:
+      $tracerProvider: '@OpenTelemetry\SDK\Trace\TracerProviderInterface'
+      $serviceName: '%otel_bundle.service_name%'
+      $tracerName: '%otel_bundle.tracer_name%'
+
+  Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry:
+    public: true
+
+  Macpaw\SymfonyOtelBundle\Listeners\InstrumentationEventSubscriber:
+    tags:
+      - { name: 'kernel.event_subscriber' }
+
+  Macpaw\SymfonyOtelBundle\Listeners\RequestRootSpanEventSubscriber:
+    tags:
+      - { name: 'kernel.event_subscriber' }
+
+  Macpaw\SymfonyOtelBundle\Listeners\ExceptionHandlingEventSubscriber:
+    tags:
+      - { name: 'kernel.event_subscriber' }
+
+  Macpaw\SymfonyOtelBundle\Service\HookManagerService:
+    public: true
+    arguments:
+      $hookManager: '@OpenTelemetry\API\Instrumentation\AutoInstrumentation\ExtensionHookManager'
+      $logger: '@?logger'
+    lazy: false
+
+  OpenTelemetry\API\Instrumentation\AutoInstrumentation\ExtensionHookManager: ~
+
+  OpenTelemetry\SDK\Trace\TracerProviderInterface:
+    factory: [ '@OpenTelemetry\SDK\Trace\TracerProviderFactory', 'create' ]
+
+  OpenTelemetry\SDK\Trace\TracerProviderFactory:
+    class: OpenTelemetry\SDK\Trace\TracerProviderFactory
+
+  OpenTelemetry\API\Trace\TracerInterface:
+    factory: [ '@OpenTelemetry\SDK\Trace\TracerProviderInterface', 'getTracer' ]
+    arguments:
+      - '%otel_bundle.tracer_name%'
+
+  OpenTelemetry\Context\Propagation\TextMapPropagatorInterface:
+    public: true
+    factory: [ '@OpenTelemetry\SDK\Propagation\PropagatorFactory', 'create' ]
+
+  OpenTelemetry\SDK\Propagation\PropagatorFactory:
+    class: OpenTelemetry\SDK\Propagation\PropagatorFactory
+
+  OpenTelemetry\API\Common\Time\ClockInterface:
+    public: true
+    class: OpenTelemetry\API\Common\Time\SystemClock
+
+  Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation: ~
+
+  Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils:
+    arguments:
+      $requestStack: '@request_stack'
+
+  Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher:
+    arguments:
+      $routerUtils: '@Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils'
+      $headerMappings: '%otel_bundle.header_mappings%'
+
+  Macpaw\SymfonyOtelBundle\Service\HttpClientDecorator:
+    decorates: 'http_client'
+    arguments:
+      $httpClient: '@.inner'
+      $requestStack: '@request_stack'
+      $propagator: '@OpenTelemetry\Context\Propagation\TextMapPropagatorInterface'
+      $routerUtils: '@Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils'
+      $logger: '@?logger'
+    public: true

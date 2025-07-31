@@ -1,0 +1,41 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+
+  App\:
+    resource: '../src/'
+    exclude:
+      - '../src/DependencyInjection/'
+      - '../src/Entity/'
+      - '../src/Kernel.php'
+
+  App\Controller\:
+    resource: '../src/Controller/'
+    tags: [ 'controller.service_arguments' ]
+
+  querybus.query.instrumentation:
+    class: Macpaw\SymfonyOtelBundle\Instrumentation\ClassHookInstrumentation
+    arguments:
+      $className: 'App\Infrastructure\MessageBus\QueryBus'
+      $methodName: 'query'
+      $spanMiddlewares:
+        - '@App\Middleware\ExampleQueryBusAttributesSpanMiddleware'
+        - '@App\Middleware\ExampleQueryBusEventsSpanMiddleware'
+
+  querybus.dispatch.instrumentation:
+    class: Macpaw\SymfonyOtelBundle\Instrumentation\ClassHookInstrumentation
+    arguments:
+      $className: 'App\Infrastructure\MessageBus\QueryBus'
+      $methodName: 'dispatch'
+      $spanMiddlewares:
+        - '@App\Middleware\ExampleLogsSpanMiddleware'
+
+  commandbus.dispatch.instrumentation:
+    class: Macpaw\SymfonyOtelBundle\Instrumentation\ClassHookInstrumentation
+    arguments:
+      $className: 'App\Infrastructure\MessageBus\CommandBus'
+      $methodName: 'dispatch'
+      $spanMiddlewares:
+        - '@App\Middleware\ExampleLogsSpanMiddleware'
+        - '@App\Middleware\ExampleCommandBusAttributesSpanMiddleware'

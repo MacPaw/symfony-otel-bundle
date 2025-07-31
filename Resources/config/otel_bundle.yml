@@ -1,0 +1,7 @@
+otel_bundle:
+  tracer_name:  '%otel_tracer_name%'
+  service_name: '%otel_service_name%'
+  instrumentations:
+    - 'Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation'
+  header_mappings:
+    http.request_id: 'X-Request-Id'

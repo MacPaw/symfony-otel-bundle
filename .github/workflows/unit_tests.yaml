@@ -24,6 +24,8 @@ jobs:
   # Unit Tests with Matrix Strategy
   # =====================================================
   unit-tests:
+    permissions:
+      contents: read
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15

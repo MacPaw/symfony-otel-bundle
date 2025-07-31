@@ -84,10 +84,3 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
-
-      - name: Upload coverage reports to Codacy
-        if: github.event_name != 'pull_request'
-        uses: codacy/codacy-coverage-reporter-action@v1
-        with:
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-          coverage-reports: var/coverage/clover.xml

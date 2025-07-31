@@ -7,3 +7,4 @@ composer.lock
 /var/cache
 .idea
 .history
+.docker-compose.override.yml

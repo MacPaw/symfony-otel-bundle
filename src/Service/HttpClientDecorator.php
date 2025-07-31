@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Macpaw\SymfonyOtelBundle\Service;
 
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
-use Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher;
 use Macpaw\SymfonyOtelBundle\Service\RequestIdGenerator;
 use OpenTelemetry\Context\Context;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;

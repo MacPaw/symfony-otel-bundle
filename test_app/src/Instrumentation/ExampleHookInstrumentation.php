@@ -28,9 +28,6 @@ final class ExampleHookInstrumentation extends AbstractHookInstrumentation
         return 'example_hook_instrumentation';
     }
 
-    /**
-     * @return string|null
-     */
     public function getClass(): ?string //@phpstan-ignore-line
     {
         return PDO::class;

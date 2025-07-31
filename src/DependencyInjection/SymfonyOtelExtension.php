@@ -33,10 +33,13 @@ class SymfonyOtelExtension extends Extension
         $tracerName = $configs['tracer_name'];
         /** @var array<int, string> $instrumentations */
         $instrumentations = $configs['instrumentations'];
+        /** @var array<string, string> $headerMappings */
+        $headerMappings = $configs['header_mappings'];
 
         $container->setParameter('otel_bundle.service_name', $serviceName);
         $container->setParameter('otel_bundle.tracer_name', $tracerName);
         $container->setParameter('otel_bundle.instrumentations', $instrumentations);
+        $container->setParameter('otel_bundle.header_mappings', $headerMappings);
     }
 
     /**

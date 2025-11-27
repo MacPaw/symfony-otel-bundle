@@ -66,6 +66,7 @@ class RequestRootSpanEventSubscriberTest extends TestCase
         $span = $this->registry->getSpan(SpanNames::REQUEST_START);
         if ($span !== null) {
             $span->end();
+            $scope->detach();
         }
     }
 
@@ -98,7 +99,9 @@ class RequestRootSpanEventSubscriberTest extends TestCase
         // Verify that onKernelTerminate completed without error
         // Note: onKernelTerminate detaches the scope and ends all spans
         // The scope may still be in the registry but is detached
-        $this->assertTrue(true); // Test passes if no exception is thrown
+        $this->assertCount(1, $this->registry->getSpans()); // Test passes if no exception is thrown
+        $scope->detach();
+        $span->end();
     }
 
     public function testOnKernelTerminateWithForceFlush(): void
@@ -135,7 +138,8 @@ class RequestRootSpanEventSubscriberTest extends TestCase
 
         // Verify scope was detached (onKernelTerminate detaches it but doesn't clear from registry)
         // Note: onKernelTerminate also ends all spans, so we don't need to do it here
-        $this->assertTrue(true); // Test passes if no exception is thrown
+        $this->assertCount(1, $this->registry->getSpans()); // Test passes if no exception is thrown
+        $scope->detach();
     }
 
     public function testOnKernelTerminateWithoutSpan(): void

@@ -18,6 +18,7 @@ use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 final class RequestExecutionTimeInstrumentation extends AbstractInstrumentation
 {
     public const NAME = 'request.execution_time';
+    public const REQUEST_EXEC_TIME_NS_ATTRIBUTE = 'request.exec_time_ns';
 
     /**
      * @var array<string, mixed>
@@ -78,7 +79,7 @@ final class RequestExecutionTimeInstrumentation extends AbstractInstrumentation
 
         if ($this->isSpanSet) {
             // Avoid extra event payload; either rely on span duration or store a compact numeric attribute
-            $this->span->setAttribute('request.exec_time_ns', $executionTime);
+            $this->span->setAttribute(self::REQUEST_EXEC_TIME_NS_ATTRIBUTE, $executionTime);
             $this->closeSpan($this->span);
         }
     }

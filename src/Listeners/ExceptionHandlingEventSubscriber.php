@@ -8,6 +8,7 @@ use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
+use OpenTelemetry\SemConv\Attributes\ExceptionAttributes;
 use OpenTelemetry\SemConv\TraceAttributes;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -18,6 +19,9 @@ use Throwable;
 
 final readonly class ExceptionHandlingEventSubscriber implements EventSubscriberInterface
 {
+    private const ERROR_HANDLED_BY_ATTRIBUTE = 'error.handled_by';
+    private const EXCEPTION_TIMESTAMP_ATTRIBUTE = 'exception.timestamp';
+
     public function __construct(
         private InstrumentationRegistry $instrumentationRegistry,
         private TraceService $traceService,
@@ -59,15 +63,15 @@ final readonly class ExceptionHandlingEventSubscriber implements EventSubscriber
                 $errorSpan->recordException($throwable);
                 $errorSpan->setStatus(StatusCode::STATUS_ERROR, $throwable->getMessage());
 
-                $errorSpan->setAttribute(TraceAttributes::EXCEPTION_TYPE, $throwable::class);
-                $errorSpan->setAttribute(TraceAttributes::EXCEPTION_MESSAGE, $throwable->getMessage());
+                $errorSpan->setAttribute(ExceptionAttributes::EXCEPTION_TYPE, $throwable::class);
+                $errorSpan->setAttribute(ExceptionAttributes::EXCEPTION_MESSAGE, $throwable->getMessage());
                 // Gate heavy stacktrace attribute behind env flag to reduce payload in production
                 $includeStack = filter_var(getenv('OTEL_INCLUDE_EXCEPTION_STACKTRACE') ?: '0', FILTER_VALIDATE_BOOL);
                 if ($includeStack) {
-                    $errorSpan->setAttribute(TraceAttributes::EXCEPTION_STACKTRACE, $throwable->getTraceAsString());
+                    $errorSpan->setAttribute(ExceptionAttributes::EXCEPTION_STACKTRACE, $throwable->getTraceAsString());
                 }
 
-                $errorSpan->setAttribute('error.handled_by', 'ExceptionHandlingEventSubscriber');
+                $errorSpan->setAttribute(self::ERROR_HANDLED_BY_ATTRIBUTE, 'ExceptionHandlingEventSubscriber');
 
                 if ($event->getRequest() instanceof Request) { // @phpstan-ignore-line
                     $errorSpan->setAttribute(TraceAttributes::HTTP_REQUEST_METHOD, $event->getRequest()->getMethod());
@@ -79,7 +83,7 @@ final readonly class ExceptionHandlingEventSubscriber implements EventSubscriber
                 }
 
 
-                $errorSpan->setAttribute('exception.timestamp', time());
+                $errorSpan->setAttribute(self::EXCEPTION_TIMESTAMP_ATTRIBUTE, time());
 
                 $this->logger?->debug('Created error span for exception', [
                     'exception' => $throwable->getMessage(),

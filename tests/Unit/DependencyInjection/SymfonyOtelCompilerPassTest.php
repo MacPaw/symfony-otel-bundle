@@ -14,8 +14,10 @@ use OpenTelemetry\API\Instrumentation\AutoInstrumentation\ExtensionHookManager;
 use OpenTelemetry\API\Trace\TracerInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException;
+use Symfony\Component\DependencyInjection\Reference;
 
 class SymfonyOtelCompilerPassTest extends TestCase
 {
@@ -30,7 +32,7 @@ class SymfonyOtelCompilerPassTest extends TestCase
         $this->container->register(HookManagerService::class)
             ->setPublic(true)
             ->setArguments([
-                new \Symfony\Component\DependencyInjection\Reference(ExtensionHookManager::class),
+                new Reference(ExtensionHookManager::class),
                 null,
             ]);
 
@@ -257,7 +259,7 @@ class SymfonyOtelCompilerPassTest extends TestCase
         $methodCalls = $hookManagerDefinition->getMethodCalls();
 
         // Should have at least one registerHook call for the TraceSpan attribute
-        $registerHookCalls = array_filter($methodCalls, fn($call) => $call[0] === 'registerHook');
+        $registerHookCalls = array_filter($methodCalls, fn(array $call): bool => $call[0] === 'registerHook');
         $this->assertGreaterThan(0, count($registerHookCalls), 'HookManagerService should have registerHook calls');
     }
 
@@ -283,7 +285,7 @@ class SymfonyOtelCompilerPassTest extends TestCase
         $this->container->setParameter('otel_bundle.instrumentations', []);
 
         // Register a service without TraceSpan attributes
-        $this->container->register(\stdClass::class, \stdClass::class)
+        $this->container->register(stdClass::class, stdClass::class)
             ->setPublic(true);
 
         $this->compilerPass->process($this->container);
@@ -292,7 +294,7 @@ class SymfonyOtelCompilerPassTest extends TestCase
         $tagged = $this->container->findTaggedServiceIds('otel.hook_instrumentation');
         $attrInstrumentations = array_filter(
             array_keys($tagged),
-            fn($id) => str_starts_with($id, 'otel.attr_instrumentation.'),
+            fn(string $id): bool => str_starts_with($id, 'otel.attr_instrumentation.'),
         );
 
         $this->assertCount(0, $attrInstrumentations);

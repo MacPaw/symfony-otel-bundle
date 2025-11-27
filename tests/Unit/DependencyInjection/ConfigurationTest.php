@@ -255,7 +255,7 @@ class ConfigurationTest extends TestCase
 
     public function testConfigurationWithInvalidForceFlushTimeout(): void
     {
-        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
+        $this->expectException(InvalidConfigurationException::class);
 
         $processor = new Processor();
         $inputConfig = [
@@ -269,7 +269,7 @@ class ConfigurationTest extends TestCase
 
     public function testConfigurationWithInvalidMetricsBackend(): void
     {
-        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
+        $this->expectException(InvalidConfigurationException::class);
 
         $processor = new Processor();
         $inputConfig = [

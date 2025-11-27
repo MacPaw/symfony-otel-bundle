@@ -5,6 +5,11 @@ declare(strict_types=1);
 namespace Tests\Unit\DependencyInjection;
 
 use Macpaw\SymfonyOtelBundle\DependencyInjection\SymfonyOtelExtension;
+use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
+use Macpaw\SymfonyOtelBundle\Listeners\RequestCountersEventSubscriber;
+use Macpaw\SymfonyOtelBundle\Logging\MonologTraceContextProcessor;
+use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
+use OpenTelemetry\API\Metrics\MeterProviderInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -213,7 +218,7 @@ class SymfonyOtelExtensionTest extends TestCase
         $this->extension->load($configs, $this->container);
 
         $this->assertTrue(
-            $this->container->hasDefinition(\Macpaw\SymfonyOtelBundle\Logging\MonologTraceContextProcessor::class),
+            $this->container->hasDefinition(MonologTraceContextProcessor::class),
         );
     }
 
@@ -234,15 +239,15 @@ class SymfonyOtelExtensionTest extends TestCase
         // Actually, looking at the code, it only registers if enabled is true
         // So if disabled, the definition should not exist
         $this->assertFalse(
-            $this->container->hasDefinition(\Macpaw\SymfonyOtelBundle\Logging\MonologTraceContextProcessor::class),
+            $this->container->hasDefinition(MonologTraceContextProcessor::class),
         );
     }
 
     public function testLoadRegistersRequestCountersWhenEnabled(): void
     {
-        $this->container->register(\OpenTelemetry\API\Metrics\MeterProviderInterface::class);
-        $this->container->register(\Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils::class);
-        $this->container->register(\Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry::class);
+        $this->container->register(MeterProviderInterface::class);
+        $this->container->register(RouterUtils::class);
+        $this->container->register(InstrumentationRegistry::class);
 
         /** @var array<string, mixed> $config */
         $config = [
@@ -259,7 +264,7 @@ class SymfonyOtelExtensionTest extends TestCase
         $this->extension->load($configs, $this->container);
 
         $this->assertTrue(
-            $this->container->hasDefinition(\Macpaw\SymfonyOtelBundle\Listeners\RequestCountersEventSubscriber::class),
+            $this->container->hasDefinition(RequestCountersEventSubscriber::class),
         );
     }
 
@@ -280,7 +285,7 @@ class SymfonyOtelExtensionTest extends TestCase
 
         // RequestCountersEventSubscriber should not be registered when disabled
         $this->assertFalse(
-            $this->container->hasDefinition(\Macpaw\SymfonyOtelBundle\Listeners\RequestCountersEventSubscriber::class),
+            $this->container->hasDefinition(RequestCountersEventSubscriber::class),
         );
     }
 }

@@ -160,7 +160,7 @@ class RequestExecutionTimeInstrumentationTest extends TestCase
 
         $span->expects($this->once())
             ->method('setAttribute')
-            ->with('request.exec_time_ns', 1000000);
+            ->with(RequestExecutionTimeInstrumentation::REQUEST_EXEC_TIME_NS_ATTRIBUTE, 1000000);
         $span->expects($this->once())
             ->method('end');
 

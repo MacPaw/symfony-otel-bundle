@@ -43,6 +43,12 @@ jobs:
           - php: '8.2'
             symfony: '6.4.*'
             dependencies: 'lowest'
+        exclude:
+          # Exclude invalid combinations
+          - php: '8.2'
+            symfony: '8.0.*'
+          - php: '8.3'
+            symfony: '8.0.*'
 
     steps:
       - name: Checkout
@@ -79,7 +85,7 @@ jobs:
           composer require symfony/dependency-injection:${{ matrix.symfony }} --no-update --no-scripts
           composer require symfony/config:${{ matrix.symfony }} --no-update --no-scripts
           composer require symfony/yaml:${{ matrix.symfony }} --no-update --no-scripts
-          composer require symfony/monolog:${{ matrix.monolog }} --no-update --no-scripts
+          composer require monolog/monolog:${{ matrix.monolog }} --no-update --no-scripts
           composer require symfony/http-kernel:${{ matrix.symfony }} --no-update --no-scripts
 
       - name: Install dependencies (highest)

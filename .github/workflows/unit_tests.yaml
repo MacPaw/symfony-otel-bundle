@@ -65,7 +65,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: opentelemetry, protobuf, json, mbstring, xdebug
+          extensions: opentelemetry, protobuf, json, mbstring, xdebug, grpc
           coverage: none
           tools: composer:v2
 

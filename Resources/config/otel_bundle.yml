@@ -7,3 +7,13 @@ otel_bundle:
     - 'Macpaw\\SymfonyOtelBundle\\Instrumentation\\RequestExecutionTimeInstrumentation'
   header_mappings:
     http.request_id: 'X-Request-Id'
+  logging:
+    enable_trace_processor: true
+    log_keys:
+      trace_id: 'trace_id'
+      span_id: 'span_id'
+      trace_flags: 'trace_flags'
+  metrics:
+    request_counters:
+      enabled: false
+      backend: 'otel'

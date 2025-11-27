@@ -18,6 +18,7 @@ otel_bundle:
 
   # Preserve BatchSpanProcessor async export (do not flush per request)
     force_flush_on_terminate: false
+    force_flush_timeout_ms: 100
     
     # Built-in instrumentations
     instrumentations:
@@ -29,6 +30,20 @@ otel_bundle:
     header_mappings:
         http.request_id: 'X-Request-Id'
         http.user_agent: 'X-User-Agent'
+
+  # Logging bridge (Monolog trace context)
+    logging:
+      enable_trace_processor: true
+      log_keys:
+        trace_id: 'trace_id'
+        span_id: 'span_id'
+        trace_flags: 'trace_flags'
+
+  # Metrics bridge (cheap request counters)
+    metrics:
+      request_counters:
+        enabled: false
+        backend: 'otel'   # 'otel' uses Metrics API; 'event' falls back to span events
 ```
 
 ### Environment Variables

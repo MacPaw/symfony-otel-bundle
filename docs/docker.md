@@ -99,6 +99,18 @@ curl -X GET http://localhost:8080/api/error
    - Operation name: `execution_time`, `api_test_operation`, etc.
    - Tags: `http.method`, `http.route`, etc.
 
+### Import the ready-made Grafana dashboard
+
+1. In Grafana, go to Dashboards → Import
+2. Upload the JSON at `docs/grafana/symfony-otel-dashboard.json` (inside this repository)
+3. Select your Tempo data source when prompted (or keep the default if named `Tempo`)
+4. Open the imported dashboard: "Symfony OpenTelemetry — Starter Dashboard"
+
+Notes:
+
+- The dashboard expects Tempo with spanmetrics enabled in your Grafana/Tempo stack
+- Use the service variable at the top of the dashboard to switch between services
+
 ### Example TraceQL Queries
 
 ```traceql

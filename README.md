@@ -8,6 +8,7 @@ A comprehensive OpenTelemetry integration bundle for Symfony applications that p
 - **Custom Instrumentations** - Easy-to-use framework for creating custom instrumentations
 - **Middleware System** - Extensible middleware system for span customization
 - **Exception Handling** - Automatic span cleanup and error recording
+- **Logging & Metrics Bridge** - Monolog trace context processor + optional request counters
 - **Docker Support** - Complete development environment with Tempo and Grafana
 - **Performance Optimized** - Support for both HTTP and gRPC transport protocols
 - **OpenTelemetry Compliant** - Follows OpenTelemetry specifications and semantic conventions
@@ -82,6 +83,84 @@ $result = $otel->inSpan('CalculatePrice', function (SpanContext $ctx) use ($orde
 
 See more patterns and best practices in
 the [Instrumentation Guide](docs/instrumentation.md#custom-instrumentations-—-build-business-spans-fast).
+
+## Logging & Metrics Bridge
+
+Two easy wins to correlate logs with traces and expose basic HTTP counters.
+
+### 1) Monolog processor for trace context
+
+When enabled (default), the bundle registers a Monolog processor that injects the current `trace_id` and `span_id` into
+every log record’s context. This makes log–trace correlation work in most backends instantly.
+
+Example log context (JSON):
+
+```json
+{
+    "message": "Order created",
+    "context": {
+        "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+        "span_id": "00f067aa0ba902b7",
+        "trace_flags": "01"
+    }
+}
+```
+
+Configuration (optional):
+
+```yaml
+# config/packages/otel_bundle.yaml
+otel_bundle:
+  logging:
+    enable_trace_processor: true
+    log_keys:
+      trace_id: trace_id
+      span_id: span_id
+      trace_flags: trace_flags
+```
+
+- Uses OpenTelemetry’s current context (`Span::getCurrent()`)
+- No overhead when there is no active span; processor is a no‑op
+
+### 2) Cheap HTTP request counters
+
+Optionally, enable a lightweight middleware that increments counters for:
+
+- Requests per route/method
+- Responses grouped by status code family (1xx/2xx/3xx/4xx/5xx)
+
+Backends:
+
+- `otel` (default) — Uses the OpenTelemetry Metrics API counters if available
+- `event` — Fallback: adds tiny span events if metrics are not configured
+
+Enable in config:
+
+```yaml
+# config/packages/otel_bundle.yaml
+otel_bundle:
+  metrics:
+    request_counters:
+      enabled: true
+      backend: otel # or 'event'
+```
+
+Counters created when using `otel` backend:
+
+- `http.server.request.count{http.route, http.request.method}`
+- `http.server.response.family.count{http.status_family}`
+
+If metrics are not available, the subscriber falls back to span events named `request.count` and `response.family.count`
+with the same labels.
+
+## Documentation & Adoption
+
+- Troubleshooting: symptom → cause → fix for common issues like no traces in Grafana, missing gRPC/protobuf, wrong
+  collector endpoint, CLI traces not appearing. See docs/troubleshooting.md
+- Migration: guidance to move from the plain OpenTelemetry Symfony SDK bundle, with config mapping and rollout notes.
+  See docs/migration.md
+- Ready-made Grafana dashboard: import docs/grafana/symfony-otel-dashboard.json into Grafana (Dashboards → Import),
+  select your Tempo data source. See docs/docker.md#import-the-ready-made-grafana-dashboard
 
 ## Environment Variables
 

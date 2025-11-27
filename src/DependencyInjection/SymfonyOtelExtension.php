@@ -5,10 +5,15 @@ declare(strict_types=1);
 namespace Macpaw\SymfonyOtelBundle\DependencyInjection;
 
 use Exception;
+use Macpaw\SymfonyOtelBundle\Listeners\RequestCountersEventSubscriber;
+use Macpaw\SymfonyOtelBundle\Logging\MonologTraceContextProcessor;
+use OpenTelemetry\API\Metrics\MeterProviderInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\DependencyInjection\Reference;
 
 class SymfonyOtelExtension extends Extension
 {
@@ -40,12 +45,60 @@ class SymfonyOtelExtension extends Extension
         /** @var array<string, string> $headerMappings */
         $headerMappings = $configs['header_mappings'];
 
+        // Logging config
+        /** @var array{enable_trace_processor: bool, log_keys: array{trace_id:string, span_id:string, trace_flags:string}} $logging */
+        $logging = $configs['logging'] ?? [
+            'enable_trace_processor' => true,
+            'log_keys' => ['trace_id' => 'trace_id', 'span_id' => 'span_id', 'trace_flags' => 'trace_flags'],
+        ];
+
+        // Metrics config
+        /** @var array{request_counters: array{enabled: bool, backend: string}} $metrics */
+        $metrics = $configs['metrics'] ?? ['request_counters' => ['enabled' => false, 'backend' => 'otel']];
+
         $container->setParameter('otel_bundle.service_name', $serviceName);
         $container->setParameter('otel_bundle.tracer_name', $tracerName);
         $container->setParameter('otel_bundle.force_flush_on_terminate', $forceFlushOnTerminate);
         $container->setParameter('otel_bundle.force_flush_timeout_ms', $forceFlushTimeoutMs);
         $container->setParameter('otel_bundle.instrumentations', $instrumentations);
         $container->setParameter('otel_bundle.header_mappings', $headerMappings);
+        $container->setParameter('otel_bundle.logging.log_keys', $logging['log_keys']);
+        $container->setParameter(
+            'otel_bundle.logging.enable_trace_processor',
+            (bool)$logging['enable_trace_processor'],
+        );
+        $container->setParameter(
+            'otel_bundle.metrics.request_counters.enabled',
+            (bool)$metrics['request_counters']['enabled'],
+        );
+        $container->setParameter(
+            'otel_bundle.metrics.request_counters.backend',
+            (string)$metrics['request_counters']['backend'],
+        );
+
+        // Conditionally register Monolog trace context processor
+        if ($container->hasParameter('otel_bundle.logging.enable_trace_processor')
+            && $container->getParameter('otel_bundle.logging.enable_trace_processor') === true
+        ) {
+            $def = new Definition(MonologTraceContextProcessor::class);
+            $def->setArgument(0, '%otel_bundle.logging.log_keys%');
+            $def->addTag('monolog.processor');
+            $container->setDefinition(MonologTraceContextProcessor::class, $def);
+        }
+
+        // Conditionally register request counters subscriber
+        $enabledCounters = (bool)$container->getParameter('otel_bundle.metrics.request_counters.enabled');
+        if ($enabledCounters === true) {
+            $backend = (string)$container->getParameter('otel_bundle.metrics.request_counters.backend');
+            $def = new Definition(RequestCountersEventSubscriber::class, [
+                new Reference(MeterProviderInterface::class),
+                new Reference('Macpaw\\SymfonyOtelBundle\\Instrumentation\\Utils\\RouterUtils'),
+                new Reference('Macpaw\\SymfonyOtelBundle\\Registry\\InstrumentationRegistry'),
+                $backend,
+            ]);
+            $def->addTag('kernel.event_subscriber');
+            $container->setDefinition(RequestCountersEventSubscriber::class, $def);
+        }
     }
 
     /**

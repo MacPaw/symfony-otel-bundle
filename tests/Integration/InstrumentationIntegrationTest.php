@@ -32,8 +32,13 @@ class InstrumentationIntegrationTest extends TestCase
         $this->container = new ContainerBuilder();
         $loader = new YamlFileLoader($this->container, new FileLocator(__DIR__ . '/../../Resources/config'));
 
+        $this->container->setParameter('otel_bundle.enabled', true);
         $this->container->setParameter('otel_bundle.service_name', 'test-service');
         $this->container->setParameter('otel_bundle.tracer_name', 'test-tracer');
+        $this->container->setParameter('otel_bundle.force_flush_on_terminate', false);
+        $this->container->setParameter('otel_bundle.force_flush_timeout_ms', 100);
+        $this->container->setParameter('otel_bundle.sampling.route_prefixes', []);
+        $this->container->setParameter('otel_bundle.header_mappings', ['http.request_id' => 'X-Request-Id']);
 
         $this->container->register('http_client', HttpClientInterface::class)
             ->setClass(HttpClient::class);
@@ -109,6 +114,7 @@ class InstrumentationIntegrationTest extends TestCase
         $this->assertSame($scope, $this->registry->getScope());
 
         $span->end();
+        $scope->detach();
     }
 
     public function testInstrumentationCanHandleExceptions(): void

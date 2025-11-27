@@ -279,7 +279,7 @@ class HookManagerServiceTest extends TestCase
         $instrumentation->method('getClass')->willReturn('TestClass');
         $instrumentation->method('getMethod')->willReturn('testMethod');
         $instrumentation->method('getName')->willReturn('test_instrumentation');
-        $instrumentation->method('pre')->willReturn(null); // Success
+        // pre() returns void, so no need to configure return value
 
         $this->hookManager->expects($this->once())
             ->method('hook')
@@ -289,17 +289,18 @@ class HookManagerServiceTest extends TestCase
 
         $this->logger->expects($this->exactly(2))
             ->method('debug')
-            ->withConsecutive(
-                ['Successfully executed pre hook for TestClass::testMethod'],
-                [
-                    'Successfully registered hook for {class}::{method}',
-                    [
-                        'class' => 'TestClass',
-                        'method' => 'testMethod',
-                        'instrumentation' => 'test_instrumentation',
-                    ],
-                ],
-            );
+            ->willReturnCallback(function ($message, $context = []) {
+                static $callCount = 0;
+                $callCount++;
+                if ($callCount === 1) {
+                    $this->assertEquals('Successfully executed pre hook for TestClass::testMethod', $message);
+                } elseif ($callCount === 2) {
+                    $this->assertEquals('Successfully registered hook for {class}::{method}', $message);
+                    $this->assertEquals('TestClass', $context['class'] ?? null);
+                    $this->assertEquals('testMethod', $context['method'] ?? null);
+                    $this->assertEquals('test_instrumentation', $context['instrumentation'] ?? null);
+                }
+            });
 
         $this->hookManagerService->registerHook($instrumentation);
     }
@@ -310,7 +311,7 @@ class HookManagerServiceTest extends TestCase
         $instrumentation->method('getClass')->willReturn('TestClass');
         $instrumentation->method('getMethod')->willReturn('testMethod');
         $instrumentation->method('getName')->willReturn('test_instrumentation');
-        $instrumentation->method('post')->willReturn(null); // Success
+        // post() returns void, so no need to configure return value
 
         $this->hookManager->expects($this->once())
             ->method('hook')
@@ -320,17 +321,18 @@ class HookManagerServiceTest extends TestCase
 
         $this->logger->expects($this->exactly(2))
             ->method('debug')
-            ->withConsecutive(
-                ['Successfully executed post hook for TestClass::testMethod'],
-                [
-                    'Successfully registered hook for {class}::{method}',
-                    [
-                        'class' => 'TestClass',
-                        'method' => 'testMethod',
-                        'instrumentation' => 'test_instrumentation',
-                    ],
-                ],
-            );
+            ->willReturnCallback(function ($message, $context = []) {
+                static $callCount = 0;
+                $callCount++;
+                if ($callCount === 1) {
+                    $this->assertEquals('Successfully executed post hook for TestClass::testMethod', $message);
+                } elseif ($callCount === 2) {
+                    $this->assertEquals('Successfully registered hook for {class}::{method}', $message);
+                    $this->assertEquals('TestClass', $context['class'] ?? null);
+                    $this->assertEquals('testMethod', $context['method'] ?? null);
+                    $this->assertEquals('test_instrumentation', $context['instrumentation'] ?? null);
+                }
+            });
 
         $this->hookManagerService->registerHook($instrumentation);
     }

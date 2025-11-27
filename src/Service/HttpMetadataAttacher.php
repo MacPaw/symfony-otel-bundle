@@ -24,6 +24,7 @@ final readonly class HttpMetadataAttacher
     ) {
     }
 
+    // Builder-based (pre-start) attachment — keep for internal uses
     public function addHttpAttributes(SpanBuilderInterface $spanBuilder, Request $request): void
     {
         foreach ($this->headerMappings as $spanAttributeName => $headerName) {
@@ -88,6 +89,69 @@ final readonly class HttpMetadataAttacher
             $spanBuilder->setAttribute(
                 SemConv\CodeAttributes::CODE_FUNCTION_NAME,
                 sprintf('%s::%s', $ns, $fn),
+            );
+        }
+    }
+
+    // Span-based (post-start) attachment — used when guarding with isRecording()
+    public function addHttpAttributesToSpan(\OpenTelemetry\API\Trace\SpanInterface $span, Request $request): void
+    {
+        foreach ($this->headerMappings as $spanAttributeName => $headerName) {
+            if ($request->headers->has($headerName) === false) {
+                continue;
+            }
+            $headerValue = (string)$request->headers->get($headerName);
+            $span->setAttribute($spanAttributeName, $headerValue);
+        }
+
+        if ($request->headers->has(HttpClientDecorator::REQUEST_ID_HEADER) === false) {
+            $requestId = RequestIdGenerator::generate();
+            $request->headers->set(HttpClientDecorator::REQUEST_ID_HEADER, $requestId);
+            $span->setAttribute(self::REQUEST_ID_ATTRIBUTE, $requestId);
+        }
+
+        $span->setAttribute(SemConv\HttpAttributes::HTTP_REQUEST_METHOD, $request->getMethod());
+        $span->setAttribute(SemConv\HttpAttributes::HTTP_ROUTE, $request->getPathInfo());
+    }
+
+    public function addRouteNameAttributeToSpan(\OpenTelemetry\API\Trace\SpanInterface $span): void
+    {
+        $routeName = $this->routerUtils->getRouteName();
+        if ($routeName !== null) {
+            $span->setAttribute(self::ROUTE_NAME_ATTRIBUTE, $routeName);
+        }
+    }
+
+    public function addControllerAttributesToSpan(\OpenTelemetry\API\Trace\SpanInterface $span, Request $request): void
+    {
+        $controller = $request->attributes->get('_controller');
+        if ($controller === null) {
+            return;
+        }
+
+        $ns = null;
+        $fn = null;
+
+        if (is_string($controller)) {
+            if (str_contains($controller, '::')) {
+                [$ns, $fn] = explode('::', $controller, 2);
+            } else {
+                $ns = $controller;
+                $fn = '__invoke';
+            }
+        } elseif (is_array($controller) && count($controller) === 2) {
+            $class = is_object($controller[0]) ? $controller[0]::class : (string)$controller[0];
+            $ns = $class;
+            $fn = (string)$controller[1];
+        } elseif (is_object($controller)) {
+            $ns = $controller::class;
+            $fn = '__invoke';
+        }
+
+        if ($ns !== null && $fn !== null) {
+            $span->setAttribute(
+                SemConv\CodeAttributes::CODE_FUNCTION_NAME,
+                $ns . '::' . $fn,
             );
         }
     }

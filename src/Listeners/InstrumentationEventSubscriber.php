@@ -23,8 +23,8 @@ class InstrumentationEventSubscriber implements EventSubscriberInterface
         if (!$this->enabled || !$event->isMainRequest()) {
             return;
         }
-        $request = $event->getRequest();
-        $this->executionTimeInstrumentation->setHeaders($request->headers->all());
+        // Avoid copying all headers on the hot path; context is already extracted by RequestRootSpanEventSubscriber.
+        // When not available, instrumentation falls back to current context.
         $this->executionTimeInstrumentation->pre();
     }
 

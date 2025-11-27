@@ -57,21 +57,22 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
 
         $spanBuilder = $this->traceService
             ->getTracer()
-            ->spanBuilder(sprintf('%s %s', $request->getMethod(), $request->getPathInfo()))
+            ->spanBuilder($request->getMethod() . ' ' . $request->getPathInfo())
             ->setParent($context)
+            // Keep only essential attributes on the builder to minimize pre-start overhead
             ->setAttribute(TraceAttributes::HTTP_REQUEST_METHOD, $request->getMethod())
-            ->setAttribute(TraceAttributes::HTTP_ROUTE, $request->getPathInfo())
-            ->setAttribute(TraceAttributes::URL_SCHEME, $request->getScheme())
-            ->setAttribute(TraceAttributes::SERVER_ADDRESS, $request->getHost());
-
-        $this->httpMetadataAttacher->addHttpAttributes($spanBuilder, $request);
-        $this->httpMetadataAttacher->addRouteNameAttribute($spanBuilder);
-        $this->httpMetadataAttacher->addControllerAttributes($spanBuilder, $request);
+            ->setAttribute(TraceAttributes::HTTP_ROUTE, $request->getPathInfo());
 
         $requestStartSpan = $spanBuilder->startSpan();
         $this->instrumentationRegistry->addSpan($requestStartSpan, SpanNames::REQUEST_START);
-
         $this->instrumentationRegistry->setScope($requestStartSpan->activate());
+
+        // Attach additional HTTP metadata only if the span is recording to avoid extra overhead
+        if ($requestStartSpan->isRecording()) {
+            $this->httpMetadataAttacher->addHttpAttributesToSpan($requestStartSpan, $request);
+            $this->httpMetadataAttacher->addRouteNameAttributeToSpan($requestStartSpan);
+            $this->httpMetadataAttacher->addControllerAttributesToSpan($requestStartSpan, $request);
+        }
     }
 
     private function shouldSampleRoute(\Symfony\Component\HttpFoundation\Request $request): bool

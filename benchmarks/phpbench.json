@@ -1,0 +1,10 @@
+{
+  "runner": {
+    "revs": 10,
+    "iterations": 5,
+    "warmup": 1
+  },
+  "report": {
+    "extends": "aggregate"
+  }
+}

@@ -35,17 +35,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: [ '8.2', '8.3', '8.4' ]
-        symfony: [ '6.4.*', '7.0.*', '7.1.*', '7.2.*', '7.3.*' ]
+        php: [ '8.2', '8.3', '8.4', '8.5' ]
+        symfony: [ '6.4.*', '7.0.*', '7.1.*', '7.2.*', '7.3.*' , '7.4.*', '8.0.*',]
+        monolog: ['2.0', '3.0']
         dependencies: [ 'highest' ]
         include:
           - php: '8.2'
             symfony: '6.4.*'
             dependencies: 'lowest'
-        exclude:
-          # Exclude invalid combinations
-          - php: '8.2'
-            symfony: '7.1.*'
 
     steps:
       - name: Checkout
@@ -82,6 +79,7 @@ jobs:
           composer require symfony/dependency-injection:${{ matrix.symfony }} --no-update --no-scripts
           composer require symfony/config:${{ matrix.symfony }} --no-update --no-scripts
           composer require symfony/yaml:${{ matrix.symfony }} --no-update --no-scripts
+          composer require symfony/monolog:${{ matrix.monolog }} --no-update --no-scripts
           composer require symfony/http-kernel:${{ matrix.symfony }} --no-update --no-scripts
 
       - name: Install dependencies (highest)

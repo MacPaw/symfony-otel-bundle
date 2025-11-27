@@ -8,6 +8,7 @@ use Exception;
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Listeners\RequestCountersEventSubscriber;
 use Macpaw\SymfonyOtelBundle\Logging\MonologTraceContextProcessor;
+use Macpaw\SymfonyOtelBundle\Logging\MonologTraceContextProcessorV3;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use OpenTelemetry\API\Metrics\MeterProviderInterface;
 use Symfony\Component\Config\FileLocator;
@@ -116,7 +117,13 @@ class SymfonyOtelExtension extends Extension
         if ($enabled && $container->hasParameter('otel_bundle.logging.enable_trace_processor')
             && $container->getParameter('otel_bundle.logging.enable_trace_processor') === true
         ) {
-            $def = new Definition(MonologTraceContextProcessor::class);
+            // Detect Monolog major version by presence of LogRecord (Monolog 3)
+            $processorClass = class_exists(\Monolog\LogRecord::class)
+                ? MonologTraceContextProcessorV3::class
+                : MonologTraceContextProcessor::class;
+
+            // Keep service id stable for BC: MonologTraceContextProcessor::class
+            $def = new Definition($processorClass);
             $def->setArgument(0, '%otel_bundle.logging.log_keys%');
             $def->addTag('monolog.processor');
             $container->setDefinition(MonologTraceContextProcessor::class, $def);

@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 final readonly class HttpMetadataAttacher
 {
     public const REQUEST_ID_ATTRIBUTE = 'http.request_id';
+
     public const ROUTE_NAME_ATTRIBUTE = 'http.route_name';
 
     /**

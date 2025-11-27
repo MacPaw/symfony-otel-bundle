@@ -74,7 +74,7 @@ final class InstrumentationRegistry
 
     public function detachScope(): void
     {
-        if ($this->scope) {
+        if ($this->scope instanceof ScopeInterface) {
             try {
                 $this->scope->detach();
             } catch (Throwable $e) {

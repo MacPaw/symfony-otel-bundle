@@ -24,8 +24,11 @@ use Tests\Support\Telemetry\InMemoryProviderFactory;
 final class GoldenTraceTest extends TestCase
 {
     private InstrumentationRegistry $registry;
+
     private TextMapPropagatorInterface $propagator;
+
     private TraceService $traceService;
+
     private HttpMetadataAttacher $httpMetadataAttacher;
 
     public function test_request_root_span_and_attributes_and_parent_child(): void
@@ -72,6 +75,7 @@ final class GoldenTraceTest extends TestCase
                 break;
             }
         }
+
         $this->assertNotNull($root, 'Root request span should be exported');
 
         // Assert key attributes on root span

@@ -57,7 +57,7 @@ final class MonologTraceContextProcessor implements LoggerAwareInterface
             // Some SDK versions expose isSampled(), others expose getTraceFlags()->isSampled()
             if (method_exists($ctx, 'isSampled')) {
                 /** @phpstan-ignore-next-line */
-                $sampled = (bool)$ctx->isSampled();
+                $sampled = $ctx->isSampled();
             } elseif (method_exists($ctx, 'getTraceFlags')) {
                 $flags = $ctx->getTraceFlags();
                 if (is_object($flags) && method_exists($flags, 'isSampled')) {

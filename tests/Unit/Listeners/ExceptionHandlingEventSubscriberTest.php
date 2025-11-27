@@ -21,8 +21,11 @@ use Symfony\Component\HttpKernel\HttpKernelInterface;
 class ExceptionHandlingEventSubscriberTest extends TestCase
 {
     private InstrumentationRegistry $registry;
+
     private TraceService&MockObject $traceService;
+
     private LoggerInterface&MockObject $logger;
+
     private ExceptionHandlingEventSubscriber $subscriber;
 
     protected function setUp(): void

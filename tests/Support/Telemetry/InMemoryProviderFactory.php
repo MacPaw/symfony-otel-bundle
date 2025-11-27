@@ -12,6 +12,7 @@ use OpenTelemetry\SDK\Trace\TracerProviderInterface;
 final class InMemoryProviderFactory
 {
     private static ?InMemoryExporter $exporter = null;
+
     private static ?TracerProviderInterface $provider = null;
 
     public static function create(): TracerProviderInterface

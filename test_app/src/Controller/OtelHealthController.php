@@ -6,13 +6,12 @@ namespace App\Controller;
 
 use DateTimeImmutable;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
 final class OtelHealthController
 {
     #[Route(path: '/_otel/health', name: 'otel_health', methods: ['GET'])]
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(): JsonResponse
     {
         return new JsonResponse([
             'status' => 'ok',

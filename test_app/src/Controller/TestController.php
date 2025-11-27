@@ -198,6 +198,7 @@ class TestController
         if ($stmt === false) {
             throw new Exception('Failed to execute PDO query');
         }
+
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return new JsonResponse([
@@ -230,6 +231,7 @@ class TestController
         $this->queryBus->query(new DummyQuery());
 
         $this->queryBus->dispatch(new DummyQuery());
+
         $this->commandBus->dispatch(new DummyCommand());
 
         return new JsonResponse([

@@ -15,6 +15,7 @@ use Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException;
 class SymfonyOtelCompilerPassTest extends TestCase
 {
     private ContainerBuilder $container;
+
     private SymfonyOtelCompilerPass $compilerPass;
 
     protected function setUp(): void

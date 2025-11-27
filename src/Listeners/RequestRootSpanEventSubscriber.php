@@ -9,8 +9,10 @@ use Macpaw\SymfonyOtelBundle\Registry\SpanNames;
 use Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\Span;
+use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\Context\Context;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use OpenTelemetry\Context\ScopeInterface;
 use OpenTelemetry\SemConv\TraceAttributes;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -62,13 +64,13 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
     public function onKernelTerminate(TerminateEvent $event): void
     {
         $requestStartSpan = $this->instrumentationRegistry->getSpan(SpanNames::REQUEST_START);
-        if ($requestStartSpan !== null) {
+        if ($requestStartSpan instanceof SpanInterface) {
             $response = $event->getResponse();
             $requestStartSpan->setAttribute(TraceAttributes::HTTP_RESPONSE_STATUS_CODE, $response->getStatusCode());
         }
 
         $scope = $this->instrumentationRegistry->getScope();
-        if ($scope !== null) {
+        if ($scope instanceof ScopeInterface) {
             $scope->detach();
         }
 

@@ -10,6 +10,7 @@ use Macpaw\SymfonyOtelBundle\Registry\SpanNames;
 use OpenTelemetry\API\Metrics\CounterInterface;
 use OpenTelemetry\API\Metrics\MeterInterface;
 use OpenTelemetry\API\Metrics\MeterProviderInterface;
+use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\SemConv\TraceAttributes;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -35,7 +36,9 @@ final class RequestCountersEventSubscriber implements EventSubscriberInterface
     private readonly LoggerInterface $logger;
 
     private ?MeterInterface $meter = null;
+
     private ?CounterInterface $requestCounter = null;
+
     private ?CounterInterface $responseFamilyCounter = null;
 
     /** @var 'otel'|'event' */
@@ -112,7 +115,7 @@ final class RequestCountersEventSubscriber implements EventSubscriberInterface
 
         // Fallback: record as a tiny event on the root span
         $span = $this->instrumentationRegistry->getSpan(SpanNames::REQUEST_START);
-        if ($span !== null) {
+        if ($span instanceof SpanInterface) {
             $span->addEvent('request.count', [
                 TraceAttributes::HTTP_ROUTE => $routeName,
                 TraceAttributes::HTTP_REQUEST_METHOD => $method,
@@ -124,8 +127,8 @@ final class RequestCountersEventSubscriber implements EventSubscriberInterface
     {
         try {
             $fn();
-        } catch (Throwable $e) {
-            $this->logger->debug('Failed to increment counter', ['error' => $e->getMessage()]);
+        } catch (Throwable $throwable) {
+            $this->logger->debug('Failed to increment counter', ['error' => $throwable->getMessage()]);
         }
     }
 
@@ -145,7 +148,7 @@ final class RequestCountersEventSubscriber implements EventSubscriberInterface
 
         // Fallback to event
         $span = $this->instrumentationRegistry->getSpan(SpanNames::REQUEST_START);
-        if ($span !== null) {
+        if ($span instanceof SpanInterface) {
             $span->addEvent('response.family.count', [
                 'http.status_family' => $family,
             ]);

@@ -11,6 +11,7 @@ use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\SemConv\TraceAttributes;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Throwable;
@@ -29,10 +30,6 @@ final readonly class ExceptionHandlingEventSubscriber implements EventSubscriber
     public function onKernelException(ExceptionEvent $event): void
     {
         $throwable = $event->getThrowable();
-
-        if ($throwable === null) { // @phpstan-ignore-line
-            return;
-        }
 
         $this->logger?->debug('Handling exception in OpenTelemetry tracing', [
             'exception' => $throwable->getMessage(),
@@ -69,9 +66,10 @@ final readonly class ExceptionHandlingEventSubscriber implements EventSubscriber
                 if ($includeStack) {
                     $errorSpan->setAttribute(TraceAttributes::EXCEPTION_STACKTRACE, $throwable->getTraceAsString());
                 }
+
                 $errorSpan->setAttribute('error.handled_by', 'ExceptionHandlingEventSubscriber');
 
-                if ($event->getRequest() !== null) { // @phpstan-ignore-line
+                if ($event->getRequest() instanceof Request) { // @phpstan-ignore-line
                     $errorSpan->setAttribute(TraceAttributes::HTTP_REQUEST_METHOD, $event->getRequest()->getMethod());
                     $errorSpan->setAttribute(TraceAttributes::URL_FULL, $event->getRequest()->getUri());
                     $errorSpan->setAttribute(

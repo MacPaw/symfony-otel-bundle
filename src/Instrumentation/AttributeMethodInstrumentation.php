@@ -37,7 +37,7 @@ final class AttributeMethodInstrumentation extends AbstractHookInstrumentation
         parent::__construct($instrumentationRegistry, $tracer, $propagator);
     }
 
-    public function getClass(): ?string
+    public function getClass(): string
     {
         return $this->className;
     }

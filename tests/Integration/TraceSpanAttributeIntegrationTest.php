@@ -14,6 +14,7 @@ use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\Context\Context;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use OpenTelemetry\SDK\Trace\SpanDataInterface;
+use OpenTelemetry\SDK\Trace\TracerProviderInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -34,9 +35,10 @@ use Tests\Support\Telemetry\InMemoryProviderFactory;
 final class TraceSpanAttributeIntegrationTest extends TestCase
 {
     private ContainerBuilder $container;
+
     private TraceService $traceService;
+
     private InstrumentationRegistry $registry;
-    private HookManagerService $hookManagerService;
 
     public function testTraceSpanAttributeCreatesSpan(): void
     {
@@ -150,6 +152,7 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
         $calculatePriceInstrumentation->pre();
         $service = $this->container->get(TraceSpanTestService::class);
         $service->calculatePrice(100.0, 0.1);
+
         $calculatePriceInstrumentation->post();
 
         $validatePaymentInstrumentation->pre();
@@ -218,6 +221,7 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
         $instrumentation->pre();
         $service = $this->container->get(TraceSpanTestService::class);
         $service->processOrder('MULTI-ATTR-123');
+
         $instrumentation->post();
 
         // Fetch exported spans
@@ -272,6 +276,7 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
         $instrumentation->pre();
         $service = $this->container->get(TraceSpanTestService::class);
         $service->calculatePrice(50.0, 0.2);
+
         $instrumentation->post();
 
         // Fetch exported spans
@@ -319,10 +324,10 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
         // Override TracerProviderInterface to use in-memory provider for testing
         // Must be done before loading services.yml
         $provider = InMemoryProviderFactory::create();
-        $this->container->register('OpenTelemetry\SDK\Trace\TracerProviderInterface')
+        $this->container->register(TracerProviderInterface::class)
             ->setSynthetic(true)
             ->setPublic(true);
-        $this->container->set('OpenTelemetry\SDK\Trace\TracerProviderInterface', $provider);
+        $this->container->set(TracerProviderInterface::class, $provider);
 
         // Register the test service BEFORE loading services.yml so compiler pass can discover it
         // Explicitly set the class to ensure compiler pass can find it
@@ -346,10 +351,7 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
         /** @var InstrumentationRegistry $registry */
         $registry = $this->container->get(InstrumentationRegistry::class);
         $this->registry = $registry;
-
-        /** @var HookManagerService $hookManagerService */
-        $hookManagerService = $this->container->get(HookManagerService::class);
-        $this->hookManagerService = $hookManagerService;
+        $this->container->get(HookManagerService::class);
 
         // Hooks are registered during container compilation via compiler pass
         // The HookManagerService constructor and registerHook calls happen during container build

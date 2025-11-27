@@ -11,6 +11,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 class SymfonyOtelExtensionTest extends TestCase
 {
     private SymfonyOtelExtension $extension;
+
     private ContainerBuilder $container;
 
     protected function setUp(): void

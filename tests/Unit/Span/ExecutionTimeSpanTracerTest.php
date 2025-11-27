@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Span;
 
 use Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation;
-use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Listeners\InstrumentationEventSubscriber;
+use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use OpenTelemetry\API\Common\Time\ClockInterface;
 use OpenTelemetry\API\Trace\TracerInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
@@ -90,7 +90,7 @@ class ExecutionTimeSpanTracerTest extends TestCase
         $kernel = $this->createMock(HttpKernelInterface::class);
         $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
         $terminateEvent = new TerminateEvent($kernel, $request, new Response());
-        $startTime = microtime(true);
+        microtime(true);
         $subscriber->onKernelRequestExecutionTime($requestEvent);
         usleep(1000);
         $subscriber->onKernelTerminateExecutionTime($terminateEvent);

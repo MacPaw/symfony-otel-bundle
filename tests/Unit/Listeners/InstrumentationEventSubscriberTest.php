@@ -21,6 +21,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
 class InstrumentationEventSubscriberTest extends TestCase
 {
     private RequestExecutionTimeInstrumentation $executionTimeInstrumentation;
+
     private InstrumentationEventSubscriber $subscriber;
 
     public function testOnKernelRequestExecutionTime(): void

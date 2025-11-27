@@ -19,10 +19,15 @@ use PHPUnit\Framework\TestCase;
 class ClassHookInstrumentationTest extends TestCase
 {
     private InstrumentationRegistry $instrumentationRegistry;
+
     private MockObject&TracerInterface $tracer;
+
     private MockObject&TextMapPropagatorInterface $propagator;
+
     private MockObject&ClockInterface $clock;
+
     private string $className;
+
     private string $methodName;
 
     protected function setUp(): void

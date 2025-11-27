@@ -16,8 +16,11 @@ use OpenTelemetry\Context\ScopeInterface;
 abstract class AbstractInstrumentation implements InstrumentationInterface
 {
     protected SpanInterface $span;
+
     protected ContextInterface $context;
+
     protected ScopeInterface $scope;
+
     protected bool $isSpanSet = false;
 
     public function __construct(
@@ -34,14 +37,16 @@ abstract class AbstractInstrumentation implements InstrumentationInterface
         if ($this->isSpanSet) {
             $this->instrumentationRegistry->removeSpan($this->getName());
         }
+
         $context ??= Context::getCurrent();
 
         $this->instrumentationRegistry->setContext($context);
 
         $context = $this->instrumentationRegistry->getContext();
-        if ($context === null) {
+        if (!$context instanceof ContextInterface) {
             $context = Context::getCurrent();
         }
+
         $this->context = $context;
 
         $spanBuilder = $this->tracer->spanBuilder($this->getName())->setParent($context);

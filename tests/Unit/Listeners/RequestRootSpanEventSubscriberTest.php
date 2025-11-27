@@ -26,8 +26,11 @@ use Tests\Support\Telemetry\InMemoryProviderFactory;
 class RequestRootSpanEventSubscriberTest extends TestCase
 {
     private InstrumentationRegistry $registry;
+
     private TextMapPropagatorInterface&MockObject $propagator;
+
     private TraceService $traceService;
+
     private HttpMetadataAttacher $httpMetadataAttacher;
 
     public function testOnKernelRequest(): void
@@ -44,6 +47,7 @@ class RequestRootSpanEventSubscriberTest extends TestCase
         $kernel = $this->createMock(HttpKernelInterface::class);
         $request = Request::create('/test', 'GET');
         $request->attributes->set('_route', 'test_route');
+
         $event = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
 
         $this->propagator->expects($this->once())

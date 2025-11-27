@@ -31,21 +31,21 @@ final readonly class HookManagerService
             $preHook = static function () use ($instrumentation, $logger, $class, $method): void {
                 try {
                     $instrumentation->pre();
-                    $logger->debug("Successfully executed pre hook for {$class}::{$method}");
-                } catch (Throwable $e) {
-                    $logger->error("Error in hook pre(): {error}", ['error' => $e->getMessage()]);
+                    $logger->debug(sprintf('Successfully executed pre hook for %s::%s', $class, $method));
+                } catch (Throwable $throwable) {
+                    $logger->error("Error in hook pre(): {error}", ['error' => $throwable->getMessage()]);
 
-                    throw $e;
+                    throw $throwable;
                 }
             };
             $postHook = static function () use ($instrumentation, $logger, $class, $method): void {
                 try {
                     $instrumentation->post();
-                    $logger->debug("Successfully executed post hook for {$class}::{$method}");
-                } catch (Throwable $e) {
-                    $logger->error("Error in hook post(): {error}", ['error' => $e->getMessage()]);
+                    $logger->debug(sprintf('Successfully executed post hook for %s::%s', $class, $method));
+                } catch (Throwable $throwable) {
+                    $logger->error("Error in hook post(): {error}", ['error' => $throwable->getMessage()]);
 
-                    throw $e;
+                    throw $throwable;
                 }
             };
 
@@ -56,12 +56,12 @@ final readonly class HookManagerService
                 'method' => $method,
                 'instrumentation' => $instrumentation->getName(),
             ]);
-        } catch (Throwable $e) {
+        } catch (Throwable $throwable) {
             $this->logger->error('Failed to register hook for {class}::{method}: {error}', [
                 'class' => $class,
                 'method' => $method,
                 'instrumentation' => $instrumentation->getName(),
-                'error' => $e->getMessage(),
+                'error' => $throwable->getMessage(),
             ]);
         }
     }

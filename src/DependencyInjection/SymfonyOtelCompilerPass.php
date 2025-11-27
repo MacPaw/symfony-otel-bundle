@@ -26,7 +26,7 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
         /** @var ?array<string, string> $instrumentations */
         $instrumentations = $container->getParameter('otel_bundle.instrumentations');
 
-        if (is_array($instrumentations) && count($instrumentations) > 0) {
+        if (is_array($instrumentations) && $instrumentations !== []) {
             foreach ($instrumentations as $instrumentationClass) {
                 $definition = $container->hasDefinition($instrumentationClass) ?
                     $container->getDefinition($instrumentationClass) : new Definition($instrumentationClass);
@@ -54,6 +54,7 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
             if (!is_string($class)) {
                 continue;
             }
+
             if (!class_exists($class)) {
                 continue;
             }
@@ -69,6 +70,7 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
                 if ($attrs === []) {
                     continue;
                 }
+
                 foreach ($attrs as $attr) {
                     /** @var TraceSpan $meta */
                     $meta = $attr->newInstance();

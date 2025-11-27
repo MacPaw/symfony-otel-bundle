@@ -16,7 +16,9 @@ use Psr\Log\LoggerInterface;
 class HookManagerServiceTest extends TestCase
 {
     private HookManagerService $hookManagerService;
+
     private LoggerInterface&MockObject $logger;
+
     private HookManagerInterface&MockObject $hookManager;
 
     protected function setUp(): void

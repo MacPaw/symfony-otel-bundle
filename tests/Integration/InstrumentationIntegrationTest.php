@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Exception;
 use Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
@@ -18,11 +15,16 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class InstrumentationIntegrationTest extends TestCase
 {
     private ContainerBuilder $container;
+
     private TraceService $traceService;
+
     private InstrumentationRegistry $registry;
 
     protected function setUp(): void
@@ -128,9 +130,9 @@ class InstrumentationIntegrationTest extends TestCase
 
         try {
             throw new Exception('Test exception during instrumentation');
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
             $instrumentation->post();
-            $this->assertInstanceOf(Exception::class, $e);
+            $this->assertInstanceOf(Exception::class, $exception);
         }
     }
 }

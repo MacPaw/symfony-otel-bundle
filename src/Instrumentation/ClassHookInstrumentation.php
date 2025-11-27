@@ -42,13 +42,11 @@ final class ClassHookInstrumentation extends AbstractHookInstrumentation impleme
 
     public function getClass(): string
     {
-        /** @var class-string */
         return $this->className;
     }
 
     public function getMethod(): string
     {
-        /** @var non-empty-string */
         return $this->methodName;
     }
 

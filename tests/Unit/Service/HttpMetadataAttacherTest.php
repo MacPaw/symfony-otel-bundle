@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 class HttpMetadataAttacherTest extends TestCase
 {
     private RouterUtils $routerUtils;
+
     private HttpMetadataAttacher $service;
 
     protected function setUp(): void

@@ -19,9 +19,13 @@ use PHPUnit\Framework\TestCase;
 class RequestExecutionTimeInstrumentationTest extends TestCase
 {
     private InstrumentationRegistry $registry;
+
     private TracerInterface&MockObject $tracer;
+
     private TextMapPropagatorInterface&MockObject $propagator;
+
     private ClockInterface&MockObject $clock;
+
     private RequestExecutionTimeInstrumentation $instrumentation;
 
     public function testSetHeaders(): void

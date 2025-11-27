@@ -27,7 +27,9 @@ use Tests\Support\Telemetry\InMemoryProviderFactory;
 class RequestCountersEventSubscriberTest extends TestCase
 {
     private MeterProviderInterface&MockObject $meterProvider;
+
     private RouterUtils $routerUtils;
+
     private InstrumentationRegistry $registry;
 
     public function testOnKernelRequestWithOtelBackend(): void
@@ -50,6 +52,7 @@ class RequestCountersEventSubscriberTest extends TestCase
         $kernel = $this->createMock(HttpKernelInterface::class);
         $request = Request::create('/test', 'GET');
         $request->attributes->set('_route', 'test_route');
+
         $event = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
 
         $requestStack = $this->createMock(RequestStack::class);
@@ -299,6 +302,7 @@ class RequestCountersEventSubscriberTest extends TestCase
         $kernel = $this->createMock(HttpKernelInterface::class);
         $request = Request::create('/test', 'GET');
         $request->attributes->set('_route', 'test_route');
+
         $event = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
 
         $requestStack = $this->createMock(RequestStack::class);

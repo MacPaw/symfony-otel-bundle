@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Macpaw\SymfonyOtelBundle\DependencyInjection;
 
 use Exception;
+use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Listeners\RequestCountersEventSubscriber;
 use Macpaw\SymfonyOtelBundle\Logging\MonologTraceContextProcessor;
+use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use OpenTelemetry\API\Metrics\MeterProviderInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -88,12 +90,12 @@ class SymfonyOtelExtension extends Extension
 
         // Conditionally register request counters subscriber
         $enabledCounters = (bool)$container->getParameter('otel_bundle.metrics.request_counters.enabled');
-        if ($enabledCounters === true) {
+        if ($enabledCounters) {
             $backend = (string)$container->getParameter('otel_bundle.metrics.request_counters.backend');
             $def = new Definition(RequestCountersEventSubscriber::class, [
                 new Reference(MeterProviderInterface::class),
-                new Reference('Macpaw\\SymfonyOtelBundle\\Instrumentation\\Utils\\RouterUtils'),
-                new Reference('Macpaw\\SymfonyOtelBundle\\Registry\\InstrumentationRegistry'),
+                new Reference(RouterUtils::class),
+                new Reference(InstrumentationRegistry::class),
                 $backend,
             ]);
             $def->addTag('kernel.event_subscriber');

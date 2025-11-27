@@ -20,7 +20,7 @@ final class TraceSpanTestService
     {
         // Simulate some work
         usleep(50000); // 50ms
-        return "Order {$orderId} processed";
+        return sprintf('Order %s processed', $orderId);
     }
 
     #[TraceSpan('CalculatePrice', SpanKind::KIND_INTERNAL)]
@@ -32,10 +32,11 @@ final class TraceSpanTestService
     }
 
     #[TraceSpan('ValidatePayment', SpanKind::KIND_CLIENT, ['payment.method' => 'credit_card'])]
-    public function validatePayment(string $paymentId): bool
+    public function validatePayment(): bool
     {
         // Simulate validation
-        usleep(20000); // 20ms
+        usleep(20000);
+        // 20ms
         return true;
     }
 }

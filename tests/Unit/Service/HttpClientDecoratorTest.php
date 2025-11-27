@@ -20,8 +20,11 @@ use Symfony\Contracts\HttpClient\ResponseStreamInterface;
 class HttpClientDecoratorTest extends TestCase
 {
     private HttpClientInterface&MockObject $httpClient;
+
     private RequestStack&MockObject $requestStack;
+
     private TextMapPropagatorInterface&MockObject $propagator;
+
     private LoggerInterface&MockObject $logger;
 
     protected function setUp(): void

@@ -18,10 +18,15 @@ use ReflectionClass;
 class AbstractInstrumentationTest extends TestCase
 {
     private TestAbstractInstrumentation $instrumentation;
+
     private InstrumentationRegistry $registry;
+
     private TracerInterface&MockObject $tracer;
+
     private TextMapPropagatorInterface&MockObject $propagator;
+
     private SpanInterface&MockObject $span;
+
     private SpanBuilderInterface&MockObject $spanBuilder;
 
     protected function setUp(): void

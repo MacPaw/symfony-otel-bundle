@@ -8,6 +8,8 @@
          colors="true">
     <php>
         <env name="OTEL_PROPAGATORS" value="baggage,tracecontext"/>
+        <!-- Ignore indirect deprecations from third-party libraries (e.g., ramsey/uuid) -->
+        <env name="SYMFONY_DEPRECATIONS_HELPER" value="max[total]=0;max[indirect]=999"/>
     </php>
     <testsuites>
         <testsuite name="Unit Tests">

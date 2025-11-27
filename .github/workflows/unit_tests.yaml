@@ -35,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: [ '8.2', '8.3', '8.4' ]
+        php: [ '8.2', '8.3', '8.4', '8.5' ]
         symfony: [ '6.4.*', '7.0.*', '7.1.*', '7.2.*', '7.3.*', '7.4.*', '8.0.*' ]
         monolog: [ '^2.9', '^3.0' ]
         dependencies: [ 'highest' ]
@@ -52,6 +52,8 @@ jobs:
         exclude:
           # PHP 8.2 doesn't support Symfony 8.0 (requires PHP 8.3+)
           - php: '8.2'
+            symfony: '8.0.*'
+          - php: '8.3'
             symfony: '8.0.*'
           # PHP 8.3 doesn't support Symfony 8.0 (requires PHP 8.3+, but Symfony 8.0 requires PHP 8.3+)
           # Actually, PHP 8.3 should support Symfony 8.0, so we keep it
@@ -108,4 +110,7 @@ jobs:
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
       - name: Run PHPUnit tests
+        env:
+          # Ignore indirect deprecations from third-party libraries (e.g., ramsey/uuid 4.x in PHP 8.2)
+          SYMFONY_DEPRECATIONS_HELPER: max[total]=0;max[indirect]=999
         run: vendor/bin/phpunit --testdox

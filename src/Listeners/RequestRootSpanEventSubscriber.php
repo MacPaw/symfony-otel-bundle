@@ -51,6 +51,7 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
 
         $this->httpMetadataAttacher->addHttpAttributes($spanBuilder, $request);
         $this->httpMetadataAttacher->addRouteNameAttribute($spanBuilder);
+        $this->httpMetadataAttacher->addControllerAttributes($spanBuilder, $request);
 
         $requestStartSpan = $spanBuilder->startSpan();
         $this->instrumentationRegistry->addSpan($requestStartSpan, SpanNames::REQUEST_START);

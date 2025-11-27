@@ -153,6 +153,35 @@ Counters created when using `otel` backend:
 If metrics are not available, the subscriber falls back to span events named `request.count` and `response.family.count`
 with the same labels.
 
+## Observability & OpenTelemetry Semantics
+
+This bundle aligns with OpenTelemetry Semantic Conventions and uses constants from `open-telemetry/sem-conv` wherever
+available. This reduces typos, keeps attribute names consistent with the ecosystem, and eases future upgrades when the
+spec changes.
+
+Emitted attributes (selected):
+
+- HTTP request root span (server):
+    - `http.request.method`, `http.route`, `http.response.status_code`
+    - `url.scheme`, `server.address`
+    - Symfony-specific extras: `http.request_id` (custom), `http.route_name` (custom)
+    - Controller attribution: `code.namespace`, `code.function`
+- Business spans created via attributes/hooks:
+    - `code.namespace`, `code.function` (class + method)
+    - Any custom attributes declared on `#[TraceSpan(..., attributes: [...])]`
+- Request counters (when enabled):
+    - Metrics (`otel` backend): `http.server.request.count{http.route,http.request.method}` and
+      `http.server.response.family.count{http.status_family}`
+    - Fallback `event` backend: span events `request.count` and `response.family.count` carrying the same labels
+
+Non-standard attributes used by this bundle (stable and documented):
+
+- `http.request_id` — request correlation id propagated via `X-Request-Id`
+- `http.route_name` — Symfony route name (e.g., `api_test`)
+- `request.exec_time_ns` — compact numeric execution time for the request instrumentation
+
+See detailed tables and examples in the Instrumentation Guide.
+
 ## Documentation & Adoption
 
 - Troubleshooting: symptom → cause → fix for common issues like no traces in Grafana, missing gRPC/protobuf, wrong

@@ -9,6 +9,7 @@ use OpenTelemetry\API\Trace\SpanBuilderInterface;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\TracerInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use OpenTelemetry\SemConv\Attributes as SemConv;
 
 /**
  * Hook-based instrumentation created from #[TraceSpan] attribute on a service method.
@@ -49,6 +50,12 @@ final class AttributeMethodInstrumentation extends AbstractHookInstrumentation
     public function pre(): void
     {
         $this->initSpan($this->instrumentationRegistry->getContext());
+
+        // Standard code.* semantic attributes (namespace + function)
+        $this->span->setAttribute(
+            SemConv\CodeAttributes::CODE_FUNCTION_NAME,
+            sprintf('%s::%s', $this->className, $this->methodName),
+        );
 
         // Set default attributes declared on the attribute
         foreach ($this->defaultAttributes as $key => $value) {

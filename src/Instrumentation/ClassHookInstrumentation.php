@@ -12,6 +12,7 @@ use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\TracerInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use OpenTelemetry\SemConv\Attributes as SemConv;
 
 final class ClassHookInstrumentation extends AbstractHookInstrumentation implements TimingInterface
 {
@@ -55,6 +56,12 @@ final class ClassHookInstrumentation extends AbstractHookInstrumentation impleme
     {
         $this->startTime = $this->clock->now();
         $this->initSpan(null);
+
+        // Standard code.* semantic attributes (namespace + function)
+        $this->span->setAttribute(
+            SemConv\CodeAttributes::CODE_FUNCTION_NAME,
+            sprintf('%s::%s', $this->className, $this->methodName),
+        );
 
         foreach ($this->spanMiddlewares as $spanMiddleware) {
             $spanMiddleware->pre($this->span, $this);

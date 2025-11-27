@@ -16,6 +16,22 @@ Automatically tracks HTTP request execution time and creates spans for each requ
 - Request metadata attachment
 - Execution time measurement
 
+**Emitted attributes (root request span):**
+
+- Standard semconv (via `open-telemetry/sem-conv`):
+    - `http.request.method`
+    - `http.route` (Symfony path, e.g., `/api/test`)
+    - `http.response.status_code`
+    - `url.scheme`
+    - `server.address`
+    - `code.namespace` (controller class)
+    - `code.function` (controller method or `__invoke`)
+- Bundle custom:
+    - `http.request_id` (generated from `X-Request-Id` if missing)
+    - `http.route_name` (Symfony route name)
+
+Note: the execution-time helper span sets a compact custom attribute `request.exec_time_ns` instead of a verbose event.
+
 **Configuration:**
 ```yaml
 otel_bundle:

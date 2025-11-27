@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Macpaw\SymfonyOtelBundle\Listeners;
 
+use Symfony\Component\HttpFoundation\Request;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Registry\SpanNames;
 use Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher;
@@ -75,7 +76,7 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
         }
     }
 
-    private function shouldSampleRoute(\Symfony\Component\HttpFoundation\Request $request): bool
+    private function shouldSampleRoute(Request $request): bool
     {
         $path = $request->getPathInfo() ?? '';
         $routeName = (string)($request->attributes->get('_route') ?? '');

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Macpaw\SymfonyOtelBundle\Service;
 
+use OpenTelemetry\API\Trace\SpanInterface;
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
 use OpenTelemetry\SemConv\Attributes as SemConv;
@@ -94,7 +95,7 @@ final readonly class HttpMetadataAttacher
     }
 
     // Span-based (post-start) attachment — used when guarding with isRecording()
-    public function addHttpAttributesToSpan(\OpenTelemetry\API\Trace\SpanInterface $span, Request $request): void
+    public function addHttpAttributesToSpan(SpanInterface $span, Request $request): void
     {
         foreach ($this->headerMappings as $spanAttributeName => $headerName) {
             if ($request->headers->has($headerName) === false) {
@@ -114,7 +115,7 @@ final readonly class HttpMetadataAttacher
         $span->setAttribute(SemConv\HttpAttributes::HTTP_ROUTE, $request->getPathInfo());
     }
 
-    public function addRouteNameAttributeToSpan(\OpenTelemetry\API\Trace\SpanInterface $span): void
+    public function addRouteNameAttributeToSpan(SpanInterface $span): void
     {
         $routeName = $this->routerUtils->getRouteName();
         if ($routeName !== null) {
@@ -122,7 +123,7 @@ final readonly class HttpMetadataAttacher
         }
     }
 
-    public function addControllerAttributesToSpan(\OpenTelemetry\API\Trace\SpanInterface $span, Request $request): void
+    public function addControllerAttributesToSpan(SpanInterface $span, Request $request): void
     {
         $controller = $request->attributes->get('_controller');
         if ($controller === null) {

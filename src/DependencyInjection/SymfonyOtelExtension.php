@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Macpaw\SymfonyOtelBundle\DependencyInjection;
 
+use Monolog\LogRecord;
 use Exception;
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Listeners\RequestCountersEventSubscriber;
@@ -118,7 +119,7 @@ class SymfonyOtelExtension extends Extension
             && $container->getParameter('otel_bundle.logging.enable_trace_processor') === true
         ) {
             // Detect Monolog major version by presence of LogRecord (Monolog 3)
-            $processorClass = class_exists(\Monolog\LogRecord::class)
+            $processorClass = class_exists(LogRecord::class)
                 ? MonologTraceContextProcessorV3::class
                 : MonologTraceContextProcessor::class;
 

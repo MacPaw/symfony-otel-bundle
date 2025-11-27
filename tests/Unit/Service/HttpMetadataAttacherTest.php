@@ -191,4 +191,151 @@ class HttpMetadataAttacherTest extends TestCase
 
         $service->addRouteNameAttribute($spanBuilder);
     }
+
+    public function testAddControllerAttributesWithStringControllerWithDoubleColon(): void
+    {
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+
+        $attributes->method('get')->with('_controller')->willReturn('App\\Controller\\HomeController::index');
+        $request->attributes = $attributes;
+
+        $spanBuilder->expects($this->once())
+            ->method('setAttribute')
+            ->with(
+                $this->stringContains('code.function'),
+                'App\\Controller\\HomeController::index',
+            )
+            ->willReturnSelf();
+
+        $this->service->addControllerAttributes($spanBuilder, $request);
+    }
+
+    public function testAddControllerAttributesWithStringControllerWithoutDoubleColon(): void
+    {
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+
+        $attributes->method('get')->with('_controller')->willReturn('App\\Controller\\InvokableController');
+        $request->attributes = $attributes;
+
+        $spanBuilder->expects($this->once())
+            ->method('setAttribute')
+            ->with(
+                $this->stringContains('code.function'),
+                'App\\Controller\\InvokableController::__invoke',
+            )
+            ->willReturnSelf();
+
+        $this->service->addControllerAttributes($spanBuilder, $request);
+    }
+
+    public function testAddControllerAttributesWithArrayController(): void
+    {
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+        $controllerObject = new class {
+            public function index(): void
+            {
+            }
+        };
+
+        $attributes->method('get')->with('_controller')->willReturn([$controllerObject, 'index']);
+        $request->attributes = $attributes;
+
+        $spanBuilder->expects($this->once())
+            ->method('setAttribute')
+            ->with(
+                $this->stringContains('code.function'),
+                $this->stringContains('::index'),
+            )
+            ->willReturnSelf();
+
+        $this->service->addControllerAttributes($spanBuilder, $request);
+    }
+
+    public function testAddControllerAttributesWithArrayControllerWithStringClass(): void
+    {
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+
+        $attributes->method('get')->with('_controller')->willReturn(['App\\Controller\\HomeController', 'index']);
+        $request->attributes = $attributes;
+
+        $spanBuilder->expects($this->once())
+            ->method('setAttribute')
+            ->with(
+                $this->stringContains('code.function'),
+                'App\\Controller\\HomeController::index',
+            )
+            ->willReturnSelf();
+
+        $this->service->addControllerAttributes($spanBuilder, $request);
+    }
+
+    public function testAddControllerAttributesWithObjectController(): void
+    {
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+        $controllerObject = new class {
+            public function __invoke(): void
+            {
+            }
+        };
+
+        $attributes->method('get')->with('_controller')->willReturn($controllerObject);
+        $request->attributes = $attributes;
+
+        $spanBuilder->expects($this->once())
+            ->method('setAttribute')
+            ->with(
+                $this->stringContains('code.function'),
+                $this->stringContains('::__invoke'),
+            )
+            ->willReturnSelf();
+
+        $this->service->addControllerAttributes($spanBuilder, $request);
+    }
+
+    public function testAddControllerAttributesWithNullController(): void
+    {
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+
+        $attributes->method('get')->with('_controller')->willReturn(null);
+        $request->attributes = $attributes;
+
+        $spanBuilder->expects($this->never())
+            ->method('setAttribute');
+
+        $this->service->addControllerAttributes($spanBuilder, $request);
+    }
+
+    public function testAddHttpAttributesWhenRequestIdExists(): void
+    {
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+        $request = $this->createMock(Request::class);
+        $headers = $this->createMock(HeaderBag::class);
+
+        $headers->method('has')
+            ->willReturnMap([
+                ['X-Request-Id', true], // Request ID already exists
+            ]);
+        $request->headers = $headers;
+        $request->method('getMethod')->willReturn('POST');
+        $request->method('getPathInfo')->willReturn('/api/test');
+
+        // Expect 2 calls: HTTP_REQUEST_METHOD and HTTP_ROUTE (no request ID generation)
+        $spanBuilder->expects($this->exactly(2))
+            ->method('setAttribute')
+            ->willReturnSelf();
+
+        $this->service->addHttpAttributes($spanBuilder, $request);
+    }
 }

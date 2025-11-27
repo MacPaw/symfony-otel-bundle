@@ -11,8 +11,8 @@ use OpenTelemetry\API\Trace\TracerInterface;
 use OpenTelemetry\Context\Context;
 use OpenTelemetry\Context\ContextInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
 class AbstractInstrumentationTest extends TestCase
 {
@@ -139,5 +139,64 @@ class AbstractInstrumentationTest extends TestCase
     public function testGetName(): void
     {
         $this->assertEquals('test_instrumentation', $this->instrumentation->getName());
+    }
+
+    public function testInitSpanWhenRegistryContextIsNull(): void
+    {
+        // Set context to null in registry after setting it
+        $context = Context::getCurrent();
+        $this->registry->setContext($context);
+
+        // Manually clear the context to simulate it being null
+        // We need to use reflection to set it to null
+        $reflection = new \ReflectionClass($this->registry);
+        $property = $reflection->getProperty('context');
+        $property->setAccessible(true);
+        $property->setValue($this->registry, null);
+
+        $this->spanBuilder->expects($this->once())
+            ->method('setParent')
+            ->with($this->isInstanceOf(ContextInterface::class))
+            ->willReturnSelf();
+
+        $this->tracer->expects($this->once())
+            ->method('spanBuilder')
+            ->with('test_instrumentation')
+            ->willReturn($this->spanBuilder);
+
+        $this->spanBuilder->expects($this->once())
+            ->method('startSpan')
+            ->willReturn($this->span);
+
+        // When registry context is null, it should fall back to Context::getCurrent()
+        $this->instrumentation->testInitSpan($context);
+
+        $this->assertTrue($this->instrumentation->isSpanSet());
+        $this->assertCount(1, $this->registry->getSpans());
+    }
+
+    public function testInitSpanWithNonNullContext(): void
+    {
+        // Test the null coalescing assignment when context is provided (line 37)
+        $context = Context::getCurrent();
+
+        $this->spanBuilder->expects($this->once())
+            ->method('setParent')
+            ->with($context)
+            ->willReturnSelf();
+
+        $this->tracer->expects($this->once())
+            ->method('spanBuilder')
+            ->with('test_instrumentation')
+            ->willReturn($this->spanBuilder);
+
+        $this->spanBuilder->expects($this->once())
+            ->method('startSpan')
+            ->willReturn($this->span);
+
+        // When context is provided (not null), the null coalescing assignment should use it
+        $this->instrumentation->testInitSpan($context);
+
+        $this->assertTrue($this->instrumentation->isSpanSet());
     }
 }

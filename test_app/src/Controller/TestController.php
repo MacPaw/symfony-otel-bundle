@@ -8,6 +8,7 @@ use App\Command\DummyCommand;
 use App\Infrastructure\MessageBus\CommandBus;
 use App\Infrastructure\MessageBus\QueryBus;
 use App\Query\DummyQuery;
+use App\Service\TraceSpanTestService;
 use Exception;
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
@@ -20,9 +21,10 @@ use Symfony\Component\Routing\Attribute\Route;
 class TestController
 {
     public function __construct(
-        private readonly TraceService $traceService, 
+        private readonly TraceService $traceService,
         private readonly QueryBus $queryBus,
         private readonly CommandBus $commandBus,
+        private readonly TraceSpanTestService $traceSpanTestService,
     ) {
     }
 
@@ -63,6 +65,9 @@ class TestController
                 </div>
                 <div class="endpoint">
                     <strong>GET <a href="/api/cqrs-test">/api/cqrs-test</a></strong> - CQRS query/command test
+                </div>
+                <div class="endpoint">
+                    <strong>GET <a href="/api/trace-span-test">/api/trace-span-test</a></strong> - TraceSpan attribute test
                 </div>
                 
                 <h2>Trace Viewing:</h2>
@@ -235,6 +240,25 @@ class TestController
                 'command' => DummyCommand::class,
             ],
             'note' => 'Check traces in Grafana for detailed execution information',
+        ]);
+    }
+
+    #[Route('/api/trace-span-test', name: 'api_trace_span_test')]
+    public function apiTraceSpanTest(): JsonResponse
+    {
+        $orderId = 'ORD-12345';
+        $result = $this->traceSpanTestService->processOrder($orderId);
+
+        $price = $this->traceSpanTestService->calculatePrice(100.0, 0.1);
+
+        $isValid = $this->traceSpanTestService->validatePayment('PAY-67890');
+
+        return new JsonResponse([
+            'message' => 'TraceSpan attribute test completed',
+            'order_result' => $result,
+            'calculated_price' => $price,
+            'payment_valid' => $isValid,
+            'note' => 'Check traces for spans created from TraceSpan attributes',
         ]);
     }
 }

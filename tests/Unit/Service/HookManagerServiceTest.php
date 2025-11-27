@@ -9,9 +9,9 @@ use Exception;
 use Macpaw\SymfonyOtelBundle\Instrumentation\HookInstrumentationInterface;
 use Macpaw\SymfonyOtelBundle\Service\HookManagerService;
 use OpenTelemetry\API\Instrumentation\AutoInstrumentation\HookManagerInterface;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use PHPUnit\Framework\MockObject\MockObject;
 
 class HookManagerServiceTest extends TestCase
 {
@@ -269,5 +269,67 @@ class HookManagerServiceTest extends TestCase
             );
 
         $this->hookManagerService->registerHooks([$instrumentation1, $instrumentation2]);
+    }
+
+    public function testRegisterHookWithSuccessfulPreHook(): void
+    {
+        $instrumentation = $this->createMock(HookInstrumentationInterface::class);
+        $instrumentation->method('getClass')->willReturn('TestClass');
+        $instrumentation->method('getMethod')->willReturn('testMethod');
+        $instrumentation->method('getName')->willReturn('test_instrumentation');
+        $instrumentation->method('pre')->willReturn(null); // Success
+
+        $this->hookManager->expects($this->once())
+            ->method('hook')
+            ->willReturnCallback(function (string $class, string $method, callable $preHook, callable $postHook): void {
+                $preHook(); // Execute pre hook
+            });
+
+        $this->logger->expects($this->exactly(2))
+            ->method('debug')
+            ->withConsecutive(
+                ['Successfully executed pre hook for TestClass::testMethod'],
+                [
+                    'Successfully registered hook for {class}::{method}',
+                    [
+                        'class' => 'TestClass',
+                        'method' => 'testMethod',
+                        'instrumentation' => 'test_instrumentation',
+                    ],
+                ],
+            );
+
+        $this->hookManagerService->registerHook($instrumentation);
+    }
+
+    public function testRegisterHookWithSuccessfulPostHook(): void
+    {
+        $instrumentation = $this->createMock(HookInstrumentationInterface::class);
+        $instrumentation->method('getClass')->willReturn('TestClass');
+        $instrumentation->method('getMethod')->willReturn('testMethod');
+        $instrumentation->method('getName')->willReturn('test_instrumentation');
+        $instrumentation->method('post')->willReturn(null); // Success
+
+        $this->hookManager->expects($this->once())
+            ->method('hook')
+            ->willReturnCallback(function (string $class, string $method, callable $preHook, callable $postHook): void {
+                $postHook(); // Execute post hook
+            });
+
+        $this->logger->expects($this->exactly(2))
+            ->method('debug')
+            ->withConsecutive(
+                ['Successfully executed post hook for TestClass::testMethod'],
+                [
+                    'Successfully registered hook for {class}::{method}',
+                    [
+                        'class' => 'TestClass',
+                        'method' => 'testMethod',
+                        'instrumentation' => 'test_instrumentation',
+                    ],
+                ],
+            );
+
+        $this->hookManagerService->registerHook($instrumentation);
     }
 }

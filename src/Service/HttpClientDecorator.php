@@ -23,6 +23,7 @@ class HttpClientDecorator implements HttpClientInterface
         private readonly TextMapPropagatorInterface $propagator,
         private readonly RouterUtils $routerUtils,
         private readonly ?LoggerInterface $logger = null,
+        private readonly bool $otelEnabled = true,
     ) {
     }
 
@@ -39,8 +40,10 @@ class HttpClientDecorator implements HttpClientInterface
         $headers = $options['headers'] ?? [];
         $headers[self::REQUEST_ID_HEADER] = $requestId;
 
-        // Inject OpenTelemetry headers - traceparent&tracestate
-        $this->propagator->inject($headers, null, Context::getCurrent());
+        if ($this->otelEnabled) {
+            // Inject OpenTelemetry headers - traceparent&tracestate
+            $this->propagator->inject($headers, null, Context::getCurrent());
+        }
 
         $options['headers'] = $headers;
 
@@ -68,7 +71,8 @@ class HttpClientDecorator implements HttpClientInterface
             $this->requestStack,
             $this->propagator,
             $this->routerUtils,
-            $this->logger
+            $this->logger,
+            $this->otelEnabled,
         );
     }
 }

@@ -21,6 +21,9 @@ use Symfony\Component\HttpKernel\KernelEvents;
 
 final readonly class RequestRootSpanEventSubscriber implements EventSubscriberInterface
 {
+    /** @var string[] */
+    private array $routePrefixes;
+
     public function __construct(
         private InstrumentationRegistry $instrumentationRegistry,
         private TextMapPropagatorInterface $propagator,
@@ -28,19 +31,29 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
         private HttpMetadataAttacher $httpMetadataAttacher,
         private bool $forceFlushOnTerminate = false,
         private int $forceFlushTimeoutMs = 100,
+        private bool $enabled = true,
+        array $routePrefixes = [],
     ) {
+        $this->routePrefixes = $routePrefixes;
     }
 
     public function onKernelRequest(RequestEvent $event): void
     {
-        $context = $this->propagator->extract($event->getRequest()->headers->all());
+        if (!$this->enabled || !$event->isMainRequest()) {
+            return;
+        }
+
+        $request = $event->getRequest();
+        if ($this->routePrefixes !== [] && !$this->shouldSampleRoute($request)) {
+            return; // skip creating root span for non-matching routes
+        }
+
+        $context = $this->propagator->extract($request->headers->all());
         $spanInjectedContext = Span::fromContext($context)->getContext();
 
         $context = $spanInjectedContext->isValid() ? $context : Context::getCurrent();
 
         $this->instrumentationRegistry->setContext($context);
-
-        $request = $event->getRequest();
 
         $spanBuilder = $this->traceService
             ->getTracer()
@@ -61,8 +74,27 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
         $this->instrumentationRegistry->setScope($requestStartSpan->activate());
     }
 
+    private function shouldSampleRoute(\Symfony\Component\HttpFoundation\Request $request): bool
+    {
+        $path = $request->getPathInfo() ?? '';
+        $routeName = (string)($request->attributes->get('_route') ?? '');
+        foreach ($this->routePrefixes as $prefix) {
+            if ($prefix === '') {
+                continue;
+            }
+            if (str_starts_with($path, $prefix) || ($routeName !== '' && str_starts_with($routeName, $prefix))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public function onKernelTerminate(TerminateEvent $event): void
     {
+        if (!$this->enabled) {
+            return;
+        }
+
         $requestStartSpan = $this->instrumentationRegistry->getSpan(SpanNames::REQUEST_START);
         if ($requestStartSpan instanceof SpanInterface) {
             $response = $event->getResponse();

@@ -17,12 +17,16 @@ final readonly class HookManagerService
     public function __construct(
         private HookManagerInterface $hookManager,
         ?LoggerInterface $logger,
+        private bool $enabled = true,
     ) {
         $this->logger = $logger ?? new NullLogger();
     }
 
     public function registerHook(HookInstrumentationInterface $instrumentation): void
     {
+        if (!$this->enabled) {
+            return;
+        }
         $class = $instrumentation->getClass();
         $method = $instrumentation->getMethod();
 

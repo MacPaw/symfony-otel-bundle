@@ -28,11 +28,15 @@ final readonly class ExceptionHandlingEventSubscriber implements EventSubscriber
         private ?LoggerInterface $logger = null,
         private bool $forceFlushOnTerminate = false,
         private int $forceFlushTimeoutMs = 100,
+        private bool $enabled = true,
     ) {
     }
 
     public function onKernelException(ExceptionEvent $event): void
     {
+        if (!$this->enabled) {
+            return;
+        }
         $throwable = $event->getThrowable();
 
         $this->logger?->debug('Handling exception in OpenTelemetry tracing', [

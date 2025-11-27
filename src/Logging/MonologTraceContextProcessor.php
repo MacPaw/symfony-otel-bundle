@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Macpaw\SymfonyOtelBundle\Logging;
 
+use Monolog\Processor\ProcessorInterface;
 use OpenTelemetry\API\Trace\Span;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
@@ -15,7 +16,7 @@ use Throwable;
  * Adds configurable keys (defaults: trace_id, span_id, trace_flags) into $record['extra'] when a valid
  * span context is available.
  */
-final class MonologTraceContextProcessor implements LoggerAwareInterface
+final class MonologTraceContextProcessor implements ProcessorInterface, LoggerAwareInterface
 {
     /** @var array{trace_id:string, span_id:string, trace_flags:string} */
     private array $keys;

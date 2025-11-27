@@ -153,6 +153,40 @@ Counters created when using `otel` backend:
 If metrics are not available, the subscriber falls back to span events named `request.count` and `response.family.count`
 with the same labels.
 
+## Performance & Feature Flags
+
+To make rollout safe and predictable, the bundle provides a global on/off switch and convenient sampling presets.
+
+- Global switch: turn the entire bundle into a no‑op using config or an env var override
+- Sampler presets: pick `always_on`, `parentbased_ratio` with a ratio, or keep `none` to respect your OTEL_* envs
+- Route‑based sampling: optionally sample only requests matching certain route/path prefixes
+
+Quick start:
+
+```yaml
+# config/packages/otel_bundle.yaml
+otel_bundle:
+  enabled: true # can also be overridden by OTEL_ENABLED=0/1
+  sampling:
+    preset: parentbased_ratio   # none | always_on | parentbased_ratio
+    ratio: 0.1                  # used for parentbased_ratio
+    route_prefixes: [ '/api', '/health' ]
+```
+
+Environment override:
+
+```bash
+# Force-disable tracing globally (useful during rollout / incidents)
+export OTEL_ENABLED=0
+```
+
+Notes:
+
+- When disabled, listeners/middleware become no‑ops, outbound HTTP won’t inject trace headers, and hooks aren’t
+  registered.
+- If you already set `OTEL_TRACES_SAMPLER`/`OTEL_TRACES_SAMPLER_ARG`, the bundle will not override them; presets only
+  apply when those env vars are absent.
+
 ## Observability & OpenTelemetry Semantics
 
 This bundle aligns with OpenTelemetry Semantic Conventions and uses constants from `open-telemetry/sem-conv` wherever

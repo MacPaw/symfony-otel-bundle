@@ -18,6 +18,8 @@ services:
     public: true
 
   Macpaw\SymfonyOtelBundle\Listeners\InstrumentationEventSubscriber:
+    arguments:
+      $enabled: '%otel_bundle.enabled%'
     tags:
       - { name: 'kernel.event_subscriber' }
 
@@ -25,6 +27,8 @@ services:
     arguments:
       $forceFlushOnTerminate: '%otel_bundle.force_flush_on_terminate%'
       $forceFlushTimeoutMs: '%otel_bundle.force_flush_timeout_ms%'
+      $enabled: '%otel_bundle.enabled%'
+      $routePrefixes: '%otel_bundle.sampling.route_prefixes%'
     tags:
       - { name: 'kernel.event_subscriber' }
 
@@ -32,6 +36,7 @@ services:
     arguments:
       $forceFlushOnTerminate: '%otel_bundle.force_flush_on_terminate%'
       $forceFlushTimeoutMs: '%otel_bundle.force_flush_timeout_ms%'
+      $enabled: '%otel_bundle.enabled%'
     tags:
       - { name: 'kernel.event_subscriber' }
 
@@ -40,6 +45,7 @@ services:
     arguments:
       $hookManager: '@OpenTelemetry\API\Instrumentation\AutoInstrumentation\ExtensionHookManager'
       $logger: '@?logger'
+      $enabled: '%otel_bundle.enabled%'
     lazy: false
 
   OpenTelemetry\API\Instrumentation\AutoInstrumentation\ExtensionHookManager: ~
@@ -85,4 +91,5 @@ services:
       $propagator: '@OpenTelemetry\Context\Propagation\TextMapPropagatorInterface'
       $routerUtils: '@Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils'
       $logger: '@?logger'
+      $otelEnabled: '%otel_bundle.enabled%'
     public: true

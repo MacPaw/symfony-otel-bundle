@@ -1,8 +1,13 @@
 otel_bundle:
+  enabled: true
   tracer_name:  '%otel_tracer_name%'
   service_name: '%otel_service_name%'
   force_flush_on_terminate: false
   force_flush_timeout_ms: 100
+  sampling:
+    preset: 'none'           # 'none' | 'always_on' | 'parentbased_ratio'
+    ratio: 0.1               # used when preset = parentbased_ratio
+    route_prefixes: [ ]       # e.g., ['/api', '/health'] — sample only matching routes
   instrumentations:
     - 'Macpaw\\SymfonyOtelBundle\\Instrumentation\\RequestExecutionTimeInstrumentation'
   header_mappings:

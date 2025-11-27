@@ -83,6 +83,32 @@ make logs        # View all logs
 make logs-php    # View PHP application logs
 ```
 
+## Golden trace tests (in-memory exporter)
+
+For deterministic and fast assertions, the test suite uses an in-memory span exporter. This avoids spinning up
+Docker/collectors and lets us assert span names, attributes, and parent/child relationships directly.
+
+- How it works
+    - A test-only tracer provider is created with `SimpleSpanProcessor` + `InMemoryExporter`.
+    - Tests initialize listeners/subscribers with a `TraceService` backed by this provider.
+    - After exercising the code, tests read exported spans from the in-memory exporter and assert on them.
+
+- Files of interest
+    - `tests/Support/Telemetry/InMemoryProviderFactory.php` — builds the test tracer provider and exposes the exporter
+    - `tests/Integration/GoldenTraceTest.php` — example end-to-end request lifecycle assertions
+
+- Writing new golden tests
+    - Use the factory to obtain the tracer provider and wire your listeners/services
+    - Drive your code under test (e.g., simulate Symfony kernel events or call your service)
+    - Fetch spans via `InMemoryProviderFactory::getExporter()->getSpans()` and assert on:
+        - span name: conventions like `GET /path`
+        - key attributes: `http.request.method`, `http.route`, `http.response.status_code`, and any custom attributes
+        - parent/child: verify parent span id semantics when needed
+
+- Optional docker-backed verification (manual/local)
+    - To verify end-to-end delivery to Tempo/Collector, you may enable a docker-backed test path guarded by an env
+      flag (e.g., `OTEL_DOCKER_GOLDEN=1`). By default, CI uses the in-memory path for speed and stability.
+
 ## Running Tests
 
 ### Basic Testing

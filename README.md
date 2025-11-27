@@ -159,6 +159,10 @@ with the same labels.
   collector endpoint, CLI traces not appearing. See docs/troubleshooting.md
 - Migration: guidance to move from the plain OpenTelemetry Symfony SDK bundle, with config mapping and rollout notes.
   See docs/migration.md
+- Symfony Flex recipe: what gets installed automatically (config, health route, .env hints) and how to publish/override.
+  See docs/recipe.md
+- Ready-made configuration snippets for typical setups (copy-paste): Local dev with docker-compose + Tempo, Kubernetes +
+  collector sidecar, monolith with multiple apps. See docs/snippets.md
 - Ready-made Grafana dashboard: import docs/grafana/symfony-otel-dashboard.json into Grafana (Dashboards → Import),
   select your Tempo data source. See docs/docker.md#import-the-ready-made-grafana-dashboard
 
@@ -234,10 +238,19 @@ transport options. For Docker setup and env examples, see [Docker Development Gu
 
 ## Quick Start
 
-1. **Install the bundle:**
-   ```bash
-   composer require macpaw/symfony-otel-bundle
-   ```
+1. **Install the bundle (with Symfony Flex recipe):**
+
+```bash
+composer require macpaw/symfony-otel-bundle
+```
+
+When the Flex recipe is enabled (via recipes-contrib), installation will automatically add:
+
+- `config/packages/otel_bundle.yaml` with sane defaults (BSP async export preserved)
+- `config/routes/otel_health.yaml` mapping `/_otel/health` to a built-in controller
+- Commented `OTEL_*` variables appended to your `.env`
+
+See details in the new guide: docs/recipe.md
 
 2. **Enable in your application:**
    ```php

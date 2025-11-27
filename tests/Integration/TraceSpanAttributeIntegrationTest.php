@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace Tests\Integration;
 
 use App\Service\TraceSpanTestService;
+use Macpaw\SymfonyOtelBundle\DependencyInjection\SymfonyOtelCompilerPass;
+use Macpaw\SymfonyOtelBundle\Instrumentation\AttributeMethodInstrumentation;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Service\HookManagerService;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
+use OpenTelemetry\API\Trace\SpanKind;
+use OpenTelemetry\Context\Context;
+use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use OpenTelemetry\SDK\Trace\SpanDataInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\FileLocator;
@@ -38,21 +43,21 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
         // Create the instrumentation manually to test TraceSpan attribute functionality
         // In a real application, this would be created by the compiler pass
         $tracer = $this->traceService->getTracer();
-        $propagator = $this->container->get(\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface::class);
+        $propagator = $this->container->get(TextMapPropagatorInterface::class);
 
-        $instrumentation = new \Macpaw\SymfonyOtelBundle\Instrumentation\AttributeMethodInstrumentation(
+        $instrumentation = new AttributeMethodInstrumentation(
             $this->registry,
             $tracer,
             $propagator,
             TraceSpanTestService::class,
             'processOrder',
             'ProcessOrder',
-            \OpenTelemetry\API\Trace\SpanKind::KIND_INTERNAL,
+            SpanKind::KIND_INTERNAL,
             ['operation.type' => 'order_processing', 'service.name' => 'order_service'],
         );
 
         // Set up context for span creation
-        $context = \OpenTelemetry\Context\Context::getCurrent();
+        $context = Context::getCurrent();
         $this->registry->setContext($context);
 
         // Manually trigger the instrumentation to verify it creates spans
@@ -91,7 +96,7 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
             $processOrderSpan,
             'ProcessOrder span should be created from TraceSpan attribute. Found spans: ' . implode(
                 ', ',
-                array_map(fn($s) => $s instanceof SpanDataInterface ? $s->getName() : 'unknown', $spans),
+                array_map(fn($s): string => $s instanceof SpanDataInterface ? $s->getName() : 'unknown', $spans),
             ),
         );
 
@@ -107,38 +112,38 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
         $this->assertStringContainsString('TraceSpanTestService::processOrder', $attrs['code.function.name']);
 
         // Verify span kind
-        $this->assertSame(\OpenTelemetry\API\Trace\SpanKind::KIND_INTERNAL, $processOrderSpan->getKind());
+        $this->assertSame(SpanKind::KIND_INTERNAL, $processOrderSpan->getKind());
     }
 
     public function testTraceSpanAttributeWithDifferentSpanKinds(): void
     {
         // Create instrumentations manually for different span kinds
         $tracer = $this->traceService->getTracer();
-        $propagator = $this->container->get(\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface::class);
+        $propagator = $this->container->get(TextMapPropagatorInterface::class);
 
-        $calculatePriceInstrumentation = new \Macpaw\SymfonyOtelBundle\Instrumentation\AttributeMethodInstrumentation(
+        $calculatePriceInstrumentation = new AttributeMethodInstrumentation(
             $this->registry,
             $tracer,
             $propagator,
             TraceSpanTestService::class,
             'calculatePrice',
             'CalculatePrice',
-            \OpenTelemetry\API\Trace\SpanKind::KIND_INTERNAL,
+            SpanKind::KIND_INTERNAL,
             [],
         );
 
-        $validatePaymentInstrumentation = new \Macpaw\SymfonyOtelBundle\Instrumentation\AttributeMethodInstrumentation(
+        $validatePaymentInstrumentation = new AttributeMethodInstrumentation(
             $this->registry,
             $tracer,
             $propagator,
             TraceSpanTestService::class,
             'validatePayment',
             'ValidatePayment',
-            \OpenTelemetry\API\Trace\SpanKind::KIND_CLIENT,
+            SpanKind::KIND_CLIENT,
             ['payment.method' => 'credit_card'],
         );
 
-        $context = \OpenTelemetry\Context\Context::getCurrent();
+        $context = Context::getCurrent();
         $this->registry->setContext($context);
 
         // Call methods with different span kinds
@@ -180,8 +185,8 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
         $this->assertNotNull($validatePaymentSpan, 'ValidatePayment span should be created');
 
         // Verify span kinds
-        $this->assertSame(\OpenTelemetry\API\Trace\SpanKind::KIND_INTERNAL, $calculatePriceSpan->getKind());
-        $this->assertSame(\OpenTelemetry\API\Trace\SpanKind::KIND_CLIENT, $validatePaymentSpan->getKind());
+        $this->assertSame(SpanKind::KIND_INTERNAL, $calculatePriceSpan->getKind());
+        $this->assertSame(SpanKind::KIND_CLIENT, $validatePaymentSpan->getKind());
 
         // Verify ValidatePayment has custom attributes
         $validateAttrs = $validatePaymentSpan->getAttributes()->toArray();
@@ -193,20 +198,20 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
     {
         // Create the instrumentation manually
         $tracer = $this->traceService->getTracer();
-        $propagator = $this->container->get(\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface::class);
+        $propagator = $this->container->get(TextMapPropagatorInterface::class);
 
-        $instrumentation = new \Macpaw\SymfonyOtelBundle\Instrumentation\AttributeMethodInstrumentation(
+        $instrumentation = new AttributeMethodInstrumentation(
             $this->registry,
             $tracer,
             $propagator,
             TraceSpanTestService::class,
             'processOrder',
             'ProcessOrder',
-            \OpenTelemetry\API\Trace\SpanKind::KIND_INTERNAL,
+            SpanKind::KIND_INTERNAL,
             ['operation.type' => 'order_processing', 'service.name' => 'order_service'],
         );
 
-        $context = \OpenTelemetry\Context\Context::getCurrent();
+        $context = Context::getCurrent();
         $this->registry->setContext($context);
 
         // Trigger the instrumentation
@@ -247,20 +252,20 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
     {
         // Create the instrumentation manually
         $tracer = $this->traceService->getTracer();
-        $propagator = $this->container->get(\OpenTelemetry\Context\Propagation\TextMapPropagatorInterface::class);
+        $propagator = $this->container->get(TextMapPropagatorInterface::class);
 
-        $instrumentation = new \Macpaw\SymfonyOtelBundle\Instrumentation\AttributeMethodInstrumentation(
+        $instrumentation = new AttributeMethodInstrumentation(
             $this->registry,
             $tracer,
             $propagator,
             TraceSpanTestService::class,
             'calculatePrice',
             'CalculatePrice',
-            \OpenTelemetry\API\Trace\SpanKind::KIND_INTERNAL,
+            SpanKind::KIND_INTERNAL,
             [],
         );
 
-        $context = \OpenTelemetry\Context\Context::getCurrent();
+        $context = Context::getCurrent();
         $this->registry->setContext($context);
 
         // Trigger the instrumentation
@@ -330,7 +335,7 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
 
         // Register compiler pass to discover TraceSpan attributes
         // This will run automatically during container compilation
-        $this->container->addCompilerPass(new \Macpaw\SymfonyOtelBundle\DependencyInjection\SymfonyOtelCompilerPass());
+        $this->container->addCompilerPass(new SymfonyOtelCompilerPass());
 
         $this->container->compile();
 

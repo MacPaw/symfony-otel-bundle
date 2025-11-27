@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
+use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Listeners\RequestRootSpanEventSubscriber;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher;
@@ -13,6 +14,7 @@ use OpenTelemetry\SDK\Propagation\PropagatorFactory;
 use OpenTelemetry\SDK\Trace\SpanDataInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\TerminateEvent;
@@ -93,8 +95,8 @@ final class GoldenTraceTest extends TestCase
         $provider = InMemoryProviderFactory::create();
         $this->traceService = new TraceService($provider, 'symfony-otel-test', 'test-tracer');
         $this->httpMetadataAttacher = new HttpMetadataAttacher(
-            new \Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils(
-                new \Symfony\Component\HttpFoundation\RequestStack(),
+            new RouterUtils(
+                new RequestStack(),
             ), [
             'http.request_id' => 'X-Request-Id',
         ],

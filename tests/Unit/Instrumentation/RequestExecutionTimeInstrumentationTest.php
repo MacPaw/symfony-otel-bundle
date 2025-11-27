@@ -11,6 +11,7 @@ use OpenTelemetry\API\Trace\SpanBuilderInterface;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\TracerInterface;
 use OpenTelemetry\Context\Context;
+use OpenTelemetry\Context\ContextInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -67,7 +68,7 @@ class RequestExecutionTimeInstrumentationTest extends TestCase
             ->willReturn($span);
         $spanBuilder->expects($this->once())
             ->method('setParent')
-            ->with($this->isInstanceOf(\OpenTelemetry\Context\ContextInterface::class))
+            ->with($this->isInstanceOf(ContextInterface::class))
             ->willReturnSelf();
 
         $this->tracer->expects($this->once())

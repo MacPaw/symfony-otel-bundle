@@ -17,6 +17,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Throwable;
 
 class SymfonyOtelCompilerPass implements CompilerPassInterface
 {
@@ -59,7 +60,7 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
 
             try {
                 $refl = new ReflectionClass($class);
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 continue;
             }
 

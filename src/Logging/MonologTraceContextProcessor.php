@@ -6,6 +6,8 @@ namespace Macpaw\SymfonyOtelBundle\Logging;
 
 use OpenTelemetry\API\Trace\Span;
 use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Monolog processor that injects OpenTelemetry trace context into every log record.
@@ -30,7 +32,7 @@ final class MonologTraceContextProcessor implements LoggerAwareInterface
         ];
     }
 
-    public function setLogger(\Psr\Log\LoggerInterface $logger): void
+    public function setLogger(LoggerInterface $logger): void
     {
         // no-op; required by LoggerAwareInterface for some Monolog integrations
     }
@@ -68,7 +70,7 @@ final class MonologTraceContextProcessor implements LoggerAwareInterface
             if ($sampled !== null) {
                 $record['context'][$this->keys['trace_flags']] = $sampled ? '01' : '00';
             }
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // never break logging
             return $record;
         }

@@ -7,8 +7,10 @@ namespace Tests\Unit\Listeners;
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Listeners\RequestRootSpanEventSubscriber;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
+use Macpaw\SymfonyOtelBundle\Registry\SpanNames;
 use Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
+use OpenTelemetry\Context\Context;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -46,11 +48,11 @@ class RequestRootSpanEventSubscriberTest extends TestCase
 
         $this->propagator->expects($this->once())
             ->method('extract')
-            ->willReturn(\OpenTelemetry\Context\Context::getCurrent());
+            ->willReturn(Context::getCurrent());
 
         $subscriber->onKernelRequest($event);
 
-        $this->assertNotNull($this->registry->getSpan(\Macpaw\SymfonyOtelBundle\Registry\SpanNames::REQUEST_START));
+        $this->assertNotNull($this->registry->getSpan(SpanNames::REQUEST_START));
     }
 
     public function testOnKernelTerminate(): void
@@ -74,7 +76,7 @@ class RequestRootSpanEventSubscriberTest extends TestCase
         $tracer = $provider->getTracer('test');
         $span = $tracer->spanBuilder('test')->startSpan();
         $scope = $span->activate();
-        $this->registry->addSpan($span, \Macpaw\SymfonyOtelBundle\Registry\SpanNames::REQUEST_START);
+        $this->registry->addSpan($span, SpanNames::REQUEST_START);
         $this->registry->setScope($scope);
 
         $subscriber->onKernelTerminate($event);
@@ -104,7 +106,7 @@ class RequestRootSpanEventSubscriberTest extends TestCase
         $tracer = $provider->getTracer('test');
         $span = $tracer->spanBuilder('test')->startSpan();
         $scope = $span->activate();
-        $this->registry->addSpan($span, \Macpaw\SymfonyOtelBundle\Registry\SpanNames::REQUEST_START);
+        $this->registry->addSpan($span, SpanNames::REQUEST_START);
         $this->registry->setScope($scope);
 
         $subscriber->onKernelTerminate($event);
@@ -165,7 +167,7 @@ class RequestRootSpanEventSubscriberTest extends TestCase
         $request = Request::create('/test', 'GET');
         $event = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
 
-        $invalidContext = \OpenTelemetry\Context\Context::getCurrent();
+        $invalidContext = Context::getCurrent();
         $this->propagator->expects($this->once())
             ->method('extract')
             ->willReturn($invalidContext);

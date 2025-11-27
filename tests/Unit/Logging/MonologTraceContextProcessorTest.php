@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Logging;
 
 use Macpaw\SymfonyOtelBundle\Logging\MonologTraceContextProcessor;
-use OpenTelemetry\API\Trace\TraceFlagsInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Tests\Support\Telemetry\InMemoryProviderFactory;
 
 class MonologTraceContextProcessorTest extends TestCase
@@ -108,7 +108,7 @@ class MonologTraceContextProcessorTest extends TestCase
     public function testSetLogger(): void
     {
         $processor = new MonologTraceContextProcessor();
-        $logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+        $logger = $this->createMock(LoggerInterface::class);
 
         // Should not throw exception
         $processor->setLogger($logger);

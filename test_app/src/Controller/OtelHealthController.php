@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use DateTimeImmutable;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -15,7 +16,7 @@ final class OtelHealthController
     {
         return new JsonResponse([
             'status' => 'ok',
-            'time' => (new \DateTimeImmutable())->format(DATE_ATOM),
+            'time' => (new DateTimeImmutable())->format(DATE_ATOM),
         ]);
     }
 }

@@ -13,6 +13,7 @@ use OpenTelemetry\Context\ContextInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 class AbstractInstrumentationTest extends TestCase
 {
@@ -149,7 +150,7 @@ class AbstractInstrumentationTest extends TestCase
 
         // Manually clear the context to simulate it being null
         // We need to use reflection to set it to null
-        $reflection = new \ReflectionClass($this->registry);
+        $reflection = new ReflectionClass($this->registry);
         $property = $reflection->getProperty('context');
         $property->setAccessible(true);
         $property->setValue($this->registry, null);

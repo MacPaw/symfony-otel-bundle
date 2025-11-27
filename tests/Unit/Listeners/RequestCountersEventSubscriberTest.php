@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Listeners;
 
+use Exception;
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Listeners\RequestCountersEventSubscriber;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
@@ -15,6 +16,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\TerminateEvent;
@@ -50,7 +52,7 @@ class RequestCountersEventSubscriberTest extends TestCase
         $request->attributes->set('_route', 'test_route');
         $event = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
 
-        $requestStack = $this->createMock(\Symfony\Component\HttpFoundation\RequestStack::class);
+        $requestStack = $this->createMock(RequestStack::class);
         $requestStack->method('getCurrentRequest')->willReturn($request);
         $requestStack->method('getMainRequest')->willReturn($request);
         $requestStack->method('getParentRequest')->willReturn(null);
@@ -253,7 +255,7 @@ class RequestCountersEventSubscriberTest extends TestCase
     {
         $this->meterProvider->expects($this->once())
             ->method('getMeter')
-            ->willThrowException(new \Exception('Metrics not available'));
+            ->willThrowException(new Exception('Metrics not available'));
 
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects($this->once())
@@ -287,7 +289,7 @@ class RequestCountersEventSubscriberTest extends TestCase
 
         $requestCounter->expects($this->once())
             ->method('add')
-            ->willThrowException(new \Exception('Counter error'));
+            ->willThrowException(new Exception('Counter error'));
 
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects($this->once())
@@ -299,7 +301,7 @@ class RequestCountersEventSubscriberTest extends TestCase
         $request->attributes->set('_route', 'test_route');
         $event = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
 
-        $requestStack = $this->createMock(\Symfony\Component\HttpFoundation\RequestStack::class);
+        $requestStack = $this->createMock(RequestStack::class);
         $requestStack->method('getCurrentRequest')->willReturn($request);
         $requestStack->method('getMainRequest')->willReturn($request);
         $requestStack->method('getParentRequest')->willReturn(null);
@@ -319,7 +321,7 @@ class RequestCountersEventSubscriberTest extends TestCase
     protected function setUp(): void
     {
         $this->meterProvider = $this->createMock(MeterProviderInterface::class);
-        $requestStack = $this->createMock(\Symfony\Component\HttpFoundation\RequestStack::class);
+        $requestStack = $this->createMock(RequestStack::class);
         $this->routerUtils = new RouterUtils($requestStack);
         $this->registry = new InstrumentationRegistry();
     }

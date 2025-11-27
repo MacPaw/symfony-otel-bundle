@@ -10,6 +10,7 @@ use OpenTelemetry\SDK\Trace\TracerProviderInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\Telemetry\InMemoryProviderFactory;
+use TypeError;
 
 class TraceServiceTest extends TestCase
 {
@@ -164,7 +165,7 @@ class TraceServiceTest extends TestCase
         try {
             $traceService->forceFlush(200);
             $this->assertTrue(true); // If no exception, that's fine
-        } catch (\TypeError $e) {
+        } catch (TypeError $e) {
             // Expected - the implementation calls with wrong signature
             // But we've tested that method_exists returns true and the code path is executed
             $this->assertStringContainsString('forceFlush', $e->getMessage());
@@ -181,7 +182,7 @@ class TraceServiceTest extends TestCase
         try {
             $traceService->forceFlush();
             $this->assertTrue(true);
-        } catch (\TypeError $e) {
+        } catch (TypeError $e) {
             // Expected due to signature mismatch, but code path is tested
             $this->assertStringContainsString('forceFlush', $e->getMessage());
         }
@@ -196,7 +197,7 @@ class TraceServiceTest extends TestCase
         try {
             $traceService->forceFlush(500);
             $this->assertTrue(true);
-        } catch (\TypeError $e) {
+        } catch (TypeError $e) {
             // Expected due to signature mismatch, but code path is tested
             $this->assertStringContainsString('forceFlush', $e->getMessage());
         }

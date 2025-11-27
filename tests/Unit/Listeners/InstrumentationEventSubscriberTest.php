@@ -12,6 +12,7 @@ use OpenTelemetry\API\Trace\TracerInterface;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\TerminateEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
@@ -39,7 +40,7 @@ class InstrumentationEventSubscriberTest extends TestCase
     {
         $kernel = $this->createMock(HttpKernelInterface::class);
         $request = Request::create('/test', 'GET');
-        $event = new TerminateEvent($kernel, $request, new \Symfony\Component\HttpFoundation\Response());
+        $event = new TerminateEvent($kernel, $request, new Response());
 
         // Verify the method calls post on the instrumentation
         $this->subscriber->onKernelTerminateExecutionTime($event);

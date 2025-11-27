@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Macpaw\SymfonyOtelBundle\Controller;
 
+use DateTimeImmutable;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -20,7 +21,7 @@ final class HealthController
         return new JsonResponse([
             'status' => 'ok',
             'service' => $_ENV['OTEL_SERVICE_NAME'] ?? 'unknown',
-            'time' => (new \DateTimeImmutable())->format(DATE_ATOM),
+            'time' => (new DateTimeImmutable())->format(DATE_ATOM),
         ]);
     }
 }

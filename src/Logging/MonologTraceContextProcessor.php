@@ -12,7 +12,7 @@ use Throwable;
 /**
  * Monolog processor that injects OpenTelemetry trace context into every log record.
  *
- * Adds configurable keys (defaults: trace_id, span_id, trace_flags) into $record['context'] when a valid
+ * Adds configurable keys (defaults: trace_id, span_id, trace_flags) into $record['extra'] when a valid
  * span context is available.
  */
 final class MonologTraceContextProcessor implements LoggerAwareInterface
@@ -65,10 +65,13 @@ final class MonologTraceContextProcessor implements LoggerAwareInterface
                 }
             }
 
-            $record['context'][$this->keys['trace_id']] = $traceId;
-            $record['context'][$this->keys['span_id']] = $spanId;
+            if (!isset($record['extra'])) {
+                $record['extra'] = [];
+            }
+            $record['extra'][$this->keys['trace_id']] = $traceId;
+            $record['extra'][$this->keys['span_id']] = $spanId;
             if ($sampled !== null) {
-                $record['context'][$this->keys['trace_flags']] = $sampled ? '01' : '00';
+                $record['extra'][$this->keys['trace_flags']] = $sampled ? '01' : '00';
             }
         } catch (Throwable) {
             // never break logging

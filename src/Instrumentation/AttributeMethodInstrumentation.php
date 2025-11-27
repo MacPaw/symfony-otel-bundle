@@ -1,0 +1,75 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Macpaw\SymfonyOtelBundle\Instrumentation;
+
+use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
+use OpenTelemetry\API\Trace\SpanBuilderInterface;
+use OpenTelemetry\API\Trace\SpanInterface;
+use OpenTelemetry\API\Trace\TracerInterface;
+use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+
+/**
+ * Hook-based instrumentation created from #[TraceSpan] attribute on a service method.
+ * Starts a span before method execution and ends it afterwards.
+ */
+final class AttributeMethodInstrumentation extends AbstractHookInstrumentation
+{
+    /**
+     * @param class-string $className
+     * @param non-empty-string $methodName
+     * @param non-empty-string $spanName
+     * @param int $spanKind One of OpenTelemetry\API\Trace\SpanKind::KIND_*
+     * @param array<string, scalar|array|null> $defaultAttributes
+     */
+    public function __construct(
+        InstrumentationRegistry $instrumentationRegistry,
+        TracerInterface $tracer,
+        TextMapPropagatorInterface $propagator,
+        private readonly string $className,
+        private readonly string $methodName,
+        private readonly string $spanName,
+        private readonly int $spanKind,
+        private readonly array $defaultAttributes = [],
+    ) {
+        parent::__construct($instrumentationRegistry, $tracer, $propagator);
+    }
+
+    public function getClass(): ?string
+    {
+        return $this->className;
+    }
+
+    public function getMethod(): string
+    {
+        return $this->methodName;
+    }
+
+    public function pre(): void
+    {
+        $this->initSpan($this->instrumentationRegistry->getContext());
+
+        // Set default attributes declared on the attribute
+        foreach ($this->defaultAttributes as $key => $value) {
+            $this->span->setAttribute((string)$key, $value);
+        }
+    }
+
+    public function post(): void
+    {
+        $this->closeSpan($this->span);
+    }
+
+    public function getName(): string
+    {
+        return $this->spanName;
+    }
+
+    protected function buildSpan(SpanBuilderInterface $spanBuilder): SpanInterface
+    {
+        return $spanBuilder
+            ->setSpanKind($this->spanKind)
+            ->startSpan();
+    }
+}

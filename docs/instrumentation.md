@@ -391,3 +391,108 @@ final class HttpClientInstrumentation extends AbstractHookInstrumentation
 - [OpenTelemetry Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/)
 - [OpenTelemetry PHP SDK](https://github.com/open-telemetry/opentelemetry-php)
 - [Symfony Event System](https://symfony.com/doc/current/event_dispatcher.html) 
+
+## Custom Instrumentations — build business spans fast
+
+Make business tracing delightful with two high‑level DX features designed to reduce boilerplate and enforce consistent
+span semantics.
+
+### Attributes / Annotations
+
+Use a PHP attribute to declare a span around a handler/controller method. The bundle auto-discovers and wires a listener
+so you don’t have to manage span lifecycle manually.
+
+```php
+<?php
+
+use Macpaw\SymfonyOtelBundle\Attribute\TraceSpan;
+
+final class CheckoutHandler
+{
+    #[TraceSpan('Checkout')]
+    public function __invoke(PlaceOrderCommand $command): void
+    {
+        // ... business logic
+        // you may still add attributes/events as needed (see tips below)
+    }
+}
+```
+
+Key points:
+
+- Zero boilerplate: attribute + autoconfigured listener automatically starts/ends spans
+- Parent context is inferred from the current request/consumer context
+- Add attributes/events inside the method as usual
+- Preview note: if your installed version doesn’t yet include the `TraceSpan` attribute, use the manual span or the
+  `inSpan()` helper below as an alternative
+
+Tips:
+
+- Name spans after business concepts (e.g., `Checkout`, `CalculatePrice`, `ApplyCoupon`)
+- Add compact attributes (e.g., `order.id`, `cart.items_count`), avoid large strings
+- Follow OpenTelemetry semantic conventions where applicable
+
+### Business spans helper: inSpan()
+
+Wrap any closure in a span with automatic lifecycle and error handling.
+
+```php
+<?php
+
+use Macpaw\SymfonyOtelBundle\Tracing\OtelFacade; // example façade
+use OpenTelemetry\API\Trace\SpanInterface; // for context typing if needed
+
+// $otel is a small tracing façade/service provided by the bundle
+$result = $otel->inSpan('CalculatePrice', function ($ctx) use ($order) {
+    // $ctx can expose helper methods to interact with the active span
+    // e.g., $ctx->setAttribute('order.items', count($order->items()));
+
+    // ... business logic
+    return $calculator->total($order);
+});
+```
+
+Semantics:
+
+- Automatic `end()` even if an exception is thrown
+- Exceptions set span status to `ERROR` and are rethrown
+- The closure’s return value is returned from `inSpan()`
+- Inside the closure you can set attributes and add events without manual span lifecycle
+
+Suggested usage patterns:
+
+- Controllers and handlers where you want a single business span per action
+- Domain services for key business operations (pricing, allocation, recommendation)
+- Background workers / Messenger handlers to wrap message processing
+
+#### Manual alternative (when attributes/helper are unavailable)
+
+```php
+<?php
+
+use OpenTelemetry\API\Trace\Span;
+use OpenTelemetry\API\Trace\StatusCode;
+
+$tracer = $traceService->getTracer();
+$span = $tracer->spanBuilder('CalculatePrice')->startSpan();
+$scope = $span->activate();
+
+try {
+    $span->setAttribute('order.items', count($order->items()));
+    $result = $calculator->total($order);
+} catch (\Throwable $e) {
+    $span->recordException($e);
+    $span->setStatus(StatusCode::STATUS_ERROR, $e->getMessage());
+    throw $e;
+} finally {
+    $scope->detach();
+    $span->end();
+}
+```
+
+### Best practices for naming and attributes
+
+- Prefer business names over technical ones: `Checkout`, not `handle`
+- Keep attributes small and typed (ints/bools), avoid large strings or arrays
+- Use semantic conventions where they fit (HTTP, DB, messaging)
+- Sample wisely in production to reduce overhead

@@ -33,11 +33,55 @@ This bundle is a wrapper around the [official OpenTelemetry PHP SDK bundle](http
 
 - **Request Execution Time Tracking** - Automatic HTTP request timing
 - **Exception Handling** - Automatic span cleanup and error recording
-- **Custom Instrumentations** - Framework for creating custom telemetry collection
+- **Custom Instrumentations** - Framework for creating custom telemetry collection (Attributes + inSpan helper)
 
 For detailed instrumentation guide, see [Instrumentation Guide](docs/instrumentation.md).
 
+## Custom Instrumentations — build business spans fast
 
+Make business tracing delightful with two high‑level DX features:
+
+#### 1) Attributes / Annotations
+
+```php
+use Macpaw\SymfonyOtelBundle\Attribute\TraceSpan;
+
+final class CheckoutHandler
+{
+    #[TraceSpan('Checkout')]
+    public function __invoke(PlaceOrderCommand $command): void
+    {
+        // ... your business logic
+        // inside the method you can still add attributes/events as needed
+        // $ctx->setAttribute('order.id', $command->orderId());
+    }
+}
+```
+
+- Zero boilerplate: attribute + autoconfigured listener starts/ends spans for you
+- Parent context is inferred from the current request/consumer
+- Add attributes/events inside as usual
+- Note: If your version doesn’t expose the `TraceSpan` attribute yet, see the Instrumentation Guide for the manual
+  approach
+
+#### 2) Simple interface for business spans
+
+```php
+// $otel is a small tracing façade (e.g., provided by this bundle)
+$result = $otel->inSpan('CalculatePrice', function (SpanContext $ctx) use ($order) {
+    $ctx->setAttribute('order.items', count($order->items()));
+    // business logic
+    return $calculator->total($order);
+});
+```
+
+- Automatic end() even on exceptions
+- Exceptions set span status to ERROR and are rethrown
+- Closure’s return value is returned by `inSpan()`
+- Access span context (`setAttribute()`, `addEvent()`) without manual lifecycle
+
+See more patterns and best practices in
+the [Instrumentation Guide](docs/instrumentation.md#custom-instrumentations-—-build-business-spans-fast).
 
 ## Environment Variables
 

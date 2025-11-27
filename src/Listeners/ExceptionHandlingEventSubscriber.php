@@ -20,7 +20,9 @@ final readonly class ExceptionHandlingEventSubscriber implements EventSubscriber
     public function __construct(
         private InstrumentationRegistry $instrumentationRegistry,
         private TraceService $traceService,
-        private ?LoggerInterface $logger = null
+        private ?LoggerInterface $logger = null,
+        private bool $forceFlushOnTerminate = false,
+        private int $forceFlushTimeoutMs = 100,
     ) {
     }
 
@@ -41,7 +43,7 @@ final readonly class ExceptionHandlingEventSubscriber implements EventSubscriber
 
         $this->cleanupSpansAndScope();
 
-        $this->shutdownTraceService();
+        $this->flushTracesIfConfigured();
     }
 
     private function createErrorSpan(ExceptionEvent $event, Throwable $throwable): void
@@ -62,7 +64,11 @@ final readonly class ExceptionHandlingEventSubscriber implements EventSubscriber
 
                 $errorSpan->setAttribute(TraceAttributes::EXCEPTION_TYPE, $throwable::class);
                 $errorSpan->setAttribute(TraceAttributes::EXCEPTION_MESSAGE, $throwable->getMessage());
-                $errorSpan->setAttribute(TraceAttributes::EXCEPTION_STACKTRACE, $throwable->getTraceAsString());
+                // Gate heavy stacktrace attribute behind env flag to reduce payload in production
+                $includeStack = filter_var(getenv('OTEL_INCLUDE_EXCEPTION_STACKTRACE') ?: '0', FILTER_VALIDATE_BOOL);
+                if ($includeStack) {
+                    $errorSpan->setAttribute(TraceAttributes::EXCEPTION_STACKTRACE, $throwable->getTraceAsString());
+                }
                 $errorSpan->setAttribute('error.handled_by', 'ExceptionHandlingEventSubscriber');
 
                 if ($event->getRequest() !== null) { // @phpstan-ignore-line
@@ -114,15 +120,17 @@ final readonly class ExceptionHandlingEventSubscriber implements EventSubscriber
         $this->instrumentationRegistry->clearScope();
     }
 
-    private function shutdownTraceService(): void
+    private function flushTracesIfConfigured(): void
     {
-        try {
-            $this->traceService->shutdown();
-            $this->logger?->debug('Shutdown trace service due to exception');
-        } catch (Throwable $e) {
-            $this->logger?->error('Failed to shutdown trace service', [
-                'error' => $e->getMessage(),
-            ]);
+        if ($this->forceFlushOnTerminate) {
+            try {
+                $this->traceService->forceFlush($this->forceFlushTimeoutMs);
+                $this->logger?->debug('Force-flushed traces due to exception');
+            } catch (Throwable $e) {
+                $this->logger?->error('Failed to force-flush traces', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 

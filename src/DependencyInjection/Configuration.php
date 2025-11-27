@@ -24,6 +24,17 @@ class Configuration implements ConfigurationInterface
                     ->cannotBeEmpty()
                     ->defaultValue('symfony-tracer')
                 ->end()
+            ->booleanNode('force_flush_on_terminate')
+            ->info(
+                'If true, calls tracer provider forceFlush() on Kernel terminate; default false to preserve BatchSpanProcessor async export.',
+            )
+            ->defaultFalse()
+            ->end()
+            ->integerNode('force_flush_timeout_ms')
+            ->info('Timeout in milliseconds for tracer provider forceFlush() when enabled (non-destructive flush).')
+            ->min(0)
+            ->defaultValue(100)
+            ->end()
                 ->arrayNode('instrumentations')
                     ->defaultValue([])
                     ->scalarPrototype()

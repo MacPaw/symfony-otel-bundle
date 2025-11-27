@@ -22,10 +22,16 @@ services:
       - { name: 'kernel.event_subscriber' }
 
   Macpaw\SymfonyOtelBundle\Listeners\RequestRootSpanEventSubscriber:
+    arguments:
+      $forceFlushOnTerminate: '%otel_bundle.force_flush_on_terminate%'
+      $forceFlushTimeoutMs: '%otel_bundle.force_flush_timeout_ms%'
     tags:
       - { name: 'kernel.event_subscriber' }
 
   Macpaw\SymfonyOtelBundle\Listeners\ExceptionHandlingEventSubscriber:
+    arguments:
+      $forceFlushOnTerminate: '%otel_bundle.force_flush_on_terminate%'
+      $forceFlushTimeoutMs: '%otel_bundle.force_flush_timeout_ms%'
     tags:
       - { name: 'kernel.event_subscriber' }
 

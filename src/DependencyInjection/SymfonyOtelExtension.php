@@ -31,6 +31,10 @@ class SymfonyOtelExtension extends Extension
         $serviceName = $configs['service_name'];
         /** @var string $tracerName */
         $tracerName = $configs['tracer_name'];
+        /** @var bool $forceFlushOnTerminate */
+        $forceFlushOnTerminate = $configs['force_flush_on_terminate'];
+        /** @var int $forceFlushTimeoutMs */
+        $forceFlushTimeoutMs = $configs['force_flush_timeout_ms'];
         /** @var array<int, string> $instrumentations */
         $instrumentations = $configs['instrumentations'];
         /** @var array<string, string> $headerMappings */
@@ -38,6 +42,8 @@ class SymfonyOtelExtension extends Extension
 
         $container->setParameter('otel_bundle.service_name', $serviceName);
         $container->setParameter('otel_bundle.tracer_name', $tracerName);
+        $container->setParameter('otel_bundle.force_flush_on_terminate', $forceFlushOnTerminate);
+        $container->setParameter('otel_bundle.force_flush_timeout_ms', $forceFlushTimeoutMs);
         $container->setParameter('otel_bundle.instrumentations', $instrumentations);
         $container->setParameter('otel_bundle.header_mappings', $headerMappings);
     }

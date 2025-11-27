@@ -35,4 +35,13 @@ readonly class TraceService
     {
         $this->tracerProvider->shutdown();
     }
+
+    public function forceFlush(int $timeoutMs = 200): void
+    {
+        // Prefer a bounded, non-destructive flush over shutdown per request
+        if (method_exists($this->tracerProvider, 'forceFlush')) {
+            // @phpstan-ignore-next-line method exists at runtime on SDK provider
+            $this->tracerProvider->forceFlush($timeoutMs);
+        }
+    }
 }

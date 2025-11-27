@@ -91,10 +91,7 @@ final class InstrumentationRegistry
 
     public function __destruct()
     {
-        foreach ($this->spans as $span) {
-            $span->end();
-        }
-
-        $this->clearScope();
+        // Avoid doing work in destructor to prevent double-ending spans or costly shutdowns
+        // Spans and scope are explicitly managed by listeners/subscribers
     }
 }

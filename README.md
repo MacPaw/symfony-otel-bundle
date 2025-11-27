@@ -51,29 +51,51 @@ The bundle supports all standard OpenTelemetry SDK environment variables. For co
 
 ### Transport Configuration
 
-**Important:** This bundle is **transport-agnostic** - it doesn't handle transport configuration directly. All transport settings are managed through standard OpenTelemetry SDK environment variables.
+**Important:** This bundle is **transport-agnostic** — it relies on standard OpenTelemetry SDK environment variables and
+preserves the `BatchSpanProcessor` (BSP) defaults for queued, asynchronous export.
 
-**Recommended for production:**
+**Recommended for production (gRPC + BSP):**
 ```bash
 # Install gRPC support
 composer require open-telemetry/transport-grpc
-pecl install grpc # may take a time to compile - 30-40 minutes
+pecl install grpc # may take time to compile (CI can cache layers)
 
-# Configure gRPC endpoint
-OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
-OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+# Configure gRPC endpoint (4317) and BSP tuning
+export OTEL_TRACES_EXPORTER=otlp
+export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317
+export OTEL_EXPORTER_OTLP_TIMEOUT=1000    # ms
+# BatchSpanProcessor (queueing + async export)
+export OTEL_BSP_SCHEDULE_DELAY=200        # ms
+export OTEL_BSP_MAX_EXPORT_BATCH_SIZE=256
+export OTEL_BSP_MAX_QUEUE_SIZE=2048
 ```
 
-**Default HTTP endpoint:** `http://collector:4318`
+If gRPC is unavailable, switch to HTTP/protobuf + gzip:
+
+```bash
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318
+export OTEL_EXPORTER_OTLP_COMPRESSION=gzip
+```
+
+Per‑request flush/teardown warning:
+
+- Avoid calling `shutdown()` at request end — it tears down processors/exporters and disables BSP benefits.
+- The bundle exposes config switches:
+    - `otel_bundle.force_flush_on_terminate` (default: false) — whether to call a non-destructive flush at request end.
+    - `otel_bundle.force_flush_timeout_ms` (default: 100) — timeout in milliseconds for `forceFlush()` when enabled.
+      Leave flushing OFF in web requests so BSP can export asynchronously; consider enabling only for CLI or short‑lived
+      processes.
 
 **Transport protocols supported:**
-- `grpc` - High performance, recommended for production
-- `http/protobuf` - Standard HTTP with protobuf encoding
-- `http/json` - HTTP with JSON encoding (slower)
 
-**Note:** Our bundle supports all transport protocols supported by the OpenTelemetry PHP SDK since we don't decorate the transport layer. For complete transport configuration options, see the [official OpenTelemetry PHP Exporters documentation](https://opentelemetry.io/docs/languages/php/exporters/).
+- `grpc` — High performance, recommended for production
+- `http/protobuf` — Standard HTTP with protobuf encoding
+- `http/json` — HTTP with JSON encoding (slower)
 
-For detailed Docker setup and development environment configuration, see [Docker Development Guide](docs/docker.md).
+See the [official OpenTelemetry PHP Exporters docs](https://opentelemetry.io/docs/languages/php/exporters/) for complete
+transport options. For Docker setup and env examples, see [Docker Development Guide](docs/docker.md).
 
 
 ## Documentation

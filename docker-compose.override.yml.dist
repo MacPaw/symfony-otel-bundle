@@ -11,9 +11,21 @@ services:
       - OTEL_TRACES_EXPORTER=otlp
       - OTEL_METRICS_EXPORTER=none
       - OTEL_LOGS_EXPORTER=none
+      # Transport: prefer OTLP gRPC to preserve BatchSpanProcessor async export
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_TIMEOUT=1000
+      # BatchSpanProcessor tuning (queueing + async export)
+      - OTEL_BSP_SCHEDULE_DELAY=200
+      - OTEL_BSP_MAX_EXPORT_BATCH_SIZE=256
+      - OTEL_BSP_MAX_QUEUE_SIZE=2048
       # Enable additional debugging
       - OTEL_PHP_AUTOLOAD_ENABLED=true
       - OTEL_TRACES_SAMPLER=always_on
+      # HTTP fallback (uncomment to use HTTP/protobuf + gzip instead of gRPC)
+      # - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      # - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      # - OTEL_EXPORTER_OTLP_COMPRESSION=gzip
     volumes:
       # Mount source code for development
       - ./:/var/www/html:rw

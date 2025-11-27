@@ -1,7 +1,9 @@
 otel_bundle:
   tracer_name:  '%otel_tracer_name%'
   service_name: '%otel_service_name%'
+  force_flush_on_terminate: false
+  force_flush_timeout_ms: 100
   instrumentations:
-    - 'Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation'
+    - 'Macpaw\\SymfonyOtelBundle\\Instrumentation\\RequestExecutionTimeInstrumentation'
   header_mappings:
     http.request_id: 'X-Request-Id'

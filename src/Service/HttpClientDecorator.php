@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Macpaw\SymfonyOtelBundle\Service;
 
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
-use Macpaw\SymfonyOtelBundle\Service\RequestIdGenerator;
 use OpenTelemetry\Context\Context;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use Psr\Log\LoggerInterface;
@@ -45,9 +44,9 @@ class HttpClientDecorator implements HttpClientInterface
 
         $options['headers'] = $headers;
 
+        // Avoid building heavy debug context on hot path; keep it minimal
         $this->logger?->debug('Added headers to HTTP request', [
             'request_id' => $requestId,
-            'otel_headers' => array_keys($this->propagator->fields()),
             'url' => $url,
         ]);
 

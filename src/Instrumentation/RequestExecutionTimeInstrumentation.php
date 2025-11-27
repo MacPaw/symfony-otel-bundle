@@ -60,6 +60,12 @@ final class RequestExecutionTimeInstrumentation extends AbstractInstrumentation
 
     protected function retrieveContext(): ContextInterface
     {
+        // Prefer context already extracted and stored by the RequestRootSpanEventSubscriber
+        $registryContext = $this->instrumentationRegistry->getContext();
+        if ($registryContext !== null) {
+            return $registryContext;
+        }
+
         $context = $this->propagator->extract($this->headers);
         $spanInjectedContext = Span::fromContext($context)->getContext();
 
@@ -71,9 +77,8 @@ final class RequestExecutionTimeInstrumentation extends AbstractInstrumentation
         $executionTime = $this->clock->now() - $this->startTime;
 
         if ($this->isSpanSet === true) {
-            $this->span->addEvent(
-                sprintf('Execution time (in nanoseconds): %d', $executionTime),
-            );
+            // Avoid extra event payload; either rely on span duration or store a compact numeric attribute
+            $this->span->setAttribute('request.exec_time_ns', $executionTime);
             $this->closeSpan($this->span);
         }
     }

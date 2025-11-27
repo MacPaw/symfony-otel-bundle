@@ -23,7 +23,9 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
         private InstrumentationRegistry $instrumentationRegistry,
         private TextMapPropagatorInterface $propagator,
         private TraceService $traceService,
-        private HttpMetadataAttacher $httpMetadataAttacher
+        private HttpMetadataAttacher $httpMetadataAttacher,
+        private bool $forceFlushOnTerminate = false,
+        private int $forceFlushTimeoutMs = 100,
     ) {
     }
 
@@ -73,7 +75,10 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
             $span->end();
         }
 
-        $this->traceService->shutdown();
+        // Preserve BatchSpanProcessor benefits: flush only when explicitly enabled
+        if ($this->forceFlushOnTerminate) {
+            $this->traceService->forceFlush($this->forceFlushTimeoutMs);
+        }
     }
 
     /**

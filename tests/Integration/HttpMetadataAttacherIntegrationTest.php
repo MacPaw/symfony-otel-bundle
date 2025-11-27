@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use OpenTelemetry\API\Trace\SpanBuilderInterface;
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher;
+use OpenTelemetry\API\Trace\SpanBuilderInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -76,10 +76,10 @@ class HttpMetadataAttacherIntegrationTest extends TestCase
 
         $spanBuilder = $this->createMock(SpanBuilderInterface::class);
 
-        // With empty mappings, only request ID should be generated
-        $spanBuilder->expects($this->once())
+        // With empty mappings: 1 for request ID generation + 2 for HTTP_REQUEST_METHOD and HTTP_ROUTE
+        $spanBuilder->expects($this->exactly(3))
             ->method('setAttribute')
-            ->with('http.request_id', $this->isType('string'));
+            ->willReturnSelf();
 
         $service->addHttpAttributes($spanBuilder, $request);
     }

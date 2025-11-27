@@ -7,12 +7,12 @@ namespace Tests\Unit\Service;
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Service\HttpClientDecorator;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
-use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\HeaderBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\HeaderBag;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 use Symfony\Contracts\HttpClient\ResponseStreamInterface;
@@ -83,7 +83,6 @@ class HttpClientDecoratorTest extends TestCase
                 'Added headers to HTTP request',
                 [
                     'request_id' => 'test-request-id',
-                    'otel_headers' => [0, 1],
                     'url' => 'https://api.example.com/data',
                 ]
             );

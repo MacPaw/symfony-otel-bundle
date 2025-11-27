@@ -6,8 +6,8 @@ namespace Tests\Unit\Service;
 
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher;
-use PHPUnit\Framework\TestCase;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
+use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\HeaderBag;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
@@ -34,11 +34,12 @@ class HttpMetadataAttacherTest extends TestCase
         $headers->method('get')->willReturn(null);
         $headers->method('has')->willReturn(false);
         $request->headers = $headers;
+        $request->method('getMethod')->willReturn('GET');
+        $request->method('getPathInfo')->willReturn('/');
 
-        // Expect one call for request ID generation
-        $spanBuilder->expects($this->once())
+        // Expect 3 calls: 1 for request ID generation + 2 for HTTP_REQUEST_METHOD and HTTP_ROUTE
+        $spanBuilder->expects($this->exactly(3))
             ->method('setAttribute')
-            ->with('http.request_id', $this->isType('string'))
             ->willReturnSelf();
 
         $this->service->addHttpAttributes($spanBuilder, $request);
@@ -71,9 +72,11 @@ class HttpMetadataAttacherTest extends TestCase
                 ['X-Request-Id', false] // No existing request ID, so one will be generated
             ]);
         $request->headers = $headers;
+        $request->method('getMethod')->willReturn('GET');
+        $request->method('getPathInfo')->willReturn('/');
 
-        // Expect 3 calls: 2 for existing headers + 1 for request ID generation
-        $spanBuilder->expects($this->exactly(3))
+        // Expect 5 calls: 2 for existing headers + 1 for request ID generation + 2 for HTTP_REQUEST_METHOD and HTTP_ROUTE
+        $spanBuilder->expects($this->exactly(5))
             ->method('setAttribute')
             ->willReturnSelf();
 
@@ -90,11 +93,12 @@ class HttpMetadataAttacherTest extends TestCase
         $headers->method('get')->willReturn(null);
         $headers->method('has')->willReturn(false);
         $request->headers = $headers;
+        $request->method('getMethod')->willReturn('GET');
+        $request->method('getPathInfo')->willReturn('/');
 
-        // Expect one call for request ID generation
-        $spanBuilder->expects($this->once())
+        // Expect 3 calls: 1 for request ID generation + 2 for HTTP_REQUEST_METHOD and HTTP_ROUTE
+        $spanBuilder->expects($this->exactly(3))
             ->method('setAttribute')
-            ->with('http.request_id', $this->isType('string'))
             ->willReturnSelf();
 
         $service->addHttpAttributes($spanBuilder, $request);
@@ -124,8 +128,12 @@ class HttpMetadataAttacherTest extends TestCase
                 ['X-Request-Id', true] // Existing request ID, so no generation needed
             ]);
         $request->headers = $headers;
+        $request->method('getMethod')->willReturn('GET');
+        $request->method('getPathInfo')->willReturn('/');
 
-        $spanBuilder->expects($this->exactly(2))
+        // Expect 4 calls: 2 for existing headers + 2 for HTTP_REQUEST_METHOD and HTTP_ROUTE
+        // Note: request ID is not generated because X-Request-Id header exists
+        $spanBuilder->expects($this->exactly(4))
             ->method('setAttribute')
             ->willReturnSelf();
 

@@ -6,7 +6,7 @@ namespace Macpaw\SymfonyOtelBundle\Service;
 
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
-use Opentelemetry\SemConv\Attributes as SemConv;
+use OpenTelemetry\SemConv\Attributes as SemConv;
 use Symfony\Component\HttpFoundation\Request;
 
 final readonly class HttpMetadataAttacher
@@ -42,7 +42,7 @@ final readonly class HttpMetadataAttacher
         }
 
         // Standard HTTP semantic attributes if not set upstream
-        $spanBuilder->setAttribute(SemConv\HttpAttributes::HTTP_REQUEST_METHOD, $request->getScheme());
+        $spanBuilder->setAttribute(SemConv\HttpAttributes::HTTP_REQUEST_METHOD, $request->getMethod());
         $spanBuilder->setAttribute(SemConv\HttpAttributes::HTTP_ROUTE, $request->getPathInfo());
     }
 

@@ -323,7 +323,7 @@ class HookManagerServiceTest extends TestCase
         $callCount = 0;
         $this->logger->expects($this->exactly(2))
             ->method('debug')
-            ->willReturnCallback(function ($message, array $context = []) use (&$callCount): void{
+            ->willReturnCallback(function ($message, array $context = []) use (&$callCount): void {
                 /** @var array<string, mixed> $context */
                 $callCount++;
                 if ($callCount === 1) {

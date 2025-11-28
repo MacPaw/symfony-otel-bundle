@@ -82,9 +82,8 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
         // Force flush to ensure spans are exported
         $provider = InMemoryProviderFactory::create();
         // TracerProviderInterface may have forceFlush method
-        // @phpstan-ignore-next-line
+        // @phpstan-ignore-next-line function.alreadyNarrowedType
         if (method_exists($provider, 'forceFlush')) {
-            /** @phpstan-ignore-next-line */
             $provider->forceFlush();
         }
 
@@ -173,8 +172,8 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
         $this->assertNotNull($exporter);
 
         $provider = InMemoryProviderFactory::create();
+        // @phpstan-ignore-next-line function.alreadyNarrowedType
         if (method_exists($provider, 'forceFlush')) {
-            /** @phpstan-ignore-next-line */
             $provider->forceFlush();
         }
 
@@ -241,8 +240,8 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
         $this->assertNotNull($exporter);
 
         $provider = InMemoryProviderFactory::create();
+        // @phpstan-ignore-next-line function.alreadyNarrowedType
         if (method_exists($provider, 'forceFlush')) {
-            /** @phpstan-ignore-next-line */
             $provider->forceFlush();
         }
 
@@ -299,8 +298,8 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
         $this->assertNotNull($exporter);
 
         $provider = InMemoryProviderFactory::create();
+        // @phpstan-ignore-next-line function.alreadyNarrowedType
         if (method_exists($provider, 'forceFlush')) {
-            /** @phpstan-ignore-next-line */
             $provider->forceFlush();
         }
 

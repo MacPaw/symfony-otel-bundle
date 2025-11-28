@@ -96,7 +96,7 @@ class MonologTraceContextProcessorTest extends TestCase
      * @param array<string, mixed>|LogRecord $record
      *
      */
-    private function hasExtraKey($record, string $key): bool
+    private function hasExtraKey(LogRecord|array $record, string $key): bool
     {
         $extra = $this->getExtra($record);
         return isset($extra[$key]);
@@ -109,7 +109,7 @@ class MonologTraceContextProcessorTest extends TestCase
      *
      * @return mixed
      */
-    private function getExtraValue($record, string $key)
+    private function getExtraValue(LogRecord|array $record, string $key)
     {
         $extra = $this->getExtra($record);
         return $extra[$key] ?? null;

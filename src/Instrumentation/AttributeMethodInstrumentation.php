@@ -32,6 +32,7 @@ final class AttributeMethodInstrumentation extends AbstractHookInstrumentation
         private readonly string $methodName,
         private readonly string $spanName,
         private readonly int $spanKind,
+        /** @param array<string, scalar|array|null> */
         private readonly array $defaultAttributes = [],
     ) {
         parent::__construct($instrumentationRegistry, $tracer, $propagator);
@@ -59,7 +60,8 @@ final class AttributeMethodInstrumentation extends AbstractHookInstrumentation
 
         // Set default attributes declared on the attribute
         foreach ($this->defaultAttributes as $key => $value) {
-            $this->span->setAttribute((string)$key, $value);
+            /** @var non-empty-string $key */
+            $this->span->setAttribute($key, $value);
         }
     }
 
@@ -75,6 +77,7 @@ final class AttributeMethodInstrumentation extends AbstractHookInstrumentation
 
     protected function buildSpan(SpanBuilderInterface $spanBuilder): SpanInterface
     {
+        // @phpstan-ignore-next-line argument.type - spanKind is validated to be one of SpanKind::KIND_* constants at construction
         return $spanBuilder
             ->setSpanKind($this->spanKind)
             ->startSpan();

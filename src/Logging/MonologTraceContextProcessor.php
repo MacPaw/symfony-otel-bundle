@@ -42,6 +42,7 @@ final class MonologTraceContextProcessor implements ProcessorInterface, LoggerAw
      * @param array<string, mixed> $record
      *
      * @return array<string, mixed>
+     * @phpstan-ignore-next-line parameter.type - Monolog 2.x uses array, Monolog 3.x uses LogRecord (handled by MonologTraceContextProcessorV3)
      */
     public function __invoke(array $record): array
     {
@@ -56,11 +57,13 @@ final class MonologTraceContextProcessor implements ProcessorInterface, LoggerAw
             $spanId = $ctx->getSpanId();
             $sampled = null;
             // Some SDK versions expose isSampled(), others expose getTraceFlags()->isSampled()
+            // @phpstan-ignore-next-line function.alreadyNarrowedType
             if (method_exists($ctx, 'isSampled')) {
-                /** @phpstan-ignore-next-line */
+                // @phpstan-ignore-next-line
                 $sampled = $ctx->isSampled();
             } elseif (method_exists($ctx, 'getTraceFlags')) {
                 $flags = $ctx->getTraceFlags();
+                // @phpstan-ignore-next-line function.impossibleType,function.alreadyNarrowedType,booleanAnd.alwaysFalse
                 if (is_object($flags) && method_exists($flags, 'isSampled')) {
                     $sampled = (bool)$flags->isSampled();
                 }
@@ -69,11 +72,14 @@ final class MonologTraceContextProcessor implements ProcessorInterface, LoggerAw
             if (!isset($record['extra'])) {
                 $record['extra'] = [];
             }
-            $record['extra'][$this->keys['trace_id']] = $traceId;
-            $record['extra'][$this->keys['span_id']] = $spanId;
+            /** @var array<string, mixed> $extra */
+            $extra = $record['extra'];
+            $extra[$this->keys['trace_id']] = $traceId;
+            $extra[$this->keys['span_id']] = $spanId;
             if ($sampled !== null) {
-                $record['extra'][$this->keys['trace_flags']] = $sampled ? '01' : '00';
+                $extra[$this->keys['trace_flags']] = $sampled ? '01' : '00';
             }
+            $record['extra'] = $extra;
         } catch (Throwable) {
             // never break logging
             return $record;

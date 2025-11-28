@@ -51,11 +51,12 @@ final class MonologTraceContextProcessorV3 implements LoggerAwareInterface
             $spanId = $ctx->getSpanId();
             $sampled = null;
             // Some SDK versions expose isSampled(), others expose getTraceFlags()->isSampled()
+            // @phpstan-ignore-next-line function.alreadyNarrowedType
             if (method_exists($ctx, 'isSampled')) {
-                /** @phpstan-ignore-next-line */
                 $sampled = $ctx->isSampled();
             } elseif (method_exists($ctx, 'getTraceFlags')) {
                 $flags = $ctx->getTraceFlags();
+                // @phpstan-ignore-next-line function.impossibleType,function.alreadyNarrowedType,booleanAnd.alwaysFalse
                 if (is_object($flags) && method_exists($flags, 'isSampled')) {
                     $sampled = (bool) $flags->isSampled();
                 }

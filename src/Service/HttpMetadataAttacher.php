@@ -77,9 +77,11 @@ final readonly class HttpMetadataAttacher
             }
         } elseif (is_array($controller) && count($controller) === 2) {
             // [object|string, method]
-            $class = is_object($controller[0]) ? $controller[0]::class : (string)$controller[0];
+            $first = $controller[0];
+            $second = $controller[1];
+            $class = is_object($first) ? $first::class : (is_string($first) ? $first : '');
             $ns = $class;
-            $fn = (string)$controller[1];
+            $fn = is_string($second) ? $second : '';
         } elseif (is_object($controller)) {
             // Invokable object
             $ns = $controller::class;
@@ -102,6 +104,7 @@ final readonly class HttpMetadataAttacher
                 continue;
             }
             $headerValue = (string)$request->headers->get($headerName);
+            /** @var non-empty-string $spanAttributeName */
             $span->setAttribute($spanAttributeName, $headerValue);
         }
 
@@ -141,9 +144,11 @@ final readonly class HttpMetadataAttacher
                 $fn = '__invoke';
             }
         } elseif (is_array($controller) && count($controller) === 2) {
-            $class = is_object($controller[0]) ? $controller[0]::class : (string)$controller[0];
+            $first = $controller[0];
+            $second = $controller[1];
+            $class = is_object($first) ? $first::class : (is_string($first) ? $first : '');
             $ns = $class;
-            $fn = (string)$controller[1];
+            $fn = is_string($second) ? $second : '';
         } elseif (is_object($controller)) {
             $ns = $controller::class;
             $fn = '__invoke';

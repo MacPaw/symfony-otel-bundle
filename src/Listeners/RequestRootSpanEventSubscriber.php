@@ -22,9 +22,12 @@ use Symfony\Component\HttpKernel\KernelEvents;
 
 final readonly class RequestRootSpanEventSubscriber implements EventSubscriberInterface
 {
-    /** @var string[] */
+    /** @var array<string> */
     private array $routePrefixes;
 
+    /**
+     * @param array<string> $routePrefixes
+     */
     public function __construct(
         private InstrumentationRegistry $instrumentationRegistry,
         private TextMapPropagatorInterface $propagator,
@@ -35,6 +38,7 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
         private bool $enabled = true,
         array $routePrefixes = [],
     ) {
+        /** @var array<string> $routePrefixes */
         $this->routePrefixes = $routePrefixes;
     }
 
@@ -78,12 +82,14 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
 
     private function shouldSampleRoute(Request $request): bool
     {
-        $path = $request->getPathInfo() ?? '';
-        $routeName = (string)($request->attributes->get('_route') ?? '');
+        $path = $request->getPathInfo();
+        $routeNameAttr = $request->attributes->get('_route');
+        $routeName = is_string($routeNameAttr) ? $routeNameAttr : '';
         foreach ($this->routePrefixes as $prefix) {
             if ($prefix === '') {
                 continue;
             }
+            /** @var string $prefix */
             if (str_starts_with($path, $prefix) || ($routeName !== '' && str_starts_with($routeName, $prefix))) {
                 return true;
             }

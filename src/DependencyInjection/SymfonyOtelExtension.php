@@ -106,7 +106,7 @@ class SymfonyOtelExtension extends Extension
                     putenv('OTEL_TRACES_SAMPLER=always_on');
                 } elseif ($preset === 'parentbased_ratio') {
                     putenv('OTEL_TRACES_SAMPLER=parentbased_traceidratio');
-                    $ratio = (string)($sampling['ratio'] ?? '0.1');
+                    $ratio = (string)$sampling['ratio'];
                     if ((getenv('OTEL_TRACES_SAMPLER_ARG') === false) || getenv('OTEL_TRACES_SAMPLER_ARG') === '') {
                         putenv('OTEL_TRACES_SAMPLER_ARG=' . $ratio);
                     }
@@ -134,7 +134,8 @@ class SymfonyOtelExtension extends Extension
         // Conditionally register request counters subscriber
         $enabledCounters = $enabled && (bool)$container->getParameter('otel_bundle.metrics.request_counters.enabled');
         if ($enabledCounters) {
-            $backend = (string)$container->getParameter('otel_bundle.metrics.request_counters.backend');
+            /** @var string $backend */
+            $backend = $container->getParameter('otel_bundle.metrics.request_counters.backend');
             $def = new Definition(RequestCountersEventSubscriber::class, [
                 new Reference(MeterProviderInterface::class),
                 new Reference(RouterUtils::class),

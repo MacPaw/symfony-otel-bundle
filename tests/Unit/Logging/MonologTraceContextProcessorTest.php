@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Logging;
 
+use DateTimeImmutable;
+use Monolog\Level;
+use OpenTelemetry\API\Trace\Span;
+use Throwable;
 use Macpaw\SymfonyOtelBundle\Logging\MonologTraceContextProcessor;
 use Macpaw\SymfonyOtelBundle\Logging\MonologTraceContextProcessorV3;
 use Monolog\LogRecord;
@@ -25,10 +29,8 @@ class MonologTraceContextProcessorTest extends TestCase
      * Create the appropriate processor instance based on Monolog version
      *
      * @param array{trace_id?:string, span_id?:string, trace_flags?:string} $keys
-     *
-     * @return MonologTraceContextProcessor|MonologTraceContextProcessorV3
      */
-    private function createProcessor(array $keys = [])
+    private function createProcessor(array $keys = []): MonologTraceContextProcessorV3|MonologTraceContextProcessor
     {
         if ($this->isMonologV3()) {
             return new MonologTraceContextProcessorV3($keys);
@@ -43,13 +45,13 @@ class MonologTraceContextProcessorTest extends TestCase
      *
      * @return array<string, mixed>|LogRecord
      */
-    private function createRecord(array $data = [])
+    private function createRecord(array $data = []): LogRecord|array
     {
         if ($this->isMonologV3()) {
             return new LogRecord(
-                datetime: new \DateTimeImmutable(),
+                datetime: new DateTimeImmutable(),
                 channel: 'test',
-                level: \Monolog\Level::Info,
+                level: Level::Info,
                 message: 'test',
                 // @phpstan-ignore-next-line
                 context: $data['context'] ?? [],
@@ -65,7 +67,7 @@ class MonologTraceContextProcessorTest extends TestCase
             'level' => 200,
             'level_name' => 'INFO',
             'channel' => 'test',
-            'datetime' => new \DateTimeImmutable(),
+            'datetime' => new DateTimeImmutable(),
         ], $data);
     }
 
@@ -76,7 +78,7 @@ class MonologTraceContextProcessorTest extends TestCase
      *
      * @return array<string, mixed>
      */
-    private function getExtra($record): array
+    private function getExtra(array $record): array
     {
         if ($record instanceof LogRecord) {
             /** @var array<string, mixed> $extra */
@@ -92,9 +94,7 @@ class MonologTraceContextProcessorTest extends TestCase
      * Check if extra key exists in record
      *
      * @param array<string, mixed>|LogRecord $record
-     * @param string                         $key
      *
-     * @return bool
      */
     private function hasExtraKey($record, string $key): bool
     {
@@ -106,7 +106,6 @@ class MonologTraceContextProcessorTest extends TestCase
      * Get extra value from record
      *
      * @param array<string, mixed>|LogRecord $record
-     * @param string                         $key
      *
      * @return mixed
      */
@@ -168,7 +167,7 @@ class MonologTraceContextProcessorTest extends TestCase
         // Ensure no active span context exists
         // Clear any active scope that might exist from previous tests
         try {
-            $currentSpan = \OpenTelemetry\API\Trace\Span::getCurrent();
+            $currentSpan = Span::getCurrent();
             $currentContext = $currentSpan->getContext();
             if ($currentContext->isValid()) {
                 // There's a valid span active, which would add trace context
@@ -178,7 +177,7 @@ class MonologTraceContextProcessorTest extends TestCase
                 // @phpstan-ignore-next-line
                 return;
             }
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // No active span, which is what we want for this test
         }
 
@@ -231,7 +230,7 @@ class MonologTraceContextProcessorTest extends TestCase
 
         // Check if there's an active span that might affect the test
         try {
-            $currentSpan = \OpenTelemetry\API\Trace\Span::getCurrent();
+            $currentSpan = Span::getCurrent();
             $currentContext = $currentSpan->getContext();
             if ($currentContext->isValid()) {
                 // There's a valid span active, which would add trace context
@@ -241,7 +240,7 @@ class MonologTraceContextProcessorTest extends TestCase
                 // @phpstan-ignore-next-line
                 return;
             }
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // No active span, which is fine for this test
         }
 
@@ -308,7 +307,7 @@ class MonologTraceContextProcessorTest extends TestCase
                 'level' => 200,
                 'level_name' => 'INFO',
                 'channel' => 'test',
-                'datetime' => new \DateTimeImmutable(),
+                'datetime' => new DateTimeImmutable(),
             ];
 
         $provider = InMemoryProviderFactory::create();
@@ -550,12 +549,12 @@ class MonologTraceContextProcessorTest extends TestCase
                 'level' => 200,
                 'level_name' => 'INFO',
                 'channel' => 'test',
-                'datetime' => new \DateTimeImmutable(),
+                'datetime' => new DateTimeImmutable(),
             ];
 
         // Check if there's an active span that might affect the test
         try {
-            $currentSpan = \OpenTelemetry\API\Trace\Span::getCurrent();
+            $currentSpan = Span::getCurrent();
             $currentContext = $currentSpan->getContext();
             if ($currentContext->isValid()) {
                 // There's a valid span active, which would add trace context
@@ -566,7 +565,7 @@ class MonologTraceContextProcessorTest extends TestCase
                 // @phpstan-ignore-next-line
                 return;
             }
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // No active span, which is what we want for this test
         }
 

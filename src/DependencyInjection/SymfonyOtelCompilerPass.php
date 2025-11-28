@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Macpaw\SymfonyOtelBundle\DependencyInjection;
 
+use ReflectionException;
 use Macpaw\SymfonyOtelBundle\Attribute\TraceSpan;
 use Macpaw\SymfonyOtelBundle\Instrumentation\AttributeMethodInstrumentation;
 use Macpaw\SymfonyOtelBundle\Instrumentation\HookInstrumentationInterface;
@@ -17,7 +18,6 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Throwable;
 
 class SymfonyOtelCompilerPass implements CompilerPassInterface
 {
@@ -59,9 +59,12 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
                 continue;
             }
 
+            // ReflectionClass constructor can throw ReflectionException if class doesn't exist,
+            // but we already checked with class_exists above, so this should never throw.
+            // However, we keep the try-catch for safety in case of edge cases.
             try {
                 $refl = new ReflectionClass($class);
-            } catch (Throwable) {
+            } catch (ReflectionException) {
                 continue;
             }
 

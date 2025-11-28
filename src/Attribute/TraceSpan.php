@@ -27,6 +27,7 @@ final class TraceSpan
     public function __construct(
         public string $name,
         public ?int $kind = null,
+        /** @var array<string, scalar|array|null> */
         public array $attributes = [],
     ) {
         if ($this->kind === null) {

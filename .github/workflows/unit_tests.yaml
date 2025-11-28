@@ -37,7 +37,7 @@ jobs:
       matrix:
         php: [ '8.2', '8.3', '8.4' ]
         symfony: [ '6.4.*', '7.0.*', '7.1.*', '7.2.*', '7.3.*', '7.4.*', '8.0.*' ]
-        monolog: [ '2.9', '3.0' ]
+        monolog: [ '2.9', '3.9' ]
         dependencies: [ 'highest' ]
         include:
           # Test lowest dependencies on stable PHP version

@@ -64,8 +64,8 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
             // However, we keep the try-catch for safety in case of edge cases.
             try {
                 $refl = new ReflectionClass($class);
-            } catch (\ReflectionException) {
                 // @phpstan-ignore-next-line catch.neverThrown
+            } catch (ReflectionException) {
                 continue;
             }
 

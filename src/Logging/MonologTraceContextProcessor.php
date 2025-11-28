@@ -39,12 +39,11 @@ final class MonologTraceContextProcessor implements ProcessorInterface, LoggerAw
     }
 
     /**
-     * @param array<string, mixed> $record
+     * @param array<array-key, mixed> $record
      *
-     * @return array<string, mixed>
+     * @return array<array-key, mixed>
      */
-    // @phpstan-ignore-next-line parameter.type - Monolog 2.x uses array, Monolog 3.x uses LogRecord (handled by MonologTraceContextProcessorV3)
-    public function __invoke(array $record): array
+    public function __invoke($record): array
     {
         try {
             $span = Span::getCurrent();

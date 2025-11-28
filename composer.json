@@ -46,7 +46,7 @@
         "symfony/http-kernel": "^6.4|^7.0|^8.0",
         "open-telemetry/sem-conv": "^1.37",
         "symfony/uid": "^6.4|^7.0|^8.0",
-        "monolog/monolog": "^2.9|^3.0"
+        "monolog/monolog": "^2.9|^3.9"
     },
     "config": {
         "allow-plugins": {

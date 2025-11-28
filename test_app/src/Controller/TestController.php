@@ -253,7 +253,7 @@ class TestController
 
         $price = $this->traceSpanTestService->calculatePrice(100.0, 0.1);
 
-        $isValid = $this->traceSpanTestService->validatePayment('PAY-67890');
+        $isValid = $this->traceSpanTestService->validatePayment();
 
         return new JsonResponse([
             'message' => 'TraceSpan attribute test completed',

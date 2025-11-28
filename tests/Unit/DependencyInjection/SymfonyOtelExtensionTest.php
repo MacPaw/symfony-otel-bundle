@@ -41,8 +41,10 @@ class SymfonyOtelExtensionTest extends TestCase
         $this->assertEquals([], $this->container->getParameter('otel_bundle.instrumentations'));
         $this->assertFalse($this->container->getParameter('otel_bundle.force_flush_on_terminate'));
         $this->assertEquals(100, $this->container->getParameter('otel_bundle.force_flush_timeout_ms'));
-        $this->assertEquals(['http.request_id' => 'X-Request-Id'],
-            $this->container->getParameter('otel_bundle.header_mappings'));
+        $this->assertEquals(
+            ['http.request_id' => 'X-Request-Id'],
+            $this->container->getParameter('otel_bundle.header_mappings')
+        );
     }
 
     public function testLoadWithCustomConfiguration(): void
@@ -178,6 +180,7 @@ class SymfonyOtelExtensionTest extends TestCase
         $this->extension->load($configs, $this->container);
 
         $this->assertFalse($this->container->getParameter('otel_bundle.logging.enable_trace_processor'));
+        /** @var array<string, string> $logKeys */
         $logKeys = $this->container->getParameter('otel_bundle.logging.log_keys');
         $this->assertEquals('custom_trace_id', $logKeys['trace_id']);
         $this->assertEquals('custom_span_id', $logKeys['span_id']);

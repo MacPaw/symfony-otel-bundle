@@ -14,4 +14,3 @@ class SpanNamesTest extends TestCase
         $this->assertSame('request_start', SpanNames::REQUEST_START);
     }
 }
-

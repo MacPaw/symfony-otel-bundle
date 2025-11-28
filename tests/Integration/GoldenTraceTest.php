@@ -31,7 +31,7 @@ final class GoldenTraceTest extends TestCase
 
     private HttpMetadataAttacher $httpMetadataAttacher;
 
-    public function test_request_root_span_and_attributes_and_parent_child(): void
+    public function testRequestRootSpanAndAttributesAndParentChild(): void
     {
         $subscriber = new RequestRootSpanEventSubscriber(
             $this->registry,
@@ -50,7 +50,11 @@ final class GoldenTraceTest extends TestCase
         $request->headers->set('X-Request-Id', 'req-123');
 
         // Simulate Kernel REQUEST
-        $requestEvent = new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
+        $requestEvent = new RequestEvent(
+            $kernel,
+            $request,
+            HttpKernelInterface::MAIN_REQUEST,
+        );
         $subscriber->onKernelRequest($requestEvent);
 
         // Simulate Kernel TERMINATE
@@ -85,8 +89,13 @@ final class GoldenTraceTest extends TestCase
         // Request::create('/api/test') may result in getPathInfo() returning '/test' after normalization
         $actualRoute = $attrs['http.route'] ?? null;
         $this->assertNotNull($actualRoute, 'http.route should be set');
-        $this->assertContains($actualRoute, ['/api/test', '/test'], 'http.route should match request path (may be normalized)');
-        // Note: http.response.status_code is set in onKernelTerminate, but may not be exported if span ends before flush
+        $this->assertContains(
+            $actualRoute,
+            ['/api/test', '/test'],
+            'http.route should match request path (may be normalized)',
+        );
+        // Note: http.response.status_code is set in onKernelTerminate, but may not
+        // be exported if span ends before flush
         // Check if status code is present, and if not, verify the span was at least created
         if (isset($attrs['http.response.status_code'])) {
             $this->assertSame(200, $attrs['http.response.status_code']);
@@ -109,13 +118,18 @@ final class GoldenTraceTest extends TestCase
         $this->registry = new InstrumentationRegistry();
         $this->propagator = (new PropagatorFactory())->create();
         $provider = InMemoryProviderFactory::create();
-        $this->traceService = new TraceService($provider, 'symfony-otel-test', 'test-tracer');
+        $this->traceService = new TraceService(
+            $provider,
+            'symfony-otel-test',
+            'test-tracer'
+        );
         $this->httpMetadataAttacher = new HttpMetadataAttacher(
             new RouterUtils(
                 new RequestStack(),
-            ), [
-            'http.request_id' => 'X-Request-Id',
-        ],
+            ),
+            [
+                'http.request_id' => 'X-Request-Id',
+            ],
         );
     }
 }

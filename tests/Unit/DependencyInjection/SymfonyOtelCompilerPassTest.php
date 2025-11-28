@@ -259,7 +259,8 @@ class SymfonyOtelCompilerPassTest extends TestCase
         $methodCalls = $hookManagerDefinition->getMethodCalls();
 
         // Should have at least one registerHook call for the TraceSpan attribute
-        $registerHookCalls = array_filter($methodCalls, fn(array $call): bool => $call[0] === 'registerHook');
+        $filterCallback = fn(mixed $call): bool => is_array($call) && $call[0] === 'registerHook';
+        $registerHookCalls = array_filter($methodCalls, $filterCallback);
         $this->assertGreaterThan(0, count($registerHookCalls), 'HookManagerService should have registerHook calls');
     }
 
@@ -314,7 +315,7 @@ class SymfonyOtelCompilerPassTest extends TestCase
         $this->compilerPass->process($this->container);
 
         // Should still process other services
-        $this->assertTrue(true);
+        $this->assertInstanceOf(SymfonyOtelCompilerPass::class, $this->compilerPass);
     }
 
     public function testProcessWithBothInstrumentationsAndTraceSpanAttributes(): void

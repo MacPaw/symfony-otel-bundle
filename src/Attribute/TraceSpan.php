@@ -18,9 +18,11 @@ use OpenTelemetry\API\Trace\SpanKind;
 final class TraceSpan
 {
     /**
-     * @param non-empty-string $name Span name
-     * @param int|null $kind One of OpenTelemetry\API\Trace\SpanKind::* (defaults to KIND_INTERNAL)
-     * @param array<string, scalar|array|null> $attributes Default attributes to set on span start
+     * @param non-empty-string                 $name Span name
+     * @param int|null                         $kind One of OpenTelemetry\API\Trace\SpanKind::*
+     *                         (defaults to KIND_INTERNAL)
+     * @param array<string, scalar|array|null> $attributes Default attributes to set
+     * on span start
      */
     public function __construct(
         public string $name,

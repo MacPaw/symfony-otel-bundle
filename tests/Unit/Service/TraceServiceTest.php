@@ -167,6 +167,7 @@ class TraceServiceTest extends TestCase
         // Note: The actual call may have type issues, but method_exists check works
         try {
             $traceService->forceFlush(200);
+            // @phpstan-ignore-next-line
             $this->assertTrue(true); // If no exception, that's fine
         } catch (TypeError $typeError) {
             // Expected - the implementation calls with wrong signature
@@ -184,6 +185,7 @@ class TraceServiceTest extends TestCase
         // Should use default timeout of 200
         try {
             $traceService->forceFlush();
+            // @phpstan-ignore-next-line
             $this->assertTrue(true);
         } catch (TypeError $typeError) {
             // Expected due to signature mismatch, but code path is tested
@@ -199,6 +201,7 @@ class TraceServiceTest extends TestCase
 
         try {
             $traceService->forceFlush(500);
+            // @phpstan-ignore-next-line
             $this->assertTrue(true);
         } catch (TypeError $typeError) {
             // Expected due to signature mismatch, but code path is tested

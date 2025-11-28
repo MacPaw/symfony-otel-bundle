@@ -115,7 +115,8 @@ class SymfonyOtelExtension extends Extension
         }
 
         // Conditionally register Monolog trace context processor
-        if ($enabled && $container->hasParameter('otel_bundle.logging.enable_trace_processor')
+        if (
+            $enabled && $container->hasParameter('otel_bundle.logging.enable_trace_processor')
             && $container->getParameter('otel_bundle.logging.enable_trace_processor') === true
         ) {
             // Detect Monolog major version by presence of LogRecord (Monolog 3)

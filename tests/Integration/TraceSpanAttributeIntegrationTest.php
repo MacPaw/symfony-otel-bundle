@@ -45,6 +45,7 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
         // Create the instrumentation manually to test TraceSpan attribute functionality
         // In a real application, this would be created by the compiler pass
         $tracer = $this->traceService->getTracer();
+        /** @var TextMapPropagatorInterface $propagator */
         $propagator = $this->container->get(TextMapPropagatorInterface::class);
 
         $instrumentation = new AttributeMethodInstrumentation(
@@ -66,9 +67,10 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
         $instrumentation->pre();
 
         // Simulate method execution
+        /** @var TraceSpanTestService $service */
         $service = $this->container->get(TraceSpanTestService::class);
         $result = $service->processOrder('TEST-ORDER-123');
-        $this->assertStringContainsString('TEST-ORDER-123', $result);
+        $this->assertStringContainsString('TEST-ORDER-123', (string)$result);
 
         // End the span
         $instrumentation->post();
@@ -79,7 +81,10 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
 
         // Force flush to ensure spans are exported
         $provider = InMemoryProviderFactory::create();
+        // TracerProviderInterface may have forceFlush method
+        // @phpstan-ignore-next-line
         if (method_exists($provider, 'forceFlush')) {
+            /** @phpstan-ignore-next-line */
             $provider->forceFlush();
         }
 
@@ -111,7 +116,9 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
 
         // Verify code.function attribute is set
         $this->assertArrayHasKey('code.function.name', $attrs);
-        $this->assertStringContainsString('TraceSpanTestService::processOrder', $attrs['code.function.name']);
+        /** @var string $codeFunctionName */
+        $codeFunctionName = $attrs['code.function.name'];
+        $this->assertStringContainsString('TraceSpanTestService::processOrder', $codeFunctionName);
 
         // Verify span kind
         $this->assertSame(SpanKind::KIND_INTERNAL, $processOrderSpan->getKind());
@@ -121,6 +128,7 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
     {
         // Create instrumentations manually for different span kinds
         $tracer = $this->traceService->getTracer();
+        /** @var TextMapPropagatorInterface $propagator */
         $propagator = $this->container->get(TextMapPropagatorInterface::class);
 
         $calculatePriceInstrumentation = new AttributeMethodInstrumentation(
@@ -150,13 +158,14 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
 
         // Call methods with different span kinds
         $calculatePriceInstrumentation->pre();
+        /** @var TraceSpanTestService $service */
         $service = $this->container->get(TraceSpanTestService::class);
         $service->calculatePrice(100.0, 0.1);
 
         $calculatePriceInstrumentation->post();
 
         $validatePaymentInstrumentation->pre();
-        $service->validatePayment('PAY-123');
+        $service->validatePayment();
         $validatePaymentInstrumentation->post();
 
         // Fetch exported spans
@@ -165,6 +174,7 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
 
         $provider = InMemoryProviderFactory::create();
         if (method_exists($provider, 'forceFlush')) {
+            /** @phpstan-ignore-next-line */
             $provider->forceFlush();
         }
 
@@ -201,6 +211,7 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
     {
         // Create the instrumentation manually
         $tracer = $this->traceService->getTracer();
+        /** @var TextMapPropagatorInterface $propagator */
         $propagator = $this->container->get(TextMapPropagatorInterface::class);
 
         $instrumentation = new AttributeMethodInstrumentation(
@@ -219,6 +230,7 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
 
         // Trigger the instrumentation
         $instrumentation->pre();
+        /** @var TraceSpanTestService $service */
         $service = $this->container->get(TraceSpanTestService::class);
         $service->processOrder('MULTI-ATTR-123');
 
@@ -230,6 +242,7 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
 
         $provider = InMemoryProviderFactory::create();
         if (method_exists($provider, 'forceFlush')) {
+            /** @phpstan-ignore-next-line */
             $provider->forceFlush();
         }
 
@@ -256,6 +269,7 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
     {
         // Create the instrumentation manually
         $tracer = $this->traceService->getTracer();
+        /** @var TextMapPropagatorInterface $propagator */
         $propagator = $this->container->get(TextMapPropagatorInterface::class);
 
         $instrumentation = new AttributeMethodInstrumentation(
@@ -274,6 +288,7 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
 
         // Trigger the instrumentation
         $instrumentation->pre();
+        /** @var TraceSpanTestService $service */
         $service = $this->container->get(TraceSpanTestService::class);
         $service->calculatePrice(50.0, 0.2);
 
@@ -285,6 +300,7 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
 
         $provider = InMemoryProviderFactory::create();
         if (method_exists($provider, 'forceFlush')) {
+            /** @phpstan-ignore-next-line */
             $provider->forceFlush();
         }
 
@@ -362,4 +378,3 @@ final class TraceSpanAttributeIntegrationTest extends TestCase
         // The HookManagerService constructor and registerHook calls happen during container build
     }
 }
-

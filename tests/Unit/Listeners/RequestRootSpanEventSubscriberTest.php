@@ -10,6 +10,7 @@ use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Registry\SpanNames;
 use Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
+use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\Context\Context;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -64,9 +65,13 @@ class RequestRootSpanEventSubscriberTest extends TestCase
             $scope->detach();
         }
         $span = $this->registry->getSpan(SpanNames::REQUEST_START);
+        // @phpstan-ignore-next-line
         if ($span !== null) {
             $span->end();
-            $scope->detach();
+            $cleanupScope = $this->registry->getScope();
+            if ($cleanupScope !== null) {
+                $cleanupScope->detach();
+            }
         }
     }
 
@@ -160,7 +165,8 @@ class RequestRootSpanEventSubscriberTest extends TestCase
 
         // No span in registry
         $subscriber->onKernelTerminate($event);
-        $this->assertCount(0, $this->registry->getSpans());;
+        $this->assertCount(0, $this->registry->getSpans());
+        ;
     }
 
     public function testGetSubscribedEvents(): void

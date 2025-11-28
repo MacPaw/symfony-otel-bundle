@@ -287,10 +287,11 @@ class HookManagerServiceTest extends TestCase
                 $preHook(); // Execute pre hook
             });
 
+        $callCount = 0;
         $this->logger->expects($this->exactly(2))
             ->method('debug')
-            ->willReturnCallback(function ($message, $context = []) {
-                static $callCount = 0;
+            ->willReturnCallback(function ($message, array $context = []) use (&$callCount) {
+                /** @var array<string, mixed> $context */
                 $callCount++;
                 if ($callCount === 1) {
                     $this->assertEquals('Successfully executed pre hook for TestClass::testMethod', $message);
@@ -319,10 +320,11 @@ class HookManagerServiceTest extends TestCase
                 $postHook(); // Execute post hook
             });
 
+        $callCount = 0;
         $this->logger->expects($this->exactly(2))
             ->method('debug')
-            ->willReturnCallback(function ($message, $context = []) {
-                static $callCount = 0;
+            ->willReturnCallback(function ($message, $context = []) use (&$callCount){
+                /** @var array<string, mixed> $context */
                 $callCount++;
                 if ($callCount === 1) {
                     $this->assertEquals('Successfully executed post hook for TestClass::testMethod', $message);

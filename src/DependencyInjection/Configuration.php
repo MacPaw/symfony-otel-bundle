@@ -18,7 +18,10 @@ class Configuration implements ConfigurationInterface
             ->children()
                 // General
                 ->booleanNode('enabled')
-                    ->info('Global on/off switch for the bundle. When false, listeners/middleware are no-ops and no headers are injected.')
+                    ->info(
+                        'Global on/off switch for the bundle. When false, ' .
+                        'listeners/middleware are no-ops and no headers are injected.'
+                    )
                     ->defaultTrue()
                 ->end()
                 ->scalarNode('service_name')
@@ -31,11 +34,17 @@ class Configuration implements ConfigurationInterface
 
                 ->end()
                 ->booleanNode('force_flush_on_terminate')
-                    ->info('If true, calls tracer provider forceFlush() on Kernel terminate; default false to preserve BatchSpanProcessor async export.')
+                    ->info(
+                        'If true, calls tracer provider forceFlush() on Kernel terminate; ' .
+                        'default false to preserve BatchSpanProcessor async export.'
+                    )
                     ->defaultFalse()
                 ->end()
                 ->integerNode('force_flush_timeout_ms')
-                    ->info('Timeout in milliseconds for tracer provider forceFlush() when enabled (non-destructive flush).')
+                    ->info(
+                        'Timeout in milliseconds for tracer provider forceFlush() when ' .
+                        'enabled (non-destructive flush).'
+                    )
                     ->min(0)
                     ->defaultValue(100)
                 ->end()
@@ -54,7 +63,10 @@ class Configuration implements ConfigurationInterface
                             ->defaultValue(0.1)
                         ->end()
                         ->arrayNode('route_prefixes')
-                            ->info('Only sample HTTP requests whose path or route starts with any of these prefixes (empty = all)')
+                            ->info(
+                                'Only sample HTTP requests whose path or route starts with ' .
+                                'any of these prefixes (empty = all)'
+                            )
                             ->scalarPrototype()->end()
                             ->defaultValue([])
                         ->end()
@@ -80,7 +92,10 @@ class Configuration implements ConfigurationInterface
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->booleanNode('enable_trace_processor')
-                            ->info('Enable Monolog processor that injects trace_id/span_id into log records context')
+                            ->info(
+                                'Enable Monolog processor that injects trace_id/span_id into ' .
+                                'log records context'
+                            )
                             ->defaultTrue()
                         ->end()
                         ->arrayNode('log_keys')

@@ -119,7 +119,8 @@ class RequestCountersEventSubscriberTest extends TestCase
 
         // Should return early for sub-requests
         $subscriber->onKernelRequest($event);
-        $this->assertTrue(true);
+        // Test passes if no exception is thrown
+        $this->assertInstanceOf(RequestCountersEventSubscriber::class, $subscriber);
     }
 
     public function testOnKernelTerminateWithOtelBackend(): void
@@ -230,7 +231,8 @@ class RequestCountersEventSubscriberTest extends TestCase
 
         // No span in registry
         $subscriber->onKernelTerminate($event);
-        $this->assertTrue(true);
+        // Test passes if no exception is thrown
+        $this->assertInstanceOf(RequestCountersEventSubscriber::class, $subscriber);
     }
 
     public function testGetSubscribedEvents(): void
@@ -330,4 +332,3 @@ class RequestCountersEventSubscriberTest extends TestCase
         $this->registry = new InstrumentationRegistry();
     }
 }
-

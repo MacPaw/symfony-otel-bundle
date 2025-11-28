@@ -25,6 +25,7 @@ class MonologTraceContextProcessorTest extends TestCase
      * Create the appropriate processor instance based on Monolog version
      *
      * @param array{trace_id?:string, span_id?:string, trace_flags?:string} $keys
+     *
      * @return MonologTraceContextProcessor|MonologTraceContextProcessorV3
      */
     private function createProcessor(array $keys = [])
@@ -39,6 +40,7 @@ class MonologTraceContextProcessorTest extends TestCase
      * Create a record compatible with the current Monolog version
      *
      * @param array<string, mixed> $data
+     *
      * @return array<string, mixed>|LogRecord
      */
     private function createRecord(array $data = [])
@@ -49,7 +51,9 @@ class MonologTraceContextProcessorTest extends TestCase
                 channel: 'test',
                 level: \Monolog\Level::Info,
                 message: 'test',
+                // @phpstan-ignore-next-line
                 context: $data['context'] ?? [],
+                // @phpstan-ignore-next-line
                 extra: $data['extra'] ?? [],
                 formatted: '',
             );
@@ -69,21 +73,27 @@ class MonologTraceContextProcessorTest extends TestCase
      * Extract extra data from a record (works for both array and LogRecord)
      *
      * @param array<string, mixed>|LogRecord $record
+     *
      * @return array<string, mixed>
      */
     private function getExtra($record): array
     {
         if ($record instanceof LogRecord) {
-            return $record->extra;
+            /** @var array<string, mixed> $extra */
+            $extra = $record->extra;
+            return $extra;
         }
-        return $record['extra'] ?? [];
+        /** @var array<string, mixed> $extra */
+        $extra = $record['extra'] ?? [];
+        return $extra;
     }
 
     /**
      * Check if extra key exists in record
      *
      * @param array<string, mixed>|LogRecord $record
-     * @param string $key
+     * @param string                         $key
+     *
      * @return bool
      */
     private function hasExtraKey($record, string $key): bool
@@ -96,7 +106,8 @@ class MonologTraceContextProcessorTest extends TestCase
      * Get extra value from record
      *
      * @param array<string, mixed>|LogRecord $record
-     * @param string $key
+     * @param string                         $key
+     *
      * @return mixed
      */
     private function getExtraValue($record, string $key)
@@ -104,6 +115,7 @@ class MonologTraceContextProcessorTest extends TestCase
         $extra = $this->getExtra($record);
         return $extra[$key] ?? null;
     }
+
     public function testInvokeWithValidSpanAndIsSampled(): void
     {
         $processor = $this->createProcessor();
@@ -163,6 +175,7 @@ class MonologTraceContextProcessorTest extends TestCase
                 // This test expects no trace context, so we skip the assertion if a valid span is active
                 // This can happen due to test state pollution
                 $this->markTestSkipped('Active span context detected - test may be affected by state from other tests');
+                // @phpstan-ignore-next-line
                 return;
             }
         } catch (\Throwable) {
@@ -176,6 +189,7 @@ class MonologTraceContextProcessorTest extends TestCase
         if ($this->hasExtraKey($result, 'trace_id')) {
             // There's an active span, so trace context was added - this is expected behavior
             // We can't test "no span" scenario in this case due to test state pollution
+            // @phpstan-ignore-next-line
             $this->assertTrue(true, 'Trace context added due to active span (test state pollution)');
         } else {
             // No active span, so no trace context should be added
@@ -224,6 +238,7 @@ class MonologTraceContextProcessorTest extends TestCase
                 // This test expects no trace context when there's an exception or invalid span
                 // Skip if a valid span is active (test state pollution)
                 $this->markTestSkipped('Active span context detected - test may be affected by state from other tests');
+                // @phpstan-ignore-next-line
                 return;
             }
         } catch (\Throwable) {
@@ -253,6 +268,7 @@ class MonologTraceContextProcessorTest extends TestCase
 
         // Should not throw exception
         $processor->setLogger($logger);
+        // @phpstan-ignore-next-line
         $this->assertTrue(true);
     }
 
@@ -271,7 +287,8 @@ class MonologTraceContextProcessorTest extends TestCase
             $result = $processor($record);
             $this->assertTrue($this->hasExtraKey($result, 'trace_flags'));
             // The default SDK behavior is to sample, so this will likely be '01'.
-            // To test '00', a custom sampler would be needed, which is out of scope for a unit test of the processor itself.
+            // To test '00', a custom sampler would be needed, which is out of
+            // scope for a unit test of the processor itself.
             $this->assertEquals('01', $this->getExtraValue($result, 'trace_flags'));
         } finally {
             $scope->detach();
@@ -283,9 +300,16 @@ class MonologTraceContextProcessorTest extends TestCase
     {
         $processor = $this->createProcessor();
         // For Monolog 2.x, create record without extra; for 3.x, LogRecord always has extra
-        $record = $this->isMonologV3() 
+        $record = $this->isMonologV3()
             ? $this->createRecord(['extra' => []])
-            : ['message' => 'test', 'context' => [], 'level' => 200, 'level_name' => 'INFO', 'channel' => 'test', 'datetime' => new \DateTimeImmutable()];
+            : [
+                'message' => 'test',
+                'context' => [],
+                'level' => 200,
+                'level_name' => 'INFO',
+                'channel' => 'test',
+                'datetime' => new \DateTimeImmutable(),
+            ];
 
         $provider = InMemoryProviderFactory::create();
         $tracer = $provider->getTracer('test');
@@ -445,6 +469,7 @@ class MonologTraceContextProcessorTest extends TestCase
         try {
             $result = $processor($record);
             // The code should handle this gracefully
+            // @phpstan-ignore-next-line
             $this->assertNotNull($result);
         } finally {
             $scope->detach();
@@ -519,7 +544,14 @@ class MonologTraceContextProcessorTest extends TestCase
         // For Monolog 2.x, create minimal record; for 3.x, LogRecord always has extra
         $record = $this->isMonologV3()
             ? $this->createRecord(['extra' => []])
-            : ['message' => 'test', 'context' => [], 'level' => 200, 'level_name' => 'INFO', 'channel' => 'test', 'datetime' => new \DateTimeImmutable()];
+            : [
+                'message' => 'test',
+                'context' => [],
+                'level' => 200,
+                'level_name' => 'INFO',
+                'channel' => 'test',
+                'datetime' => new \DateTimeImmutable(),
+            ];
 
         // Check if there's an active span that might affect the test
         try {
@@ -528,7 +560,10 @@ class MonologTraceContextProcessorTest extends TestCase
             if ($currentContext->isValid()) {
                 // There's a valid span active, which would add trace context
                 // This test expects no trace context, so we skip if a valid span is active
-                $this->markTestSkipped('Active span context detected - test may be affected by state from other tests');
+                $this->markTestSkipped(
+                    'Active span context detected - test may be affected by state from other tests',
+                );
+                // @phpstan-ignore-next-line
                 return;
             }
         } catch (\Throwable) {
@@ -547,6 +582,7 @@ class MonologTraceContextProcessorTest extends TestCase
         // In that case, we can't reliably test the "no span" scenario
         if ($this->hasExtraKey($result, 'trace_id')) {
             // There's an active span, so trace context was added - this is expected behavior
+            // @phpstan-ignore-next-line
             $this->assertTrue(true, 'Trace context added due to active span (test state pollution)');
         } else {
             // No active span, so no trace context should be added

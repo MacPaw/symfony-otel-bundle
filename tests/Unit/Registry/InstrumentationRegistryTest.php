@@ -151,4 +151,3 @@ class InstrumentationRegistryTest extends TestCase
         $this->registry = new InstrumentationRegistry();
     }
 }
-

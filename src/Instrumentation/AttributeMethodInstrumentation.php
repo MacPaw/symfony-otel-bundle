@@ -18,10 +18,10 @@ use OpenTelemetry\SemConv\Attributes as SemConv;
 final class AttributeMethodInstrumentation extends AbstractHookInstrumentation
 {
     /**
-     * @param class-string $className
-     * @param non-empty-string $methodName
-     * @param non-empty-string $spanName
-     * @param int $spanKind One of OpenTelemetry\API\Trace\SpanKind::KIND_*
+     * @param class-string                     $className
+     * @param non-empty-string                 $methodName
+     * @param non-empty-string                 $spanName
+     * @param int                              $spanKind One of OpenTelemetry\API\Trace\SpanKind::KIND_*
      * @param array<string, scalar|array|null> $defaultAttributes
      */
     public function __construct(

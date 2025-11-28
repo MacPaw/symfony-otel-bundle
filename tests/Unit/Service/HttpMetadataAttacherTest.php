@@ -76,7 +76,8 @@ class HttpMetadataAttacherTest extends TestCase
         $request->method('getMethod')->willReturn('GET');
         $request->method('getPathInfo')->willReturn('/');
 
-        // Expect 5 calls: 2 for existing headers + 1 for request ID generation + 2 for HTTP_REQUEST_METHOD and HTTP_ROUTE
+        // Expect 5 calls: 2 for existing headers + 1 for request ID generation +
+        // 2 for HTTP_REQUEST_METHOD and HTTP_ROUTE
         $spanBuilder->expects($this->exactly(5))
             ->method('setAttribute')
             ->willReturnSelf();

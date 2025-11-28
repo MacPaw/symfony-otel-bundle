@@ -23,6 +23,7 @@ class ConfigurationTest extends TestCase
     {
         $processor = new Processor();
 
+        /** @var array<string, mixed> $config */
         $config = $processor->processConfiguration($this->configuration, []);
 
         $this->assertEquals('symfony-tracer', $config['tracer_name']);
@@ -31,12 +32,20 @@ class ConfigurationTest extends TestCase
         $this->assertFalse($config['force_flush_on_terminate']);
         $this->assertEquals(100, $config['force_flush_timeout_ms']);
         $this->assertEquals(['http.request_id' => 'X-Request-Id'], $config['header_mappings']);
-        $this->assertTrue($config['logging']['enable_trace_processor']);
-        $this->assertEquals('trace_id', $config['logging']['log_keys']['trace_id']);
-        $this->assertEquals('span_id', $config['logging']['log_keys']['span_id']);
-        $this->assertEquals('trace_flags', $config['logging']['log_keys']['trace_flags']);
-        $this->assertFalse($config['metrics']['request_counters']['enabled']);
-        $this->assertEquals('otel', $config['metrics']['request_counters']['backend']);
+        /** @var array<string, mixed> $logging */
+        $logging = $config['logging'];
+        $this->assertTrue($logging['enable_trace_processor']);
+        /** @var array<string, string> $logKeys */
+        $logKeys = $logging['log_keys'];
+        $this->assertEquals('trace_id', $logKeys['trace_id']);
+        $this->assertEquals('span_id', $logKeys['span_id']);
+        $this->assertEquals('trace_flags', $logKeys['trace_flags']);
+        /** @var array<string, mixed> $metrics */
+        $metrics = $config['metrics'];
+        /** @var array<string, mixed> $requestCounters */
+        $requestCounters = $metrics['request_counters'];
+        $this->assertFalse($requestCounters['enabled']);
+        $this->assertEquals('otel', $requestCounters['backend']);
     }
 
     public function testCustomConfiguration(): void
@@ -203,8 +212,10 @@ class ConfigurationTest extends TestCase
         /** @var array<int|string, mixed> $config */
         $config = $processor->processConfiguration($this->configuration, $inputConfig);
 
-        $this->assertEquals('X-User-Id', $config['header_mappings']['user.id']);
-        $this->assertEquals('X-Client-Version', $config['header_mappings']['client.version']);
+        /** @var array<string, string> $headerMappings */
+        $headerMappings = $config['header_mappings'];
+        $this->assertEquals('X-User-Id', $headerMappings['user.id']);
+        $this->assertEquals('X-Client-Version', $headerMappings['client.version']);
     }
 
     public function testConfigurationWithLoggingSettings(): void
@@ -226,10 +237,14 @@ class ConfigurationTest extends TestCase
         /** @var array<int|string, mixed> $config */
         $config = $processor->processConfiguration($this->configuration, $inputConfig);
 
-        $this->assertFalse($config['logging']['enable_trace_processor']);
-        $this->assertEquals('custom_trace_id', $config['logging']['log_keys']['trace_id']);
-        $this->assertEquals('custom_span_id', $config['logging']['log_keys']['span_id']);
-        $this->assertEquals('custom_trace_flags', $config['logging']['log_keys']['trace_flags']);
+        /** @var array<string, mixed> $logging */
+        $logging = $config['logging'];
+        $this->assertFalse($logging['enable_trace_processor']);
+        /** @var array<string, string> $logKeys */
+        $logKeys = $logging['log_keys'];
+        $this->assertEquals('custom_trace_id', $logKeys['trace_id']);
+        $this->assertEquals('custom_span_id', $logKeys['span_id']);
+        $this->assertEquals('custom_trace_flags', $logKeys['trace_flags']);
     }
 
     public function testConfigurationWithMetricsSettings(): void
@@ -249,8 +264,12 @@ class ConfigurationTest extends TestCase
         /** @var array<int|string, mixed> $config */
         $config = $processor->processConfiguration($this->configuration, $inputConfig);
 
-        $this->assertTrue($config['metrics']['request_counters']['enabled']);
-        $this->assertEquals('event', $config['metrics']['request_counters']['backend']);
+        /** @var array<string, mixed> $metrics */
+        $metrics = $config['metrics'];
+        /** @var array<string, mixed> $requestCounters */
+        $requestCounters = $metrics['request_counters'];
+        $this->assertTrue($requestCounters['enabled']);
+        $this->assertEquals('event', $requestCounters['backend']);
     }
 
     public function testConfigurationWithInvalidForceFlushTimeout(): void

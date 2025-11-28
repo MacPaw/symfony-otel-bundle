@@ -202,7 +202,8 @@ class RequestExecutionTimeInstrumentationTest extends TestCase
 
         // When registry context is not null, it should return it directly
         $this->instrumentation->pre();
-        $this->assertTrue(true);
+        // Verify pre() completed without exception by checking span was added to registry
+        $this->assertNotNull($this->registry->getSpan($this->instrumentation->getName()));
     }
 
     protected function setUp(): void
@@ -220,4 +221,3 @@ class RequestExecutionTimeInstrumentationTest extends TestCase
         );
     }
 }
-

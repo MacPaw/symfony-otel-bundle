@@ -42,8 +42,8 @@ final class MonologTraceContextProcessor implements ProcessorInterface, LoggerAw
      * @param array<string, mixed> $record
      *
      * @return array<string, mixed>
-     * @phpstan-ignore-next-line parameter.type - Monolog 2.x uses array, Monolog 3.x uses LogRecord (handled by MonologTraceContextProcessorV3)
      */
+    // @phpstan-ignore-next-line parameter.type - Monolog 2.x uses array, Monolog 3.x uses LogRecord (handled by MonologTraceContextProcessorV3)
     public function __invoke(array $record): array
     {
         try {
@@ -59,7 +59,6 @@ final class MonologTraceContextProcessor implements ProcessorInterface, LoggerAw
             // Some SDK versions expose isSampled(), others expose getTraceFlags()->isSampled()
             // @phpstan-ignore-next-line function.alreadyNarrowedType
             if (method_exists($ctx, 'isSampled')) {
-                // @phpstan-ignore-next-line
                 $sampled = $ctx->isSampled();
             } elseif (method_exists($ctx, 'getTraceFlags')) {
                 $flags = $ctx->getTraceFlags();

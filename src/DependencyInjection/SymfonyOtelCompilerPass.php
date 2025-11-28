@@ -62,10 +62,10 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
             // ReflectionClass constructor can throw ReflectionException if class doesn't exist,
             // but we already checked with class_exists above, so this should never throw.
             // However, we keep the try-catch for safety in case of edge cases.
-            // @phpstan-ignore-next-line catch.neverThrown
             try {
                 $refl = new ReflectionClass($class);
             } catch (\ReflectionException) {
+                // @phpstan-ignore-next-line catch.neverThrown
                 continue;
             }
 

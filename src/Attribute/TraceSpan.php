@@ -21,13 +21,12 @@ final class TraceSpan
      * @param non-empty-string                 $name Span name
      * @param int|null                         $kind One of OpenTelemetry\API\Trace\SpanKind::*
      *                         (defaults to KIND_INTERNAL)
-     * @param array<string, scalar|array|null> $attributes Default attributes to set
-     * on span start
+     * @param array<string, scalar|array|null> $attributes Default attributes to set on span start
+     * @phpstan-ignore-next-line missingType.iterableValue - Type is specified in PHPDoc above
      */
     public function __construct(
         public string $name,
         public ?int $kind = null,
-        /** @var array<string, scalar|array|null> */
         public array $attributes = [],
     ) {
         if ($this->kind === null) {

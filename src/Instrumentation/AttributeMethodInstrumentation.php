@@ -23,6 +23,7 @@ final class AttributeMethodInstrumentation extends AbstractHookInstrumentation
      * @param non-empty-string                 $spanName
      * @param int                              $spanKind One of OpenTelemetry\API\Trace\SpanKind::KIND_*
      * @param array<string, scalar|array|null> $defaultAttributes
+     * @phpstan-ignore-next-line missingType.iterableValue - Type is specified in PHPDoc above
      */
     public function __construct(
         InstrumentationRegistry $instrumentationRegistry,
@@ -32,7 +33,6 @@ final class AttributeMethodInstrumentation extends AbstractHookInstrumentation
         private readonly string $methodName,
         private readonly string $spanName,
         private readonly int $spanKind,
-        /** @param array<string, scalar|array|null> */
         private readonly array $defaultAttributes = [],
     ) {
         parent::__construct($instrumentationRegistry, $tracer, $propagator);
@@ -77,8 +77,8 @@ final class AttributeMethodInstrumentation extends AbstractHookInstrumentation
 
     protected function buildSpan(SpanBuilderInterface $spanBuilder): SpanInterface
     {
-        // @phpstan-ignore-next-line argument.type - spanKind is validated to be one of SpanKind::KIND_* constants at construction
         return $spanBuilder
+            // @phpstan-ignore-next-line argument.type - spanKind is validated to be one of SpanKind::KIND_* constants at construction
             ->setSpanKind($this->spanKind)
             ->startSpan();
     }

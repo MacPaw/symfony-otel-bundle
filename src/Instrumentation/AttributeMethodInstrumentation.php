@@ -78,8 +78,8 @@ final class AttributeMethodInstrumentation extends AbstractHookInstrumentation
     protected function buildSpan(SpanBuilderInterface $spanBuilder): SpanInterface
     {
         return $spanBuilder
-            // @phpstan-ignore-next-line argument.type
             // spanKind is validated to be one of SpanKind::KIND_* constants at construction
+            // @phpstan-ignore-next-line argument.type
             ->setSpanKind($this->spanKind)
             ->startSpan();
     }

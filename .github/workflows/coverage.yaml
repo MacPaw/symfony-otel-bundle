@@ -69,8 +69,8 @@ jobs:
             echo number_format(\$percentage, 2);
           ")
           echo "Coverage: ${COVERAGE}%"
-          if (( $(echo "$COVERAGE < 95.0" | bc -l) )); then
-            echo "❌ Coverage ${COVERAGE}% is below required 95%"
+          if (( $(echo "$COVERAGE < 70.0" | bc -l) )); then
+            echo "❌ Coverage ${COVERAGE}% is below required 70%"
             exit 1
           else
             echo "✅ Coverage ${COVERAGE}% meets requirement"

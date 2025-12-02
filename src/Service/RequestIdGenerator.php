@@ -10,6 +10,6 @@ class RequestIdGenerator
 {
     public static function generate(): string
     {
-        return Uuid::v4()->toString();
+        return Uuid::v4()->toRfc4122();
     }
 }

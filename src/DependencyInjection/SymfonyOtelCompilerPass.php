@@ -28,23 +28,57 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
 
         if (is_array($instrumentations) && $instrumentations !== []) {
             foreach ($instrumentations as $instrumentationClass) {
-                $definition = $container->hasDefinition($instrumentationClass) ?
-                    $container->getDefinition($instrumentationClass) : new Definition($instrumentationClass);
+                // Use the class name as service ID to avoid conflicts
+                $serviceId = $instrumentationClass;
+                
+                // Skip if already processed to avoid duplicate registrations
+                if ($container->hasDefinition($serviceId)) {
+                    $definition = $container->getDefinition($serviceId);
+                    // If it already has the tag, skip to avoid re-processing
+                    $tags = $definition->getTags();
+                    if (isset($tags['otel.hook_instrumentation'])) {
+                        continue;
+                    }
+                } else {
+                    $definition = new Definition($instrumentationClass);
+                    $definition->setClass($instrumentationClass);
+                }
 
                 $definition->setAutowired(true);
                 $definition->setAutoconfigured(true);
 
-                $className = $definition->getClass();
+                $className = $definition->getClass() ?? $instrumentationClass;
 
-                if ($className && is_subclass_of($className, EventSubscriberInterface::class)) {
-                    $definition->addTag('kernel.event_subscriber');
+                // Use reflection to check class hierarchy without triggering autoloading issues
+                try {
+                    if (!class_exists($className, false)) {
+                        // Only autoload if not already loaded
+                        if (!class_exists($className, true)) {
+                            continue;
+                        }
+                    }
+
+                    $reflection = new ReflectionClass($className);
+
+                    if ($reflection->implementsInterface(EventSubscriberInterface::class)) {
+                        $tags = $definition->getTags();
+                        if (!isset($tags['kernel.event_subscriber'])) {
+                            $definition->addTag('kernel.event_subscriber');
+                        }
+                    }
+
+                    if ($reflection->implementsInterface(HookInstrumentationInterface::class)) {
+                        $tags = $definition->getTags();
+                        if (!isset($tags['otel.hook_instrumentation'])) {
+                            $definition->addTag('otel.hook_instrumentation');
+                        }
+                    }
+                } catch (ReflectionException) {
+                    // Skip if class cannot be reflected
+                    continue;
                 }
 
-                if ($className && is_subclass_of($className, HookInstrumentationInterface::class)) {
-                    $definition->addTag('otel.hook_instrumentation');
-                }
-
-                $container->setDefinition($instrumentationClass, $definition);
+                $container->setDefinition($serviceId, $definition);
             }
         }
 

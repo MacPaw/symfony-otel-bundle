@@ -9,6 +9,7 @@ services:
       - '../src/DependencyInjection/'
       - '../src/Entity/'
       - '../src/Kernel.php'
+      - '../src/Instrumentation/'
 
   App\Controller\:
     resource: '../src/Controller/'

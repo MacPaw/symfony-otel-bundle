@@ -13,6 +13,7 @@ use Exception;
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\SpanKind;
+use OpenTelemetry\API\Trace\StatusCode;
 use PDO;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -56,6 +57,9 @@ class TestController
                 </div>
                 <div class="endpoint">
                     <strong>GET <a href="/api/nested">/api/nested</a></strong> - Nested spans example
+                </div>
+                <div class="endpoint">
+                    <strong>GET <a href="/api/error">/api/error</a></strong> - Error handling example
                 </div>
                 <div class="endpoint">
                     <strong>GET <a href="/api/pdo-test">/api/pdo-test</a></strong> - PDO query test (for testing ExampleHookInstrumentation)
@@ -186,6 +190,49 @@ class TestController
             $rootScope->detach();
             $rootSpan->end();
             $this->traceService->shutdown();
+        }
+    }
+
+    #[Route('/api/error', name: 'api_error')]
+    public function apiError(): JsonResponse
+    {
+        $tracer = $this->traceService->getTracer('test-controller');
+
+        $span = $tracer->spanBuilder('error_handling_operation')
+            ->setSpanKind(SpanKind::KIND_SERVER)
+            ->startSpan();
+
+        $scope = $span->activate();
+
+        try {
+            $span->addEvent('Starting error handling test');
+            $span->setAttribute('operation.type', 'error_handling');
+            $span->setAttribute('error.simulated', true);
+
+            // Simulate some work before error
+            usleep(100000); // 100ms
+
+            // Simulate an error scenario but handle it gracefully
+            try {
+                throw new Exception('Simulated error for testing error handling');
+            } catch (Exception $e) {
+                $span->recordException($e);
+                $span->setAttribute('error.type', get_class($e));
+                $span->setAttribute('error.message', $e->getMessage());
+                $span->setStatus(StatusCode::STATUS_ERROR, $e->getMessage());
+                $span->addEvent('Error caught and handled gracefully');
+            }
+
+            $span->addEvent('Error handling test completed');
+
+            return new JsonResponse([
+                'message' => 'Error handling test completed',
+                'error_handled' => true,
+                'trace_id' => $span->getContext()->getTraceId(),
+            ], 200);
+        } finally {
+            $scope->detach();
+            $span->end();
         }
     }
 

@@ -7,27 +7,9 @@ This bundle ships with a Symfony Flex recipe to provide a frictionless install a
 When the recipe is available via `symfony/recipes-contrib` and your project uses Flex:
 
 - `config/packages/otel_bundle.yaml` — sane defaults that preserve BatchSpanProcessor (async export)
-- `config/routes/otel_health.yaml` — a simple health route mapped to a built‑in controller
 - `.env` — commented `OTEL_*` environment variables appended with recommended defaults
 
 These files are safe to edit. The recipe writes them once; later updates are managed by you.
-
-## Health endpoint
-
-The recipe maps `/_otel/health` to the bundle's controller `Macpaw\\SymfonyOtelBundle\\Controller\\HealthController`.
-
-- Useful to immediately see a trace in Grafana/Tempo after installation
-- Returns a minimal JSON payload:
-
-```json
-{
-    "status": "ok",
-    "service": "<env OTEL_SERVICE_NAME>",
-    "time": "2025-01-01T00:00:00+00:00"
-}
-```
-
-You can change the path or remove the route if you don't need it.
 
 ## Environment variables
 
@@ -52,4 +34,3 @@ If you maintain a fork or wish to contribute:
 - Does the recipe force a transport? No. It only suggests env vars; the OpenTelemetry SDK reads whatever `OTEL_*` vars
   you set.
 - Will it flush on each request? No. Defaults keep `force_flush_on_terminate: false` to preserve async export.
-- Can I customize the health route? Yes. Change `config/routes/otel_health.yaml` or remove it.

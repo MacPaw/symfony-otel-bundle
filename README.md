@@ -310,7 +310,6 @@ composer require macpaw/symfony-otel-bundle
 When the Flex recipe is enabled (via recipes-contrib), installation will automatically add:
 
 - `config/packages/otel_bundle.yaml` with sane defaults (BSP async export preserved)
-- `config/routes/otel_health.yaml` mapping `/_otel/health` to a built-in controller
 - Commented `OTEL_*` variables appended to your `.env`
 
 See details in the new guide: docs/recipe.md

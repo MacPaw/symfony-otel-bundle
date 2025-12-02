@@ -13,10 +13,6 @@
             "contents": "# Installed by Symfony Flex recipe for macpaw/symfony-otel-bundle\notel_bundle:\n  service_name: '%env(OTEL_SERVICE_NAME)%'\n  tracer_name: '%env(OTEL_TRACER_NAME)%'\n  # Preserve BatchSpanProcessor async export (do not flush per request)\n  force_flush_on_terminate: false\n  force_flush_timeout_ms: 100\n  instrumentations:\n    - 'Macpaw\\\\SymfonyOtelBundle\\\\Instrumentation\\\\RequestExecutionTimeInstrumentation'\n  header_mappings:\n    http.request_id: 'X-Request-Id'\n  logging:\n    enable_trace_processor: true\n  metrics:\n    request_counters:\n      enabled: false\n      backend: 'otel'\n",
             "overwrite": false
         },
-        "config/routes/otel_health.yaml": {
-            "contents": "# Simple health route for quick e2e tracing validation\notel_bundle_health:\n  path: /_otel/health\n  controller: Macpaw\\\\SymfonyOtelBundle\\\\Controller\\\\HealthController\n  methods: [GET]\n",
-            "overwrite": false
-        },
         ".env": {
             "contents": "# --- OpenTelemetry (installed by macpaw/symfony-otel-bundle) ---\n# OTEL_SERVICE_NAME=your-symfony-app\n# OTEL_TRACER_NAME=symfony-tracer\n# OTEL_PROPAGATORS=tracecontext,baggage\n# Transport (recommended gRPC)\n# OTEL_TRACES_EXPORTER=otlp\n# OTEL_EXPORTER_OTLP_PROTOCOL=grpc\n# OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317\n# OTEL_EXPORTER_OTLP_TIMEOUT=1000\n# BatchSpanProcessor (async export)\n# OTEL_BSP_SCHEDULE_DELAY=200\n# OTEL_BSP_MAX_EXPORT_BATCH_SIZE=256\n# OTEL_BSP_MAX_QUEUE_SIZE=2048\n# HTTP fallback\n# OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf\n# OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318\n# OTEL_EXPORTER_OTLP_COMPRESSION=gzip\n",
             "append": true

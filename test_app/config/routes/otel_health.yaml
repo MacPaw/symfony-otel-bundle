@@ -1,4 +1,0 @@
-otel_bundle_health:
-  path: /_otel/health
-  controller: Macpaw\SymfonyOtelBundle\Controller\HealthController
-  methods: [ GET ]

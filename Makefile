@@ -1,5 +1,5 @@
 # Makefile for Symfony OpenTelemetry Bundle
-# 
+#
 # Quick commands to manage the Docker testing environment
 # Run 'make help' to see all available commands
 
@@ -27,7 +27,7 @@ up: ## Start the complete testing environment
 	@echo "  📈 Grafana Dashboard: http://localhost:3000 (admin/admin)"
 	@echo "  🔍 Tempo API: http://localhost:3200"
 	@echo ""
-	@echo "$(YELLOW)Run 'make test' to run sample tests$(NC)"
+	@echo "$(YELLOW)Run 'make app-tracing-test' to run sample tests$(NC)"
 
 down: ## Stop all services
 	@echo "$(YELLOW)🛑 Stopping services...$(NC)"
@@ -125,7 +125,7 @@ logs-otel: ## Show OpenTelemetry related logs
 	@docker-compose logs php-app | grep -i otel
 
 ## Testing Commands
-test: ## Run all test endpoints
+app-tracing-test: ## Run all test endpoints
 	@echo "$(BLUE)🧪 Running OpenTelemetry Bundle Tests$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Testing basic tracing...$(NC)"
@@ -216,7 +216,7 @@ composer-update: ## Update Composer dependencies
 	@docker-compose exec php-app composer update
 	@echo "$(GREEN)✅ Dependencies updated$(NC)"
 
-phpunit: ## Run PHPUnit tests
+test: ## Run PHPUnit tests
 	@echo "$(BLUE)🧪 Running PHPUnit tests...$(NC)"
 	@docker-compose exec php-app vendor/bin/phpunit
 	@echo "$(GREEN)✅ PHPUnit tests completed$(NC)"
@@ -361,7 +361,7 @@ help: ## Show this help message
 	@echo ""
 	@echo "$(BLUE)💡 Quick Start:$(NC)"
 	@echo "  make start       # Start the environment"
-	@echo "  make test        # Run all tests"
+	@echo "  make test        # Run phpunit tests"
 	@echo "  make clear-data  # Clear all spans data (fresh start)"
 	@echo "  make coverage    # Generate coverage report"
 	@echo "  make grafana     # Open Grafana dashboard"

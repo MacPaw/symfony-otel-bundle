@@ -33,10 +33,11 @@ services:
       sh -c "
         composer install --no-scripts --no-autoloader &&
         composer dump-autoload --optimize &&
-        php -S 0.0.0.0:${APP_PORT:-8080} -t test_app/public
+        php -S 0.0.0.0:8080 -t test_app/public
       "
     ports:
-      - "${APP_PORT:-8080}:${APP_PORT:-8080}"
+      # Map host APP_PORT to the fixed internal port 8080 for reliability across compose versions
+      - "${APP_PORT:-8080}:8080"
 
   grafana:
     ports:

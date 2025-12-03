@@ -331,6 +331,7 @@ See details in the new guide: docs/recipe.md
 
 4. **Start testing:**
    ```bash
+   cp .env.example .env
    make up
    open http://localhost:8080
    ```

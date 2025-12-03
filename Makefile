@@ -6,6 +6,21 @@
 .PHONY: help start stop restart build clean logs test status shell grafana tempo
 .DEFAULT_GOAL := help
 
+# Load environment variables from .env if present
+ifneq (,$(wildcard .env))
+  include .env
+  export
+endif
+
+# Default ports (can be overridden by .env)
+APP_PORT ?= 8080
+GRAFANA_PORT ?= 3000
+TEMPO_PORT ?= 3200
+OTLP_GRPC_PORT ?= 4317
+OTLP_HTTP_PORT ?= 4318
+OTEL_COLLECTOR_GRPC_EXTERNAL ?= 14317
+OTEL_COLLECTOR_HTTP_EXTERNAL ?= 14318
+
 # Colors for output
 YELLOW := \033[1;33m
 GREEN := \033[0;32m
@@ -23,9 +38,9 @@ up: ## 🚀 Start the complete testing environment
 	@docker-compose up -d --build
 	@echo "$(GREEN)✅ Environment started successfully!$(NC)"
 	@echo "$(BLUE)🔗 Access Points:$(NC)"
-	@echo "  📱 Test Application: http://localhost:8080"
-	@echo "  📈 Grafana Dashboard: http://localhost:3000 (admin/admin)"
-	@echo "  🔍 Tempo API: http://localhost:3200"
+	@echo "  📱 Test Application: http://localhost:$(APP_PORT)"
+	@echo "  📈 Grafana Dashboard: http://localhost:$(GRAFANA_PORT) (admin/admin)"
+	@echo "  🔍 Tempo API: http://localhost:$(TEMPO_PORT)"
 	@echo ""
 	@echo "$(YELLOW)Run 'make app-tracing-test' to run sample tests$(NC)"
 
@@ -129,50 +144,50 @@ app-tracing-test: ## 🧪 Run all test endpoints
 	@echo "$(BLUE)🧪 Running OpenTelemetry Bundle Tests$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Testing basic tracing...$(NC)"
-	@curl -s http://localhost:8080/api/test | jq -r '.message // "Response: " + tostring'
+	@curl -s http://localhost:$(APP_PORT)/api/test | jq -r '.message // "Response: " + tostring'
 	@echo ""
 	@echo "$(YELLOW)Testing slow operation...$(NC)"
-	@curl -s http://localhost:8080/api/slow | jq -r '.message // "Response: " + tostring'
+	@curl -s http://localhost:$(APP_PORT)/api/slow | jq -r '.message // "Response: " + tostring'
 	@echo ""
 	@echo "$(YELLOW)Testing nested spans...$(NC)"
-	@curl -s http://localhost:8080/api/nested | jq -r '.message // "Response: " + tostring'
+	@curl -s http://localhost:$(APP_PORT)/api/nested | jq -r '.message // "Response: " + tostring'
 	@echo ""
 	@echo "$(YELLOW)Testing error handling...$(NC)"
-	@curl -s http://localhost:8080/api/error | jq -r '.message // "Response: " + tostring'
+	@curl -s http://localhost:$(APP_PORT)/api/error | jq -r '.message // "Response: " + tostring'
 	@echo ""
 	@echo "$(GREEN)✅ All tests completed!$(NC)"
-	@echo "$(BLUE)💡 Check Grafana at http://localhost:3000 to view traces$(NC)"
+	@echo "$(BLUE)💡 Check Grafana at http://localhost:$(GRAFANA_PORT) to view traces$(NC)"
 
 test-basic: ## 🧪 Test basic API endpoint
 	@echo "$(BLUE)🧪 Testing basic API endpoint...$(NC)"
-	@curl -s http://localhost:8080/api/test | jq .
+	@curl -s http://localhost:$(APP_PORT)/api/test | jq .
 
 test-slow: ## 🧪 Test slow operation endpoint
 	@echo "$(BLUE)🧪 Testing slow operation endpoint...$(NC)"
-	@curl -s http://localhost:8080/api/slow | jq .
+	@curl -s http://localhost:$(APP_PORT)/api/slow | jq .
 
 test-nested: ## 🧪 Test nested spans endpoint
 	@echo "$(BLUE)🧪 Testing nested spans endpoint...$(NC)"
-	@curl -s http://localhost:8080/api/nested | jq .
+	@curl -s http://localhost:$(APP_PORT)/api/nested | jq .
 
 test-error: ## 🧪 Test error handling endpoint
 	@echo "$(BLUE)🧪 Testing error handling endpoint...$(NC)"
-	@curl -s http://localhost:8080/api/error | jq .
+	@curl -s http://localhost:$(APP_PORT)/api/error | jq .
 
 test-exception: ## 🧪 Test exception handling endpoint
 	@echo "$(BLUE)🧪 Testing exception handling endpoint...$(NC)"
-	@curl -s http://localhost:8080/api/exception-test | jq .
+	@curl -s http://localhost:$(APP_PORT)/api/exception-test | jq .
 
 test-distributed: ## 🧪 Test with distributed tracing headers
 	@echo "$(BLUE)🧪 Testing distributed tracing...$(NC)"
 	@curl -s -H "traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01" \
-		http://localhost:8080/api/test | jq .
+		http://localhost:$(APP_PORT)/api/test | jq .
 
 ##@ ⚡ Load Testing
 load-test: ## ⚡ Run simple load test
 	@echo "$(BLUE)🔄 Running load test (100 requests)...$(NC)"
 	@for i in {1..100}; do \
-		curl -s http://localhost:8080/api/test > /dev/null & \
+		curl -s http://localhost:$(APP_PORT)/api/test > /dev/null & \
 		if [ $$(($${i} % 10)) -eq 0 ]; then echo "Sent $${i} requests..."; fi; \
 	done; \
 	wait
@@ -190,15 +205,15 @@ bash-tempo: ## 🐚 Access Tempo container shell
 ##@ 🌐 Web Access
 grafana: ## 📈 Open Grafana in browser
 	@echo "$(BLUE)📈 Opening Grafana Dashboard...$(NC)"
-	@open http://localhost:3000 || xdg-open http://localhost:3000 || echo "Open http://localhost:3000 in your browser"
+	@open http://localhost:$(GRAFANA_PORT) || xdg-open http://localhost:$(GRAFANA_PORT) || echo "Open http://localhost:$(GRAFANA_PORT) in your browser"
 
 app: ## 📱 Open test application in browser
 	@echo "$(BLUE)📱 Opening Test Application...$(NC)"
-	@open http://localhost:8080 || xdg-open http://localhost:8080 || echo "Open http://localhost:8080 in your browser"
+	@open http://localhost:$(APP_PORT) || xdg-open http://localhost:$(APP_PORT) || echo "Open http://localhost:$(APP_PORT) in your browser"
 
 tempo: ## 🔍 Open Tempo API in browser
 	@echo "$(BLUE)🔍 Opening Tempo API...$(NC)"
-	@open http://localhost:3200 || xdg-open http://localhost:3200 || echo "Open http://localhost:3200 in your browser"
+	@open http://localhost:$(TEMPO_PORT) || xdg-open http://localhost:$(TEMPO_PORT) || echo "Open http://localhost:$(TEMPO_PORT) in your browser"
 
 ##@ 💻 Development Commands
 dev: ## 🔧 Start development environment with hot reload
@@ -287,36 +302,36 @@ debug-otel: ## 🔍 Debug OpenTelemetry configuration
 	@docker-compose exec php-app php -m | grep -i otel
 	@echo ""
 	@echo "$(YELLOW)Tempo Health Check:$(NC)"
-	@curl -s http://localhost:3200/ready || echo "Tempo not ready"
+	@curl -s http://localhost:$(TEMPO_PORT)/ready || echo "Tempo not ready"
 	@echo ""
 
 debug-traces: ## 🔍 Check if traces are being sent
 	@echo "$(BLUE)🔍 Checking trace export...$(NC)"
 	@echo "Making test request..."
-	@curl -s http://localhost:8080/api/test > /dev/null
+	@curl -s http://localhost:$(APP_PORT)/api/test > /dev/null
 	@sleep 2
 	@echo "Checking Tempo for traces..."
-	@curl -s "http://localhost:3200/api/search?tags=service.name%3Dsymfony-otel-test" | jq '.traces // "No traces found"'
+	@curl -s "http://localhost:$(TEMPO_PORT)/api/search?tags=service.name%3Dsymfony-otel-test" | jq '.traces // "No traces found"'
 
 health: ## 🏥 Check health of all services
 	@echo "$(BLUE)🏥 Health Check:$(NC)"
 	@echo ""
 	@echo "$(YELLOW)PHP Application:$(NC)"
-	@curl -s http://localhost:8080/ > /dev/null && echo "✅ OK" || echo "❌ Failed"
+	@curl -s http://localhost:$(APP_PORT)/ > /dev/null && echo "✅ OK" || echo "❌ Failed"
 	@echo ""
 	@echo "$(YELLOW)Tempo:$(NC)"
-	@curl -s http://localhost:3200/ready > /dev/null && echo "✅ OK" || echo "❌ Failed"
+	@curl -s http://localhost:$(TEMPO_PORT)/ready > /dev/null && echo "✅ OK" || echo "❌ Failed"
 	@echo ""
 	@echo "$(YELLOW)Grafana:$(NC)"
-	@curl -s http://localhost:3000/api/health > /dev/null && echo "✅ OK" || echo "❌ Failed"
+	@curl -s http://localhost:$(GRAFANA_PORT)/api/health > /dev/null && echo "✅ OK" || echo "❌ Failed"
 
 ##@ 🛠️ Utility Commands
 urls: ## 🔗 Show all available URLs
 	@echo "$(BLUE)🔗 Available URLs:$(NC)"
-	@echo "  📱 Test Application: http://localhost:8080"
-	@echo "  📈 Grafana Dashboard: http://localhost:3000 (admin/admin)"
-	@echo "  🔍 Tempo API: http://localhost:3200"
-	@echo "  📊 Tempo Metrics: http://localhost:3200/metrics"
+	@echo "  📱 Test Application: http://localhost:$(APP_PORT)"
+	@echo "  📈 Grafana Dashboard: http://localhost:$(GRAFANA_PORT) (admin/admin)"
+	@echo "  🔍 Tempo API: http://localhost:$(TEMPO_PORT)"
+	@echo "  📊 Tempo Metrics: http://localhost:$(TEMPO_PORT)/metrics"
 	@echo "  🔧 OpenTelemetry Collector: http://localhost:4320"
 
 endpoints: ## 🧪 Show all test endpoints

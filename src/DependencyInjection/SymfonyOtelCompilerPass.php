@@ -30,13 +30,13 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
             foreach ($instrumentations as $instrumentationClass) {
                 // Use the class name as service ID to avoid conflicts
                 $serviceId = $instrumentationClass;
-                
+
                 // Skip if already processed to avoid duplicate registrations
                 if ($container->hasDefinition($serviceId)) {
                     $definition = $container->getDefinition($serviceId);
                     // If it already has the tag, skip to avoid re-processing
                     $tags = $definition->getTags();
-                    if (isset($tags['otel.hook_instrumentation'])) {
+                    if (array_key_exists(HookInstrumentationInterface::TAG, $tags)) {
                         continue;
                     }
                 } else {
@@ -49,33 +49,28 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
 
                 $className = $definition->getClass() ?? $instrumentationClass;
 
-                // Use reflection to check class hierarchy without triggering autoloading issues
-                try {
-                    if (!class_exists($className, false)) {
-                        // Only autoload if not already loaded
-                        if (!class_exists($className, true)) {
-                            continue;
-                        }
-                    }
+                // Use reflection to check class hierarchy without blocking registration
+                // Always register the service definition, but only add tags when class is reflectable
+                if (class_exists($className)) {
+                    try {
+                        $reflection = new ReflectionClass($className);
 
-                    $reflection = new ReflectionClass($className);
-
-                    if ($reflection->implementsInterface(EventSubscriberInterface::class)) {
-                        $tags = $definition->getTags();
-                        if (!isset($tags['kernel.event_subscriber'])) {
-                            $definition->addTag('kernel.event_subscriber');
+                        if ($reflection->implementsInterface(EventSubscriberInterface::class)) {
+                            $tags = $definition->getTags();
+                            if (!array_key_exists('kernel.event_subscriber', $tags)) {
+                                $definition->addTag('kernel.event_subscriber');
+                            }
                         }
-                    }
 
-                    if ($reflection->implementsInterface(HookInstrumentationInterface::class)) {
-                        $tags = $definition->getTags();
-                        if (!isset($tags['otel.hook_instrumentation'])) {
-                            $definition->addTag('otel.hook_instrumentation');
+                        if ($reflection->implementsInterface(HookInstrumentationInterface::class)) {
+                            $tags = $definition->getTags();
+                            if (!array_key_exists(HookInstrumentationInterface::TAG, $tags)) {
+                                $definition->addTag(HookInstrumentationInterface::TAG);
+                            }
                         }
+                    } catch (ReflectionException) {
+                        // If reflection fails, proceed without adding interface-based tags
                     }
-                } catch (ReflectionException) {
-                    // Skip if class cannot be reflected
-                    continue;
                 }
 
                 $container->setDefinition($serviceId, $definition);
@@ -124,7 +119,7 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
                     ]);
                     $instrDef->setAutowired(true);
                     $instrDef->setAutoconfigured(true);
-                    $instrDef->addTag('otel.hook_instrumentation');
+                    $instrDef->addTag(HookInstrumentationInterface::TAG);
 
                     $serviceAlias = sprintf(
                         'otel.attr_instrumentation.%s.%s.%s',
@@ -142,7 +137,7 @@ class SymfonyOtelCompilerPass implements CompilerPassInterface
         $hookManagerDefinition->setLazy(false);
         $hookManagerDefinition->setPublic(true);
 
-        $tagged = $container->findTaggedServiceIds('otel.hook_instrumentation');
+        $tagged = $container->findTaggedServiceIds(HookInstrumentationInterface::TAG);
         foreach (array_keys($tagged) as $serviceId) {
             $hookManagerDefinition->addMethodCall('registerHook', [new Reference($serviceId)]);
         }

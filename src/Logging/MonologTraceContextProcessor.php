@@ -67,7 +67,7 @@ final class MonologTraceContextProcessor implements ProcessorInterface, LoggerAw
                 }
             }
 
-            if (!isset($record['extra'])) {
+            if (!array_key_exists('extra', $record)) {
                 $record['extra'] = [];
             }
             /** @var array<string, mixed> $extra */

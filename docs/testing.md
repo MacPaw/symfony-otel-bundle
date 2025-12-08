@@ -14,7 +14,7 @@ make health
 
 ### 2. Run Tests
 ```bash
-make test
+make app-tracing-test
 ```
 
 ### 3. View Traces
@@ -64,7 +64,7 @@ make status      # Show service status
 
 ### Testing
 ```bash
-make test        # Run all tests
+make app-tracing-test        # Run all tests
 make load-test   # Generate test load
 ```
 
@@ -89,10 +89,10 @@ make logs-php    # View PHP application logs
 
 ```bash
 # Run all tests
-make test
+make app-tracing-test
 
 # Run specific test suites
-make phpunit
+make test
 make phpcs
 make phpstan
 
@@ -206,7 +206,7 @@ make data-commands
 #### Development
 ```bash
 make up          # Start environment
-make test        # Run tests
+make app-tracing-test        # Run tests
 make clear-data  # Clear for clean testing
 make grafana     # View results
 ```
@@ -401,8 +401,8 @@ make health      # Check service health
 ### Testing Commands
 
 ```bash
-make test        # Run all tests
-make phpunit     # Run PHPUnit tests
+make app-tracing-test        # Run all tests
+make test     # Run PHPUnit tests
 make load-test   # Generate test load
 make coverage    # Run tests with coverage
 ```

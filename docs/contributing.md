@@ -34,7 +34,7 @@ Thank you for your interest in contributing to the Symfony OpenTelemetry Bundle!
 4. **Verify setup**
    ```bash
    make health
-   make test
+   make app-tracing-test
    ```
 
 ### Development Workflow
@@ -52,6 +52,7 @@ Thank you for your interest in contributing to the Symfony OpenTelemetry Bundle!
 3. **Run tests**
    ```bash
    make test
+   make app-tracing-test
    ```
 
 4. **Submit a pull request**
@@ -144,14 +145,14 @@ make phpcs-fix      # Fix coding standards
 make phpstan        # Run PHPStan static analysis
 
 # Testing
-make phpunit        # Run PHPUnit tests
+make test        # Run PHPUnit tests
 make coverage       # Run tests with coverage
 make infection      # Run mutation testing
 
 # Environment
 make up             # Start test environment
 make down           # Stop test environment
-make test           # Run all tests
+make app-tracing-test           # Run app tracing tests
 make health         # Check service health
 ```
 
@@ -164,7 +165,7 @@ Use the provided Docker environment for integration testing:
 make up
 
 # Run integration tests
-make test
+make app-tracing-test
 
 # Check traces in Grafana
 make grafana

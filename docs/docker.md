@@ -77,7 +77,7 @@ This guide covers setting up the complete Docker development environment for the
 
 ```bash
 # Run basic tests
-make test
+make app-tracing-test
 
 # Generate load for testing
 make load-test

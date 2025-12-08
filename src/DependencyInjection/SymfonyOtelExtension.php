@@ -97,23 +97,6 @@ class SymfonyOtelExtension extends Extension
             (string)$metrics['request_counters']['backend'],
         );
 
-        // Apply sampler preset only if not already defined via environment variables
-        if ($enabled) {
-            $envSampler = getenv('OTEL_TRACES_SAMPLER');
-            if ($envSampler === false || $envSampler === '') {
-                $preset = (string)$sampling['preset'];
-                if ($preset === 'always_on') {
-                    putenv('OTEL_TRACES_SAMPLER=always_on');
-                } elseif ($preset === 'parentbased_ratio') {
-                    putenv('OTEL_TRACES_SAMPLER=parentbased_traceidratio');
-                    $ratio = (string)$sampling['ratio'];
-                    if ((getenv('OTEL_TRACES_SAMPLER_ARG') === false) || getenv('OTEL_TRACES_SAMPLER_ARG') === '') {
-                        putenv('OTEL_TRACES_SAMPLER_ARG=' . $ratio);
-                    }
-                }
-            }
-        }
-
         // Conditionally register Monolog trace context processor
         if (
             $enabled && $container->hasParameter('otel_bundle.logging.enable_trace_processor')

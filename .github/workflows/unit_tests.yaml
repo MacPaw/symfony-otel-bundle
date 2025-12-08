@@ -109,5 +109,5 @@ jobs:
       - name: Run PHPUnit tests
         env:
           # Ignore indirect deprecations from third-party libraries (e.g., ramsey/uuid 4.x in PHP 8.2)
-          SYMFONY_DEPRECATIONS_HELPER: "disabled=1;"
+          SYMFONY_DEPRECATIONS_HELPER: "max[direct]=0"
         run: vendor/bin/phpunit --testdox

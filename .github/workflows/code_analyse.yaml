@@ -33,6 +33,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.3
+          extensions: opentelemetry, grpc
           coverage: none
           tools: composer:v2, cs2pr
 

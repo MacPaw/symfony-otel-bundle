@@ -24,10 +24,10 @@ Fixes #<!-- issue number -->
 
 <!-- Describe the tests you ran to verify your changes -->
 
-- [ ] Unit tests pass locally (`make phpunit`)
+- [ ] Unit tests pass locally (`make test`)
 - [ ] Code style checks pass (`make phpcs`)
 - [ ] Static analysis passes (`make phpstan`)
-- [ ] Integration tests pass (`make test`)
+- [ ] Integration tests pass (`make app-tracing-test`)
 - [ ] Added tests for new functionality
 - [ ] Coverage requirement met (95%+)
 

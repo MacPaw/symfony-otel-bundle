@@ -55,6 +55,23 @@ services:
       - otel-network
     ports:
       - "${APP_PORT:-8080}:8080"
+
+  # k6 Load Testing
+  k6:
+    build:
+      context: .
+      dockerfile: docker/k6-go/Dockerfile
+    environment:
+      BASE_URL: http://php-app:8080
+    volumes:
+      - ./loadTesting:/scripts:ro
+    depends_on:
+      - php-app
+    networks:
+      - otel-network
+    profiles:
+      - loadtest
+    command: ["run", "/scripts/all-scenarios-test.js"]
 volumes:
   tempo-data:
   grafana-data:

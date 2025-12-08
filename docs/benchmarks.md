@@ -109,10 +109,7 @@ composer require --dev phpbench/phpbench
 ## Bench scaffold
 
 - `benchmarks/phpbench.json` — PhpBench configuration
-- `benchmarks/HttpRequestOverheadBench.php` — sample benchmark that bootstraps minimal services and simulates a request
-  lifecycle
-
-The example benchmark avoids hitting a real collector by using an in-memory processor when possible.
+- `benchmarks/BundleOverheadBench.php` — benchmarks for collect and send traces and spans to collectors
 
 ## Tips
 

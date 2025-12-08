@@ -83,6 +83,7 @@ For detailed Docker setup and development environment configuration, see [Docker
 - [Instrumentation Guide](docs/instrumentation.md) - Built-in instrumentations and custom development
 - [Docker Development](docs/docker.md) - Local development environment setup
 - [Testing Guide](docs/testing.md) - Testing, trace visualization, and troubleshooting
+- [Load Testing Guide](loadTesting/README.md) - k6 load testing for performance validation
 
 - [OpenTelemetry Basics](docs/otel_basics.md) - OpenTelemetry concepts and fundamentals
 - [Contributing Guide](CONTRIBUTING.md) - How to contribute to the project
@@ -114,6 +115,27 @@ For detailed Docker setup and development environment configuration, see [Docker
    make up
    open http://localhost:8080
    ```
+
+## Load Testing
+
+The bundle includes comprehensive load testing capabilities using k6. The k6 runner is built as a Go-based image (no Node.js required) from `docker/k6-go/Dockerfile`:
+
+```bash
+# Quick smoke test
+make k6-smoke
+
+# Run all load tests
+make k6-all
+
+# Stress test (31 minutes)
+make k6-stress
+```
+
+Notes:
+- The `k6` service is gated behind the `loadtest` compose profile. You can run tests with: `docker-compose --profile loadtest run k6 run /scripts/smoke-test.js`.
+- Dockerfiles are consolidated under the `docker/` directory, e.g. `docker/php.grpc.Dockerfile` for the PHP app and `docker/k6-go/Dockerfile` for the k6 runner.
+
+See [Load Testing Guide](loadTesting/README.md) for detailed documentation on all available tests and usage options.
 
 ## Usage
 

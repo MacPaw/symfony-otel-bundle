@@ -47,9 +47,9 @@
                 "query": "label_values(service.name)",
                 "refresh": 2,
                 "current": {
-                    "text": "symfony-otel-test",
-                    "value": "symfony-otel-test",
-                    "selected": false
+                    "text": "symfony-otel-app",
+                    "value": "symfony-otel-app",
+                    "selected": true
                 },
                 "includeAll": false,
                 "hide": 0

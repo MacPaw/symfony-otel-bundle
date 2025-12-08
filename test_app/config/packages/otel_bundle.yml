@@ -4,7 +4,6 @@ otel_bundle:
   force_flush_on_terminate: false
   force_flush_timeout_ms: 100
   instrumentations:
-    - 'App\\Instrumentation\\ExampleHookInstrumentation'
     - 'querybus.query.instrumentation'
     - 'querybus.dispatch.instrumentation'
     - 'commandbus.dispatch.instrumentation'

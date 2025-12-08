@@ -1,6 +1,4 @@
 /vendor/
-var/cache/phpstan/
-var/coverage/
 composer.lock
 /.phpunit.result.cache
 /.phpcs-cache
@@ -9,3 +7,4 @@ composer.lock
 .history
 .docker-compose.override.yml
 .env
+/var

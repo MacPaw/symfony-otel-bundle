@@ -36,6 +36,7 @@ COMPOSE_OVERRIDE := docker-compose.override.yml
 up: ## 🚀 Start the complete testing environment
 	@echo "$(BLUE)🐳 Starting Symfony OpenTelemetry Bundle Test Environment$(NC)"
 	@docker-compose up -d --build
+	@echo $(APP_PORT)
 	@echo "$(GREEN)✅ Environment started successfully!$(NC)"
 	@echo "$(BLUE)🔗 Access Points:$(NC)"
 	@echo "  📱 Test Application: http://localhost:$(APP_PORT)"

@@ -203,6 +203,83 @@ load-test: ## ⚡ Run simple load test
 	wait
 	@echo "$(GREEN)✅ Load test completed$(NC)"
 
+k6-smoke: ## ⚡ Run k6 smoke test (quick sanity check)
+	@echo "$(BLUE)🧪 Running k6 smoke test...$(NC)"
+	@echo "$(YELLOW)📊 Dashboard: http://localhost:$(K6_DASHBOARD_PORT:-5665)$(NC)"
+	@docker-compose run --rm k6 run /scripts/smoke-test.js
+	@echo "$(GREEN)✅ Smoke test completed$(NC)"
+	@echo "$(BLUE)📄 HTML Report: loadTesting/reports/html-report.html$(NC)"
+
+k6-basic: ## ⚡ Run k6 basic load test
+	@echo "$(BLUE)🔄 Running k6 basic load test...$(NC)"
+	@echo "$(YELLOW)📊 Dashboard: http://localhost:$(K6_DASHBOARD_PORT:-5665)$(NC)"
+	@docker-compose run --rm k6 run /scripts/basic-test.js
+	@echo "$(GREEN)✅ Basic load test completed$(NC)"
+	@echo "$(BLUE)📄 HTML Report: loadTesting/reports/html-report.html$(NC)"
+
+k6-slow: ## ⚡ Run k6 slow endpoint test
+	@echo "$(BLUE)🐌 Running k6 slow endpoint test...$(NC)"
+	@echo "$(YELLOW)📊 Dashboard: http://localhost:$(K6_DASHBOARD_PORT:-5665)$(NC)"
+	@docker-compose run --rm k6 run /scripts/slow-endpoint-test.js
+	@echo "$(GREEN)✅ Slow endpoint test completed$(NC)"
+	@echo "$(BLUE)📄 HTML Report: loadTesting/reports/html-report.html$(NC)"
+
+k6-nested: ## ⚡ Run k6 nested spans test
+	@echo "$(BLUE)🔗 Running k6 nested spans test...$(NC)"
+	@echo "$(YELLOW)📊 Dashboard: http://localhost:$(K6_DASHBOARD_PORT:-5665)$(NC)"
+	@docker-compose run --rm k6 run /scripts/nested-spans-test.js
+	@echo "$(GREEN)✅ Nested spans test completed$(NC)"
+	@echo "$(BLUE)📄 HTML Report: loadTesting/reports/html-report.html$(NC)"
+
+k6-pdo: ## ⚡ Run k6 PDO instrumentation test
+	@echo "$(BLUE)💾 Running k6 PDO test...$(NC)"
+	@echo "$(YELLOW)📊 Dashboard: http://localhost:$(K6_DASHBOARD_PORT:-5665)$(NC)"
+	@docker-compose run --rm k6 run /scripts/pdo-test.js
+	@echo "$(GREEN)✅ PDO test completed$(NC)"
+	@echo "$(BLUE)📄 HTML Report: loadTesting/reports/html-report.html$(NC)"
+
+k6-cqrs: ## ⚡ Run k6 CQRS pattern test
+	@echo "$(BLUE)📋 Running k6 CQRS test...$(NC)"
+	@echo "$(YELLOW)📊 Dashboard: http://localhost:$(K6_DASHBOARD_PORT:-5665)$(NC)"
+	@docker-compose run --rm k6 run /scripts/cqrs-test.js
+	@echo "$(GREEN)✅ CQRS test completed$(NC)"
+	@echo "$(BLUE)📄 HTML Report: loadTesting/reports/html-report.html$(NC)"
+
+k6-comprehensive: ## ⚡ Run k6 comprehensive mixed workload test
+	@echo "$(BLUE)🎯 Running k6 comprehensive test...$(NC)"
+	@echo "$(YELLOW)📊 Dashboard: http://localhost:$(K6_DASHBOARD_PORT:-5665)$(NC)"
+	@docker-compose run --rm k6 run /scripts/comprehensive-test.js
+	@echo "$(GREEN)✅ Comprehensive test completed$(NC)"
+	@echo "$(BLUE)📄 HTML Report: loadTesting/reports/html-report.html$(NC)"
+
+k6-stress: ## ⚡ Run k6 stress test (~31 minutes, up to 300 VUs)
+	@echo "$(YELLOW)⚠️  Warning: This will take approximately 31 minutes$(NC)"
+	@echo "$(YELLOW)📊 Dashboard: http://localhost:$(K6_DASHBOARD_PORT:-5665)$(NC)"
+	@echo "$(BLUE)💪 Running k6 stress test...$(NC)"
+	@docker-compose run --rm k6 run /scripts/stress-test.js
+	@echo "$(GREEN)✅ Stress test completed$(NC)"
+	@echo "$(BLUE)📄 HTML Report: loadTesting/reports/html-report.html$(NC)"
+
+k6-all-scenarios: ## ⚡ Run all k6 test scenarios in a single comprehensive test (~15 minutes)
+	@echo "$(BLUE)🎯 Running all k6 scenarios in sequence...$(NC)"
+	@echo "$(YELLOW)📊 Dashboard: http://localhost:$(K6_DASHBOARD_PORT:-5665)$(NC)"
+	@docker-compose run --rm k6 run /scripts/all-scenarios-test.js
+	@echo "$(GREEN)✅ All scenarios test completed!$(NC)"
+	@echo "$(BLUE)💡 Check Grafana at http://localhost:$(GRAFANA_PORT) to view traces$(NC)"
+	@echo "$(BLUE)📄 HTML Report: loadTesting/reports/html-report.html$(NC)"
+
+k6-custom: ## ⚡ Run custom k6 test (usage: make k6-custom TEST=script.js)
+	@if [ -z "$(TEST)" ]; then \
+		echo "$(RED)❌ Error: TEST parameter required$(NC)"; \
+		echo "$(YELLOW)Usage: make k6-custom TEST=script.js$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)🔧 Running custom k6 test: $(TEST)$(NC)"
+	@echo "$(YELLOW)📊 Dashboard: http://localhost:$(K6_DASHBOARD_PORT:-5665)$(NC)"
+	@docker-compose run --rm k6 run /scripts/$(TEST)
+	@echo "$(GREEN)✅ Custom test completed$(NC)"
+	@echo "$(BLUE)📄 HTML Report: loadTesting/reports/html-report.html$(NC)"
+
 ##@ 🐚 Access Commands
 bash: ## 🐚 Access PHP container shell
 	@echo "$(BLUE)🐚 Accessing PHP container shell...$(NC)"

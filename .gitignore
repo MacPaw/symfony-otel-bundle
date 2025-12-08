@@ -6,5 +6,6 @@ composer.lock
 .idea
 .history
 .docker-compose.override.yml
-.env
+/.env
+loadTesting/reports/
 /var

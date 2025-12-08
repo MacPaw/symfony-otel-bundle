@@ -19,6 +19,8 @@ services:
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
     volumes:
       - grafana-data:/var/lib/grafana:rw
+      # Auto-provision dashboards from repo
+      - ./docs/grafana:/var/lib/grafana/dashboards:ro
       - ./docker/grafana/provisioning:/etc/grafana/provisioning:rw
     depends_on:
       - tempo
@@ -55,6 +57,26 @@ services:
       - otel-network
     ports:
       - "${APP_PORT:-8080}:8080"
+
+  # k6 Load Testing
+  k6:
+    build:
+      context: .
+      dockerfile: docker/k6-go/Dockerfile
+    environment:
+      BASE_URL: http://php-app:8080
+      K6_WEB_DASHBOARD: ${K6_WEB_DASHBOARD:-true}
+      K6_WEB_DASHBOARD_EXPORT: ${K6_WEB_DASHBOARD_EXPORT:-/scripts/reports/html-report.html}
+    volumes:
+      - ./loadTesting:/scripts:rw
+    depends_on:
+      - php-app
+    networks:
+      - otel-network
+    ports:
+      - "${K6_DASHBOARD_PORT:-5665}:5665"
+    profiles:
+      - loadtest
 volumes:
   tempo-data:
   grafana-data:

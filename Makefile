@@ -250,10 +250,6 @@ k6-all-scenarios: ## ⚡ Run all k6 test scenarios in a single comprehensive tes
 	@echo "$(GREEN)✅ All scenarios test completed!$(NC)"
 	@echo "$(BLUE)💡 Check Grafana at http://localhost:$(GRAFANA_PORT) to view traces$(NC)"
 
-k6-all: k6-smoke k6-basic k6-slow k6-nested k6-pdo k6-cqrs k6-comprehensive ## ⚡ Run all k6 tests individually (except stress test)
-	@echo "$(GREEN)✅ All k6 tests completed!$(NC)"
-	@echo "$(BLUE)💡 Check Grafana at http://localhost:$(GRAFANA_PORT) to view traces$(NC)"
-
 k6-custom: ## ⚡ Run custom k6 test (usage: make k6-custom TEST=script.js)
 	@if [ -z "$(TEST)" ]; then \
 		echo "$(RED)❌ Error: TEST parameter required$(NC)"; \

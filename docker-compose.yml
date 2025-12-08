@@ -19,6 +19,8 @@ services:
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
     volumes:
       - grafana-data:/var/lib/grafana:rw
+      # Auto-provision dashboards from repo
+      - ./docs/grafana:/var/lib/grafana/dashboards:ro
       - ./docker/grafana/provisioning:/etc/grafana/provisioning:rw
     depends_on:
       - tempo
@@ -71,7 +73,6 @@ services:
       - otel-network
     profiles:
       - loadtest
-    command: ["run", "/scripts/all-scenarios-test.js"]
 volumes:
   tempo-data:
   grafana-data:

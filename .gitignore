@@ -9,3 +9,4 @@ composer.lock
 .history
 .docker-compose.override.yml
 /.env
+loadTesting/reports/

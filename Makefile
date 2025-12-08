@@ -159,6 +159,15 @@ app-tracing-test: ## 🧪 Run all test endpoints
 	@echo "$(GREEN)✅ All tests completed!$(NC)"
 	@echo "$(BLUE)💡 Check Grafana at http://localhost:$(GRAFANA_PORT) to view traces$(NC)"
 
+##@ 🚀 Benchmarking
+phpbench: ## 🚀 Run PhpBench benchmarks for this bundle (inside php container)
+	@echo "$(BLUE)🚀 Running PhpBench benchmarks...$(NC)"
+	@docker-compose exec php-app ./vendor/bin/phpbench run benchmarks --config=benchmarks/phpbench.json --report=aggregate
+
+phpbench-verbose: ## 🔍 Run PhpBench with verbose output (debugging)
+	@echo "$(BLUE)🔍 Running PhpBench (verbose)...$(NC)"
+	@docker-compose exec php-app ./vendor/bin/phpbench run benchmarks --config=benchmarks/phpbench.json --report=aggregate -v
+
 test-basic: ## 🧪 Test basic API endpoint
 	@echo "$(BLUE)🧪 Testing basic API endpoint...$(NC)"
 	@curl -s http://localhost:$(APP_PORT)/api/test | jq .

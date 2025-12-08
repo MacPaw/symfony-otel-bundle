@@ -14,8 +14,12 @@
     "customPath": "vendor/bin/phpunit"
   },
   "logs": {
-    "text": "no"
+      "text": "yes",
+      "summary": "var/coverage/infection-summary.txt",
+      "junit": "var/coverage/infection-junit.xml"
   },
+    "min-msi": 80,
+    "min-covered-msi": 70,
   "mutators": {
     "@default": true
   }

@@ -1,21 +1,18 @@
 FROM php:8.2-fpm-alpine
 
+ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+
 # Install system dependencies
 RUN apk add --no-cache \
     git \
     curl \
-    libpng-dev \
-    libxml2-dev \
     zip \
     unzip \
-    oniguruma-dev \
-    autoconf \
-    g++ \
     bash \
     make
 
 # Install PHP extensions
-RUN docker-php-ext-install \
+RUN install-php-extensions \
     pdo_mysql \
     mbstring \
     exif \
@@ -25,12 +22,11 @@ RUN docker-php-ext-install \
     xml
 
 # Install OpenTelemetry extension
-RUN pecl install opentelemetry-1.0.0
+RUN install-php-extensions opentelemetry-1.0.0
 
 # Install Xdebug for code coverage
-RUN apk add --no-cache linux-headers \
-    && pecl install xdebug-3.3.1 \
-    && docker-php-ext-enable xdebug
+# Note: xdebug 3.3.1 may fail to compile with certain PHP headers; use 3.3.2+
+RUN install-php-extensions xdebug
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

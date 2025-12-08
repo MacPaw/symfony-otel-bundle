@@ -1,0 +1,168 @@
+{
+    "__inputs": [],
+    "__requires": [
+        {
+            "type": "grafana",
+            "id": "grafana",
+            "name": "Grafana",
+            "version": "10.x"
+        },
+        {
+            "type": "datasource",
+            "id": "grafana-tempo-datasource",
+            "name": "Tempo",
+            "version": "2.x"
+        }
+    ],
+    "title": "Symfony OpenTelemetry — Starter Dashboard",
+    "tags": [
+        "symfony",
+        "opentelemetry",
+        "tempo"
+    ],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "time": {
+        "from": "now-15m",
+        "to": "now"
+    },
+    "timepicker": {
+        "refresh_intervals": [
+            "5s",
+            "10s",
+            "30s",
+            "1m"
+        ]
+    },
+    "templating": {
+        "list": [
+            {
+                "name": "service",
+                "type": "query",
+                "datasource": {
+                    "type": "grafana-tempo-datasource",
+                    "uid": "tempo"
+                },
+                "query": "label_values(service.name)",
+                "refresh": 2,
+                "current": {
+                    "text": "symfony-otel-app",
+                    "value": "symfony-otel-app",
+                    "selected": true
+                },
+                "includeAll": false,
+                "hide": 0
+            }
+        ]
+    },
+    "panels": [
+        {
+            "type": "timeseries",
+            "title": "Requests per Route (Tempo derived)",
+            "gridPos": {
+                "x": 0,
+                "y": 0,
+                "w": 12,
+                "h": 8
+            },
+            "options": {
+                "legend": {
+                    "showLegend": true
+                }
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-tempo-datasource",
+                        "uid": "tempo"
+                    },
+                    "queryType": "traceqlMetrics",
+                    "query": "rate(spanmetrics_calls_total{service.name=~\"$service\"}[$__rate_interval]) by (http.route)",
+                    "refId": "A"
+                }
+            ]
+        },
+        {
+            "type": "timeseries",
+            "title": "Latency p50/p90/p99",
+            "gridPos": {
+                "x": 12,
+                "y": 0,
+                "w": 12,
+                "h": 8
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-tempo-datasource",
+                        "uid": "tempo"
+                    },
+                    "queryType": "traceqlMetrics",
+                    "query": "histogram_quantile(0.5, sum(rate(spanmetrics_duration_milliseconds_bucket{service.name=~\"$service\"}[$__rate_interval])) by (le))",
+                    "refId": "P50"
+                },
+                {
+                    "datasource": {
+                        "type": "grafana-tempo-datasource",
+                        "uid": "tempo"
+                    },
+                    "queryType": "traceqlMetrics",
+                    "query": "histogram_quantile(0.9, sum(rate(spanmetrics_duration_milliseconds_bucket{service.name=~\"$service\"}[$__rate_interval])) by (le))",
+                    "refId": "P90"
+                },
+                {
+                    "datasource": {
+                        "type": "grafana-tempo-datasource",
+                        "uid": "tempo"
+                    },
+                    "queryType": "traceqlMetrics",
+                    "query": "histogram_quantile(0.99, sum(rate(spanmetrics_duration_milliseconds_bucket{service.name=~\"$service\"}[$__rate_interval])) by (le))",
+                    "refId": "P99"
+                }
+            ]
+        },
+        {
+            "type": "table",
+            "title": "Top Error Routes (last 15m)",
+            "gridPos": {
+                "x": 0,
+                "y": 8,
+                "w": 12,
+                "h": 8
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-tempo-datasource",
+                        "uid": "tempo"
+                    },
+                    "queryType": "traceqlSearch",
+                    "query": "{service.name=\"$service\", status=error}",
+                    "refId": "ERR"
+                }
+            ]
+        },
+        {
+            "type": "table",
+            "title": "Recent Traces",
+            "gridPos": {
+                "x": 12,
+                "y": 8,
+                "w": 12,
+                "h": 8
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-tempo-datasource",
+                        "uid": "tempo"
+                    },
+                    "queryType": "traceqlSearch",
+                    "query": "{service.name=\"$service\"}",
+                    "refId": "RECENT"
+                }
+            ]
+        }
+    ]
+}

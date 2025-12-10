@@ -19,11 +19,15 @@ services:
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
     volumes:
       - grafana-data:/var/lib/grafana:rw
+      # Auto-provision dashboards from repo
+      - ./docs/grafana:/var/lib/grafana/dashboards:ro
       - ./docker/grafana/provisioning:/etc/grafana/provisioning:rw
     depends_on:
       - tempo
     networks:
       - otel-network
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
 
   # PHP application for testing
   php-app:
@@ -36,17 +40,43 @@ services:
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:rw
     environment:
       OTEL_TRACES_EXPORTER: otlp
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317 # Used tempo directly for simplicity, or you may use otel-collector - http://otel-collector:4317 (external ports: 14317/14318)
-      OTEL_EXPORTER_OTLP_PROTOCOL: grpc # or grpc
+      # Use OTLP over HTTP to match PHP SDK expectations (requires scheme + path)
+      # Tempo HTTP receiver: 4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
+      # Ensure sampling isn't dropping spans during tests
+      # OTEL_TRACES_SAMPLER: always_on
       OTEL_SERVICE_NAME: symfony-otel-app
       OTEL_TRACER_NAME: symfony-otel-bundle
-      OTEL_RESOURCE_ATTRIBUTES: service.name=symfony-otel-app
+      # OTEL_RESOURCE_ATTRIBUTES: service.name=symfony-otel-app
       OTEL_PROPAGATORS: tracecontext,baggage
       OTEL_LOG_LEVEL: debug
     depends_on:
       - tempo
     networks:
       - otel-network
+    ports:
+      - "${APP_PORT:-8080}:8080"
+
+  # k6 Load Testing
+  k6:
+    build:
+      context: .
+      dockerfile: docker/k6-go/Dockerfile
+    environment:
+      BASE_URL: http://php-app:8080
+      K6_WEB_DASHBOARD: ${K6_WEB_DASHBOARD:-true}
+      K6_WEB_DASHBOARD_EXPORT: ${K6_WEB_DASHBOARD_EXPORT:-/scripts/reports/html-report.html}
+    volumes:
+      - ./loadTesting:/scripts:rw
+    depends_on:
+      - php-app
+    networks:
+      - otel-network
+    ports:
+      - "${K6_DASHBOARD_PORT:-5665}:5665"
+    profiles:
+      - loadtest
 volumes:
   tempo-data:
   grafana-data:

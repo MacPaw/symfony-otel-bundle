@@ -8,3 +8,5 @@ composer.lock
 .idea
 .history
 .docker-compose.override.yml
+/.env
+loadTesting/reports/

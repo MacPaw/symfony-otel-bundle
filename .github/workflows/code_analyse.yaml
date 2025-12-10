@@ -5,12 +5,7 @@ permissions:
 
 on:
   pull_request:
-    branches: [ main, develop ]
   push:
-    branches: [ main, develop ]
-  schedule:
-    # Run daily at 2 AM UTC to catch dependency issues
-    - cron: '0 2 * * *'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -38,6 +33,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.3
+          extensions: opentelemetry, grpc
           coverage: none
           tools: composer:v2, cs2pr
 

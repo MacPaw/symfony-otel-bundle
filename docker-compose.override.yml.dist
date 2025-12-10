@@ -11,9 +11,21 @@ services:
       - OTEL_TRACES_EXPORTER=otlp
       - OTEL_METRICS_EXPORTER=none
       - OTEL_LOGS_EXPORTER=none
+      # Transport: prefer OTLP gRPC to preserve BatchSpanProcessor async export
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_TIMEOUT=1000
+      # BatchSpanProcessor tuning (queueing + async export)
+      - OTEL_BSP_SCHEDULE_DELAY=200
+      - OTEL_BSP_MAX_EXPORT_BATCH_SIZE=256
+      - OTEL_BSP_MAX_QUEUE_SIZE=2048
       # Enable additional debugging
       - OTEL_PHP_AUTOLOAD_ENABLED=true
       - OTEL_TRACES_SAMPLER=always_on
+      # HTTP fallback (uncomment to use HTTP/protobuf + gzip instead of gRPC)
+      # - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      # - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      # - OTEL_EXPORTER_OTLP_COMPRESSION=gzip
     volumes:
       # Mount source code for development
       - ./:/var/www/html:rw
@@ -24,11 +36,12 @@ services:
         php -S 0.0.0.0:8080 -t test_app/public
       "
     ports:
-      - "8080:8080"
+      # Map host APP_PORT to the fixed internal port 8080 for reliability across compose versions
+      - "${APP_PORT:-8080}:8080"
 
   grafana:
     ports:
-      - "3000:3000"
+      - "${GRAFANA_PORT:-3000}:3000"
 
   # Additional debugging service for viewing raw traces
   tempo:
@@ -37,9 +50,9 @@ services:
     volumes:
       - ./docker/tempo/tempo.yaml:/etc/tempo.yaml:rw
     ports:
-      - "3200:3200"   # tempo
-      - "4317:4317"   # otlp grpc
-      - "4318:4318"   # otlp http
+      - "${TEMPO_PORT:-3200}:3200"   # tempo
+      - "${OTLP_GRPC_PORT:-4317}:4317"   # otlp grpc
+      - "${OTLP_HTTP_PORT:-4318}:4318"   # otlp http
 
   # OpenTelemetry Collector (optional - for more advanced setups)
   otel-collector:
@@ -53,5 +66,5 @@ services:
     networks:
       - otel-network
     ports:
-      - "14317:4317" # OTLP grpc receiver
-      - "14318:4318" # OTLP http receiver
+      - "${OTEL_COLLECTOR_GRPC_EXTERNAL:-14317}:4317" # OTLP grpc receiver
+      - "${OTEL_COLLECTOR_HTTP_EXTERNAL:-14318}:4318" # OTLP http receiver

@@ -10,7 +10,8 @@
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/",
-            "App\\": "test_app/src"
+            "App\\": "test_app/src",
+            "Benchmarks\\": "benchmarks/"
         }
     },
     "authors": [
@@ -21,23 +22,32 @@
         {
             "name": "Serhii Donii",
             "email": "serhii.donii@macpaw.com"
+        },
+        {
+            "name": "Ihor Kopyl",
+            "email": "i.kopyl@macpaw.com"
+        },
+        {
+            "name": "Vasyl Kyrashchuk",
+            "email": "v.kyrashchuk@macpaw.com"
         }
     ],
     "minimum-stability": "stable",
     "require": {
         "php": "^8.2",
         "ext-opentelemetry": "*",
-        "symfony/dependency-injection": "^6.4|^7.0",
-        "symfony/config": "^6.4|^7.0",
-        "symfony/yaml": "^6.4|^7.0",
+        "symfony/dependency-injection": "^6.4|^7.0|^8.0",
+        "symfony/config": "^6.4|^7.0|^8.0",
+        "symfony/yaml": "^6.4|^7.0|^8.0",
         "open-telemetry/symfony-sdk-bundle": "^0.0.28",
         "open-telemetry/api": "^1.4",
-        "symfony/http-client": "^6.4|^7.0",
         "nyholm/psr7": "^1.8",
         "guzzlehttp/promises": "^2.0",
         "php-http/httplug": "^2.4",
-        "symfony/http-kernel": "^6.4|^7.0",
-        "ramsey/uuid": "^4.9"
+        "symfony/http-kernel": "^6.4|^7.0|^8.0",
+        "open-telemetry/sem-conv": "^1.37",
+        "symfony/uid": "^6.4|^7.0|^8.0",
+        "monolog/monolog": "^2.9|^3.9"
     },
     "config": {
         "allow-plugins": {
@@ -54,19 +64,29 @@
         "phpstan/phpstan": "^1.0|^2.0",
         "symfony/phpunit-bridge": "^6.4|^7.0",
         "symfony/framework-bundle": "^6.4|^7.0",
+        "symfony/http-client": "^6.4|^7.0|^8.0",
         "rector/rector": "^2.1",
         "infection/infection": "^0.30.1",
         "symfony/runtime": "^6.4|7.0",
-        "symfony/messenger": "^7.3"
+        "symfony/messenger": "^7.3",
+        "phpbench/phpbench": "^1.4",
+        "open-telemetry/transport-grpc": "^1.1"
     },
     "scripts": {
         "phpcs": "phpcs",
         "phpcs-fix": "phpcbf",
         "phpstan": "phpstan analyse",
         "phpunit": "phpunit",
+        "infection": "infection --min-msi=80 --min-covered-msi=70 --threads=2 --no-interaction",
         "coverage": "php -d xdebug.mode=coverage vendor/bin/phpunit --coverage-html var/coverage/html --coverage-text",
         "coverage-text": "php -d xdebug.mode=coverage vendor/bin/phpunit --coverage-text",
         "coverage-clover": "php -d xdebug.mode=coverage vendor/bin/phpunit --coverage-clover var/coverage/clover.xml",
+        "qa": [
+            "@phpcs",
+            "@phpstan",
+            "@phpunit",
+            "@infection"
+        ],
         "test": [
             "@phpcs",
             "@phpstan",
@@ -86,6 +106,7 @@
     "suggest": {
         "ext-protobuf": "For protobuf support in OpenTelemetry (required for OTLP exporters)",
         "ext-grpc": "For gRPC transport support in OpenTelemetry",
-        "open-telemetry/transport-grpc": "For gRPC transport support in OpenTelemetry"
+        "open-telemetry/transport-grpc": "For gRPC transport support in OpenTelemetry",
+        "symfony/http-client": "For HTTP client instrumentation"
     }
 }

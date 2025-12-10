@@ -1,0 +1,26 @@
+{
+  "$schema": "vendor/phpbench/phpbench/phpbench.schema.json",
+  "runner.bootstrap": "bootstrap.php",
+  "runner.revs": 100,
+  "runner.iterations": 10,
+  "runner.warmup": 2,
+  "runner.retry_threshold": 3,
+  "runner.path": [
+    "benchmarks"
+  ],
+  "runner.php_config": {
+    "max_execution_time": 600
+  },
+  "report.generators": {
+    "default": {
+      "extends": "aggregate",
+      "cols": ["benchmark", "subject", "set", "revs", "its", "mem_peak", "mode", "mean", "median", "rstdev"],
+      "break": ["benchmark"]
+    },
+    "detailed": {
+      "extends": "aggregate",
+      "cols": ["benchmark", "subject", "set", "revs", "its", "mem_peak", "best", "worst", "mean", "mode", "stdev", "rstdev"],
+      "break": ["benchmark"]
+    }
+  }
+}

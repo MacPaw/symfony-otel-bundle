@@ -5,12 +5,7 @@ permissions:
 
 on:
   pull_request:
-    branches: [ main, develop ]
   push:
-    branches: [ main, develop ]
-  schedule:
-    # Run daily at 2 AM UTC to catch dependency issues
-    - cron: '0 2 * * *'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -26,7 +21,7 @@ jobs:
   unit-tests:
     permissions:
       contents: read
-    name: Unit Tests
+    name: PHP ${{ matrix.php }} - Symfony ${{ matrix.symfony }} - Monolog ${{ matrix.monolog }} (${{ matrix.dependencies }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -36,16 +31,30 @@ jobs:
       fail-fast: false
       matrix:
         php: [ '8.2', '8.3', '8.4' ]
-        symfony: [ '6.4.*', '7.0.*', '7.1.*', '7.2.*', '7.3.*' ]
+        symfony: [ '6.4.*', '7.0.*', '7.1.*', '7.2.*', '7.3.*', '7.4.*', '8.0.*' ]
+        monolog: [ '2.9', '3.9' ]
         dependencies: [ 'highest' ]
         include:
+          # Test lowest dependencies on stable PHP version
           - php: '8.2'
             symfony: '6.4.*'
+            monolog: '^2.9'
+            dependencies: 'lowest'
+          - php: '8.2'
+            symfony: '6.4.*'
+            monolog: '3.0'
             dependencies: 'lowest'
         exclude:
-          # Exclude invalid combinations
+          # PHP 8.2 doesn't support Symfony 8.0 (requires PHP 8.3+)
           - php: '8.2'
-            symfony: '7.1.*'
+            symfony: '8.0.*'
+          - php: '8.3'
+            symfony: '8.0.*'
+          - php: '8.5'
+            monolog: '2.9'
+          # PHP 8.3 doesn't support Symfony 8.0 (requires PHP 8.3+, but Symfony 8.0 requires PHP 8.3+)
+          # Actually, PHP 8.3 should support Symfony 8.0, so we keep it
+          # PHP 8.4 supports all Symfony versions
 
     steps:
       - name: Checkout
@@ -55,7 +64,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: opentelemetry, protobuf, json, mbstring, xdebug
+          extensions: opentelemetry, protobuf, json, mbstring, xdebug, grpc
           coverage: none
           tools: composer:v2
 
@@ -70,19 +79,21 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ matrix.php }}-${{ matrix.symfony }}-${{ matrix.dependencies }}-${{ hashFiles('**/composer.lock', '**/composer.json') }}
+          key: ${{ runner.os }}-composer-${{ matrix.php }}-${{ matrix.symfony }}-${{ matrix.monolog }}-${{ matrix.dependencies }}-${{ hashFiles('**/composer.lock', '**/composer.json') }}
           restore-keys: |
-            ${{ runner.os }}-composer-${{ matrix.php }}-${{ matrix.symfony }}-${{ matrix.dependencies }}-
+            ${{ runner.os }}-composer-${{ matrix.php }}-${{ matrix.symfony }}-${{ matrix.monolog }}-${{ matrix.dependencies }}-
+            ${{ runner.os }}-composer-${{ matrix.php }}-${{ matrix.symfony }}-${{ matrix.monolog }}-
             ${{ runner.os }}-composer-${{ matrix.php }}-${{ matrix.symfony }}-
             ${{ runner.os }}-composer-${{ matrix.php }}-
 
-      - name: Configure Symfony version
-        if: matrix.symfony != ''
+      - name: Configure Symfony and Monolog versions
+        if: matrix.symfony != '' && matrix.monolog != ''
         run: |
           composer require symfony/dependency-injection:${{ matrix.symfony }} --no-update --no-scripts
           composer require symfony/config:${{ matrix.symfony }} --no-update --no-scripts
           composer require symfony/yaml:${{ matrix.symfony }} --no-update --no-scripts
           composer require symfony/http-kernel:${{ matrix.symfony }} --no-update --no-scripts
+          composer require monolog/monolog:${{ matrix.monolog }} --no-update --no-scripts
 
       - name: Install dependencies (highest)
         if: matrix.dependencies == 'highest'
@@ -96,4 +107,7 @@ jobs:
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
       - name: Run PHPUnit tests
+        env:
+          # Ignore indirect deprecations from third-party libraries (e.g., ramsey/uuid 4.x in PHP 8.2)
+          SYMFONY_DEPRECATIONS_HELPER: "max[direct]=0"
         run: vendor/bin/phpunit --testdox

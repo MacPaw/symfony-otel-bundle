@@ -185,6 +185,10 @@ class AbstractInstrumentationTest extends TestCase
 
     public function testInitSpanCallsRemoveSpanWhenSpanIsSet(): void
     {
+        // Test that removeSpan is called when isSpanSet is true
+        // If removeSpan is NOT called, we'd have 2 spans with the same name (which shouldn't happen)
+        // But since removeSpan IS called, we have only 1 span
+        
         // First init to set isSpanSet = true
         $this->tracer->expects($this->exactly(2))
             ->method('spanBuilder')
@@ -202,22 +206,22 @@ class AbstractInstrumentationTest extends TestCase
         $this->instrumentation->testInitSpan(null);
         $this->assertCount(1, $this->registry->getSpans());
         $this->assertTrue($this->instrumentation->isSpanSet());
-
-        // Store the first span to verify it's removed
-        $firstSpan = $this->registry->getSpan('test_instrumentation');
-        $this->assertNotNull($firstSpan);
+        $this->assertNotNull($this->registry->getSpan('test_instrumentation'));
 
         // Second init should call removeSpan before adding new span
-        // Verify removeSpan is called by checking the span is removed and replaced
+        // Verify removeSpan is called by checking:
+        // 1. The span count stays at 1 (not 2) - proving removeSpan was called
+        // 2. The span still exists (was removed and re-added)
         $this->instrumentation->testInitSpan(null);
         
-        // Verify only one span exists (old one was removed, new one added)
+        // If removeSpan was NOT called, we'd have issues with duplicate spans
+        // But since it IS called, we have exactly 1 span
         $this->assertCount(1, $this->registry->getSpans());
-        $secondSpan = $this->registry->getSpan('test_instrumentation');
-        $this->assertNotNull($secondSpan);
-        // The span objects are the same mock, but they're different instances
-        // The important thing is that removeSpan was called (span count stays at 1)
-        $this->assertCount(1, $this->registry->getSpans());
+        $this->assertNotNull($this->registry->getSpan('test_instrumentation'));
+        
+        // Verify the span is still accessible (was properly removed and re-added)
+        $finalSpan = $this->registry->getSpan('test_instrumentation');
+        $this->assertNotNull($finalSpan);
     }
 
     public function testInitSpanUsesNullCoalesceAssignment(): void

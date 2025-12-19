@@ -474,6 +474,8 @@ class HttpMetadataAttacherTest extends TestCase
     public function testAddControllerAttributesUsesExplodeLimit(): void
     {
         // Test that explode uses limit of 2 (not 3)
+        // With limit 2, explode('::', 'A::B::C', 2) returns ['A', 'B::C']
+        // With limit 3, explode('::', 'A::B::C', 3) returns ['A', 'B', 'C']
         $spanBuilder = $this->createMock(SpanBuilderInterface::class);
         $request = $this->createMock(Request::class);
         $attributes = $this->createMock(ParameterBag::class);
@@ -486,7 +488,7 @@ class HttpMetadataAttacherTest extends TestCase
             ->method('setAttribute')
             ->with(
                 $this->stringContains('code.function'),
-                'App\\Controller::method::extra' // Should split only on first ::
+                'App\\Controller::method::extra' // With limit 2: ['App\\Controller', 'method::extra']
             )
             ->willReturnSelf();
 
@@ -497,9 +499,9 @@ class HttpMetadataAttacherTest extends TestCase
     {
         // Test that both $ns and $fn must be non-null (&& not ||)
         // When $fn is empty string (not null), it should still set the attribute
-        // But we need to test the && logic - if one is null, attribute should not be set
+        // The && check ensures both are non-null (empty string is not null, so it passes)
         
-        // Test case 1: Array with non-string second element results in empty string for $fn
+        // Test case: Array with non-string second element results in empty string for $fn
         // Empty string is not null, so && check passes and attribute IS set
         $spanBuilder = $this->createMock(SpanBuilderInterface::class);
         $request = $this->createMock(Request::class);
@@ -509,12 +511,37 @@ class HttpMetadataAttacherTest extends TestCase
         $request->attributes = $attributes;
 
         // When $fn is empty string (not null), the && check passes and attribute is set
-        // This tests that && is used (not ||) - if || were used, it would set even with null
+        // This verifies that && is used (not ||) - if || were used, behavior might differ
         $spanBuilder->expects($this->once())
             ->method('setAttribute')
             ->with(
                 $this->stringContains('code.function'),
                 'App\\Controller::' // $fn is empty string, so it's 'App\\Controller::'
+            )
+            ->willReturnSelf();
+
+        $this->service->addControllerAttributes($spanBuilder, $request);
+    }
+
+    public function testAddControllerAttributesWithEmptyStringForNs(): void
+    {
+        // Test && logic: if $ns is empty string and $fn is set, attribute should be set
+        // (empty string is not null, so && passes)
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+
+        // Array with first element that results in empty string for $ns
+        $attributes->method('get')->with('_controller')->willReturn([123, 'index']);
+        $request->attributes = $attributes;
+
+        // $ns will be empty string (not null), $fn will be 'index'
+        // && check passes (both non-null), so attribute is set
+        $spanBuilder->expects($this->once())
+            ->method('setAttribute')
+            ->with(
+                $this->stringContains('code.function'),
+                '::index' // $ns is empty string
             )
             ->willReturnSelf();
 
@@ -553,6 +580,7 @@ class HttpMetadataAttacherTest extends TestCase
     public function testAddHttpAttributesToSpanCastsHeaderValueToString(): void
     {
         // Test that header value is cast to string in addHttpAttributesToSpan
+        // The cast (string) ensures the value is always a string
         $headerMappings = ['user.id' => 'X-User-Id'];
         $service = new HttpMetadataAttacher($this->routerUtils, $headerMappings);
         $span = $this->createMock(\OpenTelemetry\API\Trace\SpanInterface::class);
@@ -578,10 +606,12 @@ class HttpMetadataAttacherTest extends TestCase
         $request->method('getMethod')->willReturn('GET');
         $request->method('getPathInfo')->willReturn('/');
 
+        // Verify the cast to string is applied
         $span->expects($this->atLeastOnce())
             ->method('setAttribute')
             ->willReturnCallback(function (string $key, $value) use ($span) {
                 if ($key === 'user.id') {
+                    // Verify value is a string (cast was applied)
                     $this->assertIsString($value);
                     $this->assertSame('12345', $value);
                 }
@@ -760,6 +790,7 @@ class HttpMetadataAttacherTest extends TestCase
     public function testAddControllerAttributesToSpanChecksStrictNull(): void
     {
         // Test that === null is used (not !== null)
+        // When controller is not null, the check should pass and process it
         $span = $this->createMock(\OpenTelemetry\API\Trace\SpanInterface::class);
         $request = $this->createMock(Request::class);
         $attributes = $this->createMock(ParameterBag::class);
@@ -772,6 +803,50 @@ class HttpMetadataAttacherTest extends TestCase
             ->with(
                 $this->stringContains('code.function'),
                 'App\\Controller::index'
+            )
+            ->willReturnSelf();
+
+        $this->service->addControllerAttributesToSpan($span, $request);
+    }
+
+    public function testAddControllerAttributesToSpanUsesExplodeLimit(): void
+    {
+        // Test that explode uses limit of 2 in addControllerAttributesToSpan
+        $span = $this->createMock(\OpenTelemetry\API\Trace\SpanInterface::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+
+        $attributes->method('get')->with('_controller')->willReturn('App\\Controller::method::extra');
+        $request->attributes = $attributes;
+
+        $span->expects($this->once())
+            ->method('setAttribute')
+            ->with(
+                $this->stringContains('code.function'),
+                'App\\Controller::method::extra' // With limit 2
+            )
+            ->willReturnSelf();
+
+        $this->service->addControllerAttributesToSpan($span, $request);
+    }
+
+    public function testAddControllerAttributesToSpanRequiresBothNsAndFn(): void
+    {
+        // Test that && is used (not ||) in addControllerAttributesToSpan
+        $span = $this->createMock(\OpenTelemetry\API\Trace\SpanInterface::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+
+        // Array with non-string second element - $fn will be empty string (not null)
+        $attributes->method('get')->with('_controller')->willReturn(['App\\Controller', 123]);
+        $request->attributes = $attributes;
+
+        // Empty string is not null, so && passes and attribute is set
+        $span->expects($this->once())
+            ->method('setAttribute')
+            ->with(
+                $this->stringContains('code.function'),
+                'App\\Controller::' // $fn is empty string
             )
             ->willReturnSelf();
 

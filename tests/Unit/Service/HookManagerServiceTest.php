@@ -127,8 +127,24 @@ class HookManagerServiceTest extends TestCase
                 $preHook();
             });
 
+        // Verify error is logged with proper array key 'error'
+        $callCount = 0;
         $this->logger->expects($this->exactly(2))
-            ->method('error');
+            ->method('error')
+            ->willReturnCallback(function (string $message, array $context = []) use (&$callCount): void {
+                $callCount++;
+                if ($callCount === 1) {
+                    $this->assertEquals("Error in hook pre(): {error}", $message);
+                    $this->assertArrayHasKey('error', $context);
+                    $this->assertEquals('Pre hook error', $context['error']);
+                } elseif ($callCount === 2) {
+                    $this->assertEquals('Failed to register hook for {class}::{method}: {error}', $message);
+                    $this->assertArrayHasKey('class', $context);
+                    $this->assertArrayHasKey('method', $context);
+                    $this->assertArrayHasKey('instrumentation', $context);
+                    $this->assertArrayHasKey('error', $context);
+                }
+            });
 
         $this->logger->expects($this->never())
             ->method('debug');
@@ -150,8 +166,24 @@ class HookManagerServiceTest extends TestCase
                 $postHook();
             });
 
+        // Verify error is logged with proper array key 'error'
+        $callCount = 0;
         $this->logger->expects($this->exactly(2))
-            ->method('error');
+            ->method('error')
+            ->willReturnCallback(function (string $message, array $context = []) use (&$callCount): void {
+                $callCount++;
+                if ($callCount === 1) {
+                    $this->assertEquals("Error in hook post(): {error}", $message);
+                    $this->assertArrayHasKey('error', $context);
+                    $this->assertEquals('Post hook error', $context['error']);
+                } elseif ($callCount === 2) {
+                    $this->assertEquals('Failed to register hook for {class}::{method}: {error}', $message);
+                    $this->assertArrayHasKey('class', $context);
+                    $this->assertArrayHasKey('method', $context);
+                    $this->assertArrayHasKey('instrumentation', $context);
+                    $this->assertArrayHasKey('error', $context);
+                }
+            });
 
         $this->logger->expects($this->never())
             ->method('debug');

@@ -195,4 +195,58 @@ class ClassHookInstrumentationTest extends TestCase
 
         $this->assertEquals($endTime - $startTime, $instrumentation->getExecutionTime());
     }
+
+    public function testPreSetsCodeFunctionNameAttribute(): void
+    {
+        $startTime = 1000000;
+        $endTime = 2000000;
+
+        $this->clock->expects($this->exactly(2))
+            ->method('now')
+            ->willReturnOnConsecutiveCalls($startTime, $endTime);
+
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+        $span = $this->createMock(SpanInterface::class);
+
+        $this->tracer->expects($this->once())
+            ->method('spanBuilder')
+            ->with(ClassHookInstrumentation::NAME)
+            ->willReturn($spanBuilder);
+
+        $spanBuilder->expects($this->once())
+            ->method('setParent')
+            ->willReturn($spanBuilder);
+
+        $spanBuilder->expects($this->once())
+            ->method('setSpanKind')
+            ->with(SpanKind::KIND_SERVER)
+            ->willReturn($spanBuilder);
+
+        $spanBuilder->expects($this->once())
+            ->method('startSpan')
+            ->willReturn($span);
+
+        // Verify CODE_FUNCTION_NAME attribute is set
+        $span->expects($this->once())
+            ->method('setAttribute')
+            ->with(
+                \OpenTelemetry\SemConv\Attributes\CodeAttributes::CODE_FUNCTION_NAME,
+                sprintf('%s::%s', $this->className, $this->methodName)
+            );
+
+        $span->expects($this->once())
+            ->method('end');
+
+        $instrumentation = new ClassHookInstrumentation(
+            $this->instrumentationRegistry,
+            $this->tracer,
+            $this->propagator,
+            $this->clock,
+            $this->className,
+            $this->methodName
+        );
+
+        $instrumentation->pre();
+        $instrumentation->post();
+    }
 }

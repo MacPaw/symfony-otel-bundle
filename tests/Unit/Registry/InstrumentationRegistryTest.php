@@ -71,6 +71,11 @@ class InstrumentationRegistryTest extends TestCase
     public function testRemoveSpanWhenNotExists(): void
     {
         // Should not throw exception when removing non-existent span
+        // This tests the early return when span doesn't exist
+        $this->registry->removeSpan('non_existent');
+        $this->assertNull($this->registry->getSpan('non_existent'));
+        
+        // Verify that calling removeSpan again on non-existent span doesn't cause issues
         $this->registry->removeSpan('non_existent');
         $this->assertNull($this->registry->getSpan('non_existent'));
     }

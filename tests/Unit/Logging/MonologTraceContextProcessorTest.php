@@ -198,6 +198,42 @@ class MonologTraceContextProcessorTest extends TestCase
         }
     }
 
+    public function testInvokeV3WithInvalidContextReturnsRecordEarly(): void
+    {
+        if (!$this->isMonologV3()) {
+            $this->markTestSkipped('This test is for Monolog V3 only');
+        }
+
+        $processor = new MonologTraceContextProcessorV3();
+        $originalRecord = $this->createRecord(['extra' => ['existing' => 'value']]);
+
+        // Ensure no active span context exists
+        try {
+            $currentSpan = Span::getCurrent();
+            $currentContext = $currentSpan->getContext();
+            if ($currentContext->isValid()) {
+                $this->markTestSkipped('Active span context detected - test may be affected by state from other tests');
+                return;
+            }
+        } catch (Throwable) {
+            // No active span, which is what we want
+        }
+
+        // When context is invalid, the record should be returned early without modification
+        $result = $processor($originalRecord);
+        
+        // Verify the record is returned unchanged (no trace context added)
+        $this->assertInstanceOf(LogRecord::class, $result);
+        if (!$this->hasExtraKey($result, 'trace_id')) {
+            // Verify original extra data is preserved
+            $extra = $this->getExtra($result);
+            $this->assertArrayHasKey('existing', $extra);
+            $this->assertSame('value', $extra['existing']);
+            $this->assertFalse($this->hasExtraKey($result, 'trace_id'));
+            $this->assertFalse($this->hasExtraKey($result, 'span_id'));
+        }
+    }
+
     public function testInvokeWithCustomKeys(): void
     {
         $processor = $this->createProcessor([

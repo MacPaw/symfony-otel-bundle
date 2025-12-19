@@ -2,11 +2,20 @@
     "$schema": "vendor/infection/infection/resources/schema.json",
     "source": {
         "directories": [
-            "."
+            "src"
         ],
         "excludes": [
             "vendor",
             "tests",
+            "test_app",
+            "test_app_baseline",
+            "var",
+            "benchmarks",
+            "loadTesting",
+            "docs",
+            "docker",
+            "recipes",
+            "Resources",
             "src/DependencyInjection"
         ]
     },
@@ -15,5 +24,7 @@
     },
     "mutators": {
         "@default": true
-    }
+    },
+    "minMsi": 90,
+    "minCoveredMsi": 90
 }

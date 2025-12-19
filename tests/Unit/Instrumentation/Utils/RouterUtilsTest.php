@@ -358,4 +358,94 @@ class RouterUtilsTest extends TestCase
 
         $this->assertEquals([], $result);
     }
+
+    public function testGetRequestReturnsCurrentRequestFirst(): void
+    {
+        $requestStack = $this->createMock(RequestStack::class);
+        $currentRequest = $this->createMock(Request::class);
+
+        $requestStack->expects($this->once())
+            ->method('getCurrentRequest')
+            ->willReturn($currentRequest);
+
+        // getMainRequest and getParentRequest may be called as part of the coalesce chain
+        // but their results won't be used when currentRequest is not null
+        $requestStack->expects($this->once())
+            ->method('getMainRequest')
+            ->willReturn(null);
+
+        $requestStack->expects($this->once())
+            ->method('getParentRequest')
+            ->willReturn(null);
+
+        $routerUtils = new RouterUtils($requestStack);
+        $result = $routerUtils->getRequest();
+
+        $this->assertSame($currentRequest, $result);
+    }
+
+    public function testGetRequestReturnsMainRequestWhenCurrentIsNull(): void
+    {
+        $requestStack = $this->createMock(RequestStack::class);
+        $mainRequest = $this->createMock(Request::class);
+
+        $requestStack->expects($this->once())
+            ->method('getCurrentRequest')
+            ->willReturn(null);
+
+        $requestStack->expects($this->once())
+            ->method('getMainRequest')
+            ->willReturn($mainRequest);
+
+        // getParentRequest may be called as part of the coalesce chain, but its result won't be used
+        $requestStack->expects($this->once())
+            ->method('getParentRequest')
+            ->willReturn(null);
+
+        $routerUtils = new RouterUtils($requestStack);
+        $result = $routerUtils->getRequest();
+
+        $this->assertSame($mainRequest, $result);
+    }
+
+    public function testGetRouteParamsCastsKeysToString(): void
+    {
+        $requestStack = $this->createMock(RequestStack::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+
+        $requestStack->expects($this->once())
+            ->method('getCurrentRequest')
+            ->willReturn($request);
+
+        $requestStack->expects($this->once())
+            ->method('getMainRequest')
+            ->willReturn(null);
+
+        $requestStack->expects($this->once())
+            ->method('getParentRequest')
+            ->willReturn(null);
+
+        $request->attributes = $attributes;
+        
+        // Use integer keys to test casting
+        $routeParams = [123 => 'value1', 456 => 'value2'];
+        $attributes->expects($this->once())
+            ->method('get')
+            ->with('_route_params')
+            ->willReturn($routeParams);
+
+        $routerUtils = new RouterUtils($requestStack);
+        $result = $routerUtils->getRouteParams();
+
+        // Verify keys are cast to strings
+        $this->assertNotNull($result);
+        $this->assertIsArray($result);
+        /** @var array<string, mixed> $result */
+        $resultArray = $result;
+        $this->assertArrayHasKey('123', $resultArray);
+        $this->assertArrayHasKey('456', $resultArray);
+        $this->assertSame('value1', $resultArray['123']);
+        $this->assertSame('value2', $resultArray['456']);
+    }
 }

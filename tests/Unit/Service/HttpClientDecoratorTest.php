@@ -172,4 +172,41 @@ class HttpClientDecoratorTest extends TestCase
         $this->assertInstanceOf(HttpClientDecorator::class, $newDecorator);
         $this->assertNotSame($decorator, $newDecorator);
     }
+
+    public function testRequestWithNullRequestUsesNullSafeOperator(): void
+    {
+        $response = $this->createMock(ResponseInterface::class);
+
+        $this->requestStack->method('getCurrentRequest')->willReturn(null);
+        $this->requestStack->method('getMainRequest')->willReturn(null);
+        $this->requestStack->method('getParentRequest')->willReturn(null);
+        
+        $this->propagator->method('fields')->willReturn(['traceparent', 'tracestate']);
+        $this->propagator->expects($this->once())->method('inject');
+
+        $this->httpClient
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                'GET',
+                'https://api.example.com/data',
+                $this->callback(function (array $options): bool {
+                    /** @var array<string, mixed> $options */
+                    /** @var array<string, string> $headers */
+                    $headers = $options['headers'] ?? [];
+                    // When request is null, X-Request-Id should be generated
+                    return isset($headers['X-Request-Id']) &&
+                        preg_match(
+                            '/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/',
+                            $headers['X-Request-Id']
+                        );
+                })
+            )
+            ->willReturn($response);
+
+        $decorator = $this->createDecorator();
+        $result = $decorator->request('GET', 'https://api.example.com/data');
+
+        $this->assertSame($response, $result);
+    }
 }

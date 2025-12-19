@@ -206,6 +206,7 @@ class RequestExecutionTimeInstrumentationTest extends TestCase
         $this->assertNotNull($this->registry->getSpan($this->instrumentation->getName()));
     }
 
+
     protected function setUp(): void
     {
         $this->registry = new InstrumentationRegistry();

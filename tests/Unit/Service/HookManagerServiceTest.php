@@ -127,7 +127,8 @@ class HookManagerServiceTest extends TestCase
                 $preHook();
             });
 
-        // Verify error is logged with proper array key 'error'
+        // Verify error is logged with proper array key 'error' using => operator (not >)
+        // The array must have ['error' => $throwable->getMessage()] structure
         $callCount = 0;
         $this->logger->expects($this->exactly(2))
             ->method('error')
@@ -135,8 +136,13 @@ class HookManagerServiceTest extends TestCase
                 $callCount++;
                 if ($callCount === 1) {
                     $this->assertEquals("Error in hook pre(): {error}", $message);
+                    // Verify array has 'error' key with => operator (not >)
+                    // If > were used, the array would be malformed or missing the key
                     $this->assertArrayHasKey('error', $context);
                     $this->assertEquals('Pre hook error', $context['error']);
+                    // Verify the array structure is correct (=> operator creates proper key-value pair)
+                    $this->assertCount(1, $context, 'Array should have exactly 1 element with => operator');
+                    $this->assertSame('Pre hook error', $context['error'], 'Array value should match using => operator');
                 } elseif ($callCount === 2) {
                     $this->assertEquals('Failed to register hook for {class}::{method}: {error}', $message);
                     $this->assertArrayHasKey('class', $context);
@@ -166,7 +172,8 @@ class HookManagerServiceTest extends TestCase
                 $postHook();
             });
 
-        // Verify error is logged with proper array key 'error'
+        // Verify error is logged with proper array key 'error' using => operator (not >)
+        // The array must have ['error' => $throwable->getMessage()] structure
         $callCount = 0;
         $this->logger->expects($this->exactly(2))
             ->method('error')
@@ -174,8 +181,13 @@ class HookManagerServiceTest extends TestCase
                 $callCount++;
                 if ($callCount === 1) {
                     $this->assertEquals("Error in hook post(): {error}", $message);
+                    // Verify array has 'error' key with => operator (not >)
+                    // If > were used, the array would be malformed or missing the key
                     $this->assertArrayHasKey('error', $context);
                     $this->assertEquals('Post hook error', $context['error']);
+                    // Verify the array structure is correct (=> operator creates proper key-value pair)
+                    $this->assertCount(1, $context, 'Array should have exactly 1 element with => operator');
+                    $this->assertSame('Post hook error', $context['error'], 'Array value should match using => operator');
                 } elseif ($callCount === 2) {
                     $this->assertEquals('Failed to register hook for {class}::{method}: {error}', $message);
                     $this->assertArrayHasKey('class', $context);

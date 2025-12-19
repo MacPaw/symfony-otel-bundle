@@ -203,25 +203,29 @@ class AbstractInstrumentationTest extends TestCase
             ->method('startSpan')
             ->willReturn($this->span);
 
+        // First init - removeSpan should NOT be called (isSpanSet is false)
         $this->instrumentation->testInitSpan(null);
         $this->assertCount(1, $this->registry->getSpans());
         $this->assertTrue($this->instrumentation->isSpanSet());
         $this->assertNotNull($this->registry->getSpan('test_instrumentation'));
+        
+        // Store the first span to verify it's replaced
+        $firstSpan = $this->registry->getSpan('test_instrumentation');
 
-        // Second init should call removeSpan before adding new span
-        // Verify removeSpan is called by checking:
-        // 1. The span count stays at 1 (not 2) - proving removeSpan was called
-        // 2. The span still exists (was removed and re-added)
+        // Second init - removeSpan SHOULD be called (isSpanSet is true)
+        // If removeSpan is NOT called, we'd have 2 spans with the same name
+        // But since removeSpan IS called, we have exactly 1 span (the old one was removed)
         $this->instrumentation->testInitSpan(null);
         
-        // If removeSpan was NOT called, we'd have issues with duplicate spans
-        // But since it IS called, we have exactly 1 span
+        // Verify only 1 span exists (proving removeSpan was called)
         $this->assertCount(1, $this->registry->getSpans());
         $this->assertNotNull($this->registry->getSpan('test_instrumentation'));
         
-        // Verify the span is still accessible (was properly removed and re-added)
-        $finalSpan = $this->registry->getSpan('test_instrumentation');
-        $this->assertNotNull($finalSpan);
+        // Verify the span was replaced (proving removeSpan removed the old one before adding new one)
+        $secondSpan = $this->registry->getSpan('test_instrumentation');
+        $this->assertSame($this->span, $secondSpan, 'New span should be the one from startSpan');
+        // Note: Since we're using the same mock span, we can't verify it's different
+        // But the fact that count is 1 (not 2) proves removeSpan was called
     }
 
     public function testInitSpanUsesNullCoalesceAssignment(): void

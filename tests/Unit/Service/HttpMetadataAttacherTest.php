@@ -344,9 +344,12 @@ class HttpMetadataAttacherTest extends TestCase
     public function testAddHttpAttributesContinuesWhenHeaderNotPresent(): void
     {
         // Test that continue is used (not break) when header is not present
+        // If break were used, the loop would stop and subsequent headers wouldn't be processed
+        // If continue is used, the loop continues to process remaining headers
         $headerMappings = [
             'user.id' => 'X-User-Id',
             'client.version' => 'X-Client-Version',
+            'api.key' => 'X-Api-Key',
         ];
 
         $service = new HttpMetadataAttacher($this->routerUtils, $headerMappings);
@@ -354,12 +357,15 @@ class HttpMetadataAttacherTest extends TestCase
         $request = $this->createMock(Request::class);
         $headers = $this->createMock(HeaderBag::class);
 
-        // First header is present, second is not - should continue to next iteration
+        // First header is present, second is NOT (should continue), third IS present
+        // If break were used, third header wouldn't be processed
+        // If continue is used, third header WILL be processed
         $headers->method('has')
             ->willReturnCallback(function (string $headerName): bool {
                 return match ($headerName) {
-                    'X-User-Id' => true,
-                    'X-Client-Version' => false, // This should cause continue, not break
+                    'X-User-Id' => true, // First: present
+                    'X-Client-Version' => false, // Second: NOT present - should continue (not break)
+                    'X-Api-Key' => true, // Third: present - should be processed if continue is used
                     'X-Request-Id' => false,
                     default => false,
                 };
@@ -368,6 +374,7 @@ class HttpMetadataAttacherTest extends TestCase
             ->willReturnCallback(function (string $headerName): ?string {
                 return match ($headerName) {
                     'X-User-Id' => 'user123',
+                    'X-Api-Key' => 'api_key_123',
                     default => null,
                 };
             });
@@ -375,12 +382,25 @@ class HttpMetadataAttacherTest extends TestCase
         $request->method('getMethod')->willReturn('GET');
         $request->method('getPathInfo')->willReturn('/');
 
-        // Should process first header and continue (not break), then add standard attributes
-        $spanBuilder->expects($this->atLeast(3))
+        // Verify both first and third headers are processed (proving continue is used, not break)
+        $callCount = 0;
+        $processedHeaders = [];
+        $spanBuilder->expects($this->atLeast(4)) // 2 custom headers + request ID + 2 standard attributes
             ->method('setAttribute')
-            ->willReturnSelf();
+            ->willReturnCallback(function (string $key, $value) use ($spanBuilder, &$callCount, &$processedHeaders) {
+                $callCount++;
+                if ($key === 'user.id' || $key === 'api.key') {
+                    $processedHeaders[] = $key;
+                }
+                return $spanBuilder;
+            });
 
         $service->addHttpAttributes($spanBuilder, $request);
+        
+        // Verify both headers were processed (proving continue was used, not break)
+        $this->assertContains('user.id', $processedHeaders, 'First header should be processed');
+        $this->assertContains('api.key', $processedHeaders, 'Third header should be processed (continue allows loop to continue)');
+        $this->assertCount(2, $processedHeaders, 'Both present headers should be processed when continue is used');
     }
 
     public function testAddHttpAttributesCastsHeaderValueToString(): void
@@ -419,7 +439,8 @@ class HttpMetadataAttacherTest extends TestCase
                 // Verify that when user.id is set, the value is a string
                 if ($key === 'user.id') {
                     $this->assertSame('12345', $value);
-                    $this->assertIsString($value);
+                    // Verify it's a string (cast was applied)
+                    $this->assertTrue(is_string($value), 'Header value should be cast to string');
                 }
                 return $spanBuilder;
             });

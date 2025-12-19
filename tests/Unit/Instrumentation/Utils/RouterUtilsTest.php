@@ -441,8 +441,8 @@ class RouterUtilsTest extends TestCase
         // Verify keys are cast to strings
         $this->assertNotNull($result);
         $this->assertIsArray($result);
-        /** @var array<string, mixed> $result */
-        $resultArray = $result;
+        /** @var array<string, mixed> $resultArray */
+        $resultArray = (array) $result;
         $this->assertArrayHasKey('123', $resultArray);
         $this->assertArrayHasKey('456', $resultArray);
         $this->assertSame('value1', $resultArray['123']);
@@ -509,6 +509,7 @@ class RouterUtilsTest extends TestCase
     {
         // Test that assert checks: is_string($routeName) || is_null($routeName)
         // NOT: !is_string($routeName) || !is_null($routeName)
+        // If the mutant were applied, assert would fail for string route names
         
         $requestStack = $this->createMock(RequestStack::class);
         $request = $this->createMock(Request::class);
@@ -526,16 +527,51 @@ class RouterUtilsTest extends TestCase
 
         $request->attributes = $attributes;
         
-        // Test with string route name
+        // Test with string route name - assert should PASS (not fail)
+        // If mutant (!is_string || !is_null) were applied, assert would FAIL for strings
         $attributes->expects($this->once())
             ->method('get')
             ->with('_route')
             ->willReturn('test_route');
 
         $routerUtils = new RouterUtils($requestStack);
+        // If assert fails, this would throw AssertionError
+        // Since assert passes, we can get the result
         $result = $routerUtils->getRouteName();
 
-        // Should return the string route name (assert should pass)
+        // Should return the string route name (assert passed, not failed)
         $this->assertSame('test_route', $result);
+    }
+
+    public function testGetRouteNameAssertChecksStringOrNullWithNull(): void
+    {
+        // Test that assert checks: is_string($routeName) || is_null($routeName)
+        // NOT: !is_string($routeName) || !is_null($routeName)
+        // Test with null route name - assert should also PASS
+        
+        $requestStack = $this->createMock(RequestStack::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+
+        $requestStack->expects($this->once())
+            ->method('getCurrentRequest')
+            ->willReturn($request);
+        $requestStack->expects($this->once())
+            ->method('getMainRequest')
+            ->willReturn(null);
+        $requestStack->expects($this->once())
+            ->method('getParentRequest')
+            ->willReturn(null);
+
+        $request->attributes = $attributes;
+        
+        $attributes->expects($this->once())
+            ->method('get')
+            ->with('_route')
+            ->willReturn(null);
+        
+        $routerUtils = new RouterUtils($requestStack);
+        $result = $routerUtils->getRouteName();
+        $this->assertNull($result);
     }
 }

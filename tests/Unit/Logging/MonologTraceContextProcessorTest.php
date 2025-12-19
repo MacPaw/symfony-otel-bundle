@@ -208,32 +208,42 @@ class MonologTraceContextProcessorTest extends TestCase
         $originalRecord = $this->createRecord(['extra' => ['existing' => 'value']]);
 
         // Ensure no active span context exists
+        $hasActiveSpan = false;
         try {
             $currentSpan = Span::getCurrent();
             $currentContext = $currentSpan->getContext();
             if ($currentContext->isValid()) {
-                $this->markTestSkipped('Active span context detected - test may be affected by state from other tests');
-                return;
+                $hasActiveSpan = true;
             }
         } catch (Throwable) {
             // No active span, which is what we want
         }
+        
+        if ($hasActiveSpan) {
+            $this->markTestSkipped('Active span context detected - test may be affected by state from other tests');
+            return;
+        }
 
         // When context is invalid, the record should be returned early without modification
-        // The return statement should be executed, not skipped
+        // The return statement MUST be executed - if removed, the code would continue and modify the record
+        /** @var LogRecord $result */
         $result = $processor($originalRecord);
         
         // Verify the record is returned unchanged (no trace context added)
+        // This proves the return statement was executed (not skipped)
         $this->assertInstanceOf(LogRecord::class, $result);
-        if (!$this->hasExtraKey($result, 'trace_id')) {
-            // Verify original extra data is preserved (proving early return happened)
-            $extra = $this->getExtra($result);
-            $this->assertArrayHasKey('existing', $extra);
-            $this->assertSame('value', $extra['existing']);
-            $this->assertFalse($this->hasExtraKey($result, 'trace_id'));
-            $this->assertFalse($this->hasExtraKey($result, 'span_id'));
-            $this->assertFalse($this->hasExtraKey($result, 'trace_flags'));
-        }
+        
+        // If return statement is removed, trace context would be added even with invalid context
+        // So we verify NO trace context is added, proving return was executed
+        $extra = $this->getExtra($result);
+        $this->assertArrayHasKey('existing', $extra);
+        $this->assertSame('value', $extra['existing']);
+        $this->assertFalse($this->hasExtraKey($result, 'trace_id'), 'Return statement should prevent trace_id from being added');
+        $this->assertFalse($this->hasExtraKey($result, 'span_id'), 'Return statement should prevent span_id from being added');
+        $this->assertFalse($this->hasExtraKey($result, 'trace_flags'), 'Return statement should prevent trace_flags from being added');
+        
+        // Verify the record object is the same (proving early return, not modification)
+        $this->assertSame($originalRecord, $result, 'Return statement should return the original record unchanged');
     }
 
     public function testInvokeWithCustomKeys(): void

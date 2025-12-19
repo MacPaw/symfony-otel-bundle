@@ -212,7 +212,9 @@ class HttpClientDecoratorTest extends TestCase
 
     public function testRequestUsesNullSafeOperator(): void
     {
-        // Test that null safe operator is used for request access
+        // Test that null safe operator is used for logger access
+        // When logger is null, null safe operator (?->) should not throw
+        // If regular operator (->) were used, it would throw an error
         $response = $this->createMock(ResponseInterface::class);
 
         $this->requestStack->method('getCurrentRequest')->willReturn(null);
@@ -242,7 +244,18 @@ class HttpClientDecoratorTest extends TestCase
             )
             ->willReturn($response);
 
-        $decorator = $this->createDecorator();
+        // Create decorator with null logger to test null-safe operator
+        $routerUtils = new RouterUtils($this->requestStack);
+        $decorator = new HttpClientDecorator(
+            $this->httpClient,
+            $this->requestStack,
+            $this->propagator,
+            $routerUtils,
+            null // null logger - null safe operator should handle this
+        );
+        
+        // If null-safe operator is NOT used, this would throw an error
+        // Since null-safe operator IS used, this should work fine
         $result = $decorator->request('GET', 'https://api.example.com/data');
 
         $this->assertSame($response, $result);
@@ -313,7 +326,7 @@ class HttpClientDecoratorTest extends TestCase
             ->with(
                 'GET',
                 'https://api.example.com/data',
-                $this->callback(function (array $options) use ($existingHeaders): bool {
+                $this->callback(function (array $options): bool {
                     /** @var array<string, mixed> $options */
                     /** @var array<string, string> $headers */
                     $headers = $options['headers'] ?? [];

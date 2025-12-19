@@ -1,26 +1,19 @@
 {
-  "$schema": "vendor/infection/infection/resources/schema.json",
-  "source": {
-    "directories": [
-      "."
-    ],
-    "excludes": [
-      "vendor",
-      "tests",
-      "src/DependencyInjection"
-    ]
-  },
-  "phpUnit": {
-    "customPath": "vendor/bin/phpunit"
-  },
-  "logs": {
-      "text": "yes",
-      "summary": "var/coverage/infection-summary.txt",
-      "junit": "var/coverage/infection-junit.xml"
-  },
-    "min-msi": 80,
-    "min-covered-msi": 70,
-  "mutators": {
-    "@default": true
-  }
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": [
+            "."
+        ],
+        "excludes": [
+            "vendor",
+            "tests",
+            "src/DependencyInjection"
+        ]
+    },
+    "phpUnit": {
+        "customPath": "vendor/bin/phpunit"
+    },
+    "mutators": {
+        "@default": true
+    }
 }

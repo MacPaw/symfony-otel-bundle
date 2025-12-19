@@ -27,6 +27,7 @@
             <directory suffix="Exception.php">src</directory>
             <directory suffix="php">src/DependencyInjection</directory>
             <directory suffix="php">src/Listeners</directory>
+            <directory suffix="php">src/Logging</directory>
             <file>src/SymfonyOtelBundle.php</file>
         </exclude>
     </source>

@@ -10,6 +10,7 @@
             "test_app",
             "test_app_baseline",
             "var",
+            "src/Logging",
             "benchmarks",
             "loadTesting",
             "docs",

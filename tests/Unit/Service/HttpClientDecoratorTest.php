@@ -285,4 +285,54 @@ class HttpClientDecoratorTest extends TestCase
 
         $this->assertSame($response, $result);
     }
+
+    public function testRequestUsesCorrectCoalesceOrderForHeaders(): void
+    {
+        // Test that coalesce order is: $options['headers'] ?? []
+        // NOT: [] ?? $options['headers']
+        // When $options['headers'] exists, it should be used (not replaced by [])
+        
+        $response = $this->createMock(ResponseInterface::class);
+        $request = $this->createMock(Request::class);
+        $headers = $this->createMock(HeaderBag::class);
+
+        $headers->method('get')->with('X-Request-Id')->willReturn(null);
+        $request->headers = $headers;
+
+        $this->requestStack->method('getCurrentRequest')->willReturn($request);
+        $this->requestStack->method('getMainRequest')->willReturn($request);
+        $this->requestStack->method('getParentRequest')->willReturn(null);
+        $this->propagator->method('fields')->willReturn(['traceparent', 'tracestate']);
+        $this->propagator->expects($this->once())->method('inject');
+
+        $existingHeaders = ['Authorization' => 'Bearer token123', 'Content-Type' => 'application/json'];
+        
+        $this->httpClient
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                'GET',
+                'https://api.example.com/data',
+                $this->callback(function (array $options) use ($existingHeaders): bool {
+                    /** @var array<string, mixed> $options */
+                    /** @var array<string, string> $headers */
+                    $headers = $options['headers'] ?? [];
+                    // When headers exist in options, they should be preserved (coalesce uses them)
+                    return isset($headers['Authorization']) &&
+                        $headers['Authorization'] === 'Bearer token123' &&
+                        isset($headers['Content-Type']) &&
+                        $headers['Content-Type'] === 'application/json' &&
+                        isset($headers['X-Request-Id']); // New header should be added
+                })
+            )
+            ->willReturn($response);
+
+        $decorator = $this->createDecorator();
+        // Call with existing headers to test coalesce uses them
+        $result = $decorator->request('GET', 'https://api.example.com/data', [
+            'headers' => $existingHeaders,
+        ]);
+
+        $this->assertSame($response, $result);
+    }
 }

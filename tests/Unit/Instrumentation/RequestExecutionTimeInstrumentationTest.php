@@ -241,6 +241,48 @@ class RequestExecutionTimeInstrumentationTest extends TestCase
         $this->instrumentation->pre();
     }
 
+    public function testRetrieveContextUsesCorrectTernaryOrder(): void
+    {
+        // Test that ternary operator order is correct:
+        // isValid() ? $context : Context::getCurrent()
+        // NOT: isValid() ? Context::getCurrent() : $context
+        
+        $headers = ['traceparent' => '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01'];
+        $this->instrumentation->setHeaders($headers);
+
+        $extractedContext = Context::getCurrent();
+        $this->propagator->expects($this->once())
+            ->method('extract')
+            ->with($headers)
+            ->willReturn($extractedContext);
+
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+        $span = $this->createMock(SpanInterface::class);
+
+        $spanBuilder->expects($this->once())
+            ->method('setSpanKind')
+            ->willReturnSelf();
+        $spanBuilder->expects($this->once())
+            ->method('startSpan')
+            ->willReturn($span);
+        
+        // When span context is valid, should use extracted context (not Context::getCurrent())
+        $spanBuilder->expects($this->once())
+            ->method('setParent')
+            ->with($extractedContext) // Should use extracted context when valid
+            ->willReturnSelf();
+
+        $this->tracer->expects($this->once())
+            ->method('spanBuilder')
+            ->willReturn($spanBuilder);
+
+        $this->clock->expects($this->once())
+            ->method('now')
+            ->willReturn(1000000);
+
+        $this->instrumentation->pre();
+    }
+
     protected function setUp(): void
     {
         $this->registry = new InstrumentationRegistry();

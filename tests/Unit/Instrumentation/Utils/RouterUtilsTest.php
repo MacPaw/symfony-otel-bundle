@@ -474,4 +474,68 @@ class RouterUtilsTest extends TestCase
         // Should return currentRequest (first in coalesce chain)
         $this->assertSame($currentRequest, $result);
     }
+
+    public function testGetRequestCoalesceOrderIsCorrect(): void
+    {
+        // Test that coalesce order is: currentRequest ?? mainRequest ?? parentRequest
+        // NOT: currentRequest ?? parentRequest ?? mainRequest
+        // NOT: mainRequest ?? currentRequest ?? parentRequest
+        
+        $requestStack = $this->createMock(RequestStack::class);
+        $mainRequest = $this->createMock(Request::class);
+        $parentRequest = $this->createMock(Request::class);
+
+        // When currentRequest is null, should use mainRequest (not parentRequest)
+        $requestStack->expects($this->once())
+            ->method('getCurrentRequest')
+            ->willReturn(null);
+
+        $requestStack->expects($this->once())
+            ->method('getMainRequest')
+            ->willReturn($mainRequest);
+
+        $requestStack->expects($this->once())
+            ->method('getParentRequest')
+            ->willReturn($parentRequest);
+
+        $routerUtils = new RouterUtils($requestStack);
+        $result = $routerUtils->getRequest();
+
+        // Should return mainRequest (second in coalesce chain), not parentRequest
+        $this->assertSame($mainRequest, $result);
+    }
+
+    public function testGetRouteNameAssertChecksStringOrNull(): void
+    {
+        // Test that assert checks: is_string($routeName) || is_null($routeName)
+        // NOT: !is_string($routeName) || !is_null($routeName)
+        
+        $requestStack = $this->createMock(RequestStack::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+
+        $requestStack->expects($this->once())
+            ->method('getCurrentRequest')
+            ->willReturn($request);
+        $requestStack->expects($this->once())
+            ->method('getMainRequest')
+            ->willReturn(null);
+        $requestStack->expects($this->once())
+            ->method('getParentRequest')
+            ->willReturn(null);
+
+        $request->attributes = $attributes;
+        
+        // Test with string route name
+        $attributes->expects($this->once())
+            ->method('get')
+            ->with('_route')
+            ->willReturn('test_route');
+
+        $routerUtils = new RouterUtils($requestStack);
+        $result = $routerUtils->getRouteName();
+
+        // Should return the string route name (assert should pass)
+        $this->assertSame('test_route', $result);
+    }
 }

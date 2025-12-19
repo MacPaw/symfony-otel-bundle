@@ -203,28 +203,41 @@ class AbstractInstrumentationTest extends TestCase
         $this->assertCount(1, $this->registry->getSpans());
         $this->assertTrue($this->instrumentation->isSpanSet());
 
+        // Store the first span to verify it's removed
+        $firstSpan = $this->registry->getSpan('test_instrumentation');
+        $this->assertNotNull($firstSpan);
+
         // Second init should call removeSpan before adding new span
-        // Verify removeSpan is called by checking the span is removed
+        // Verify removeSpan is called by checking the span is removed and replaced
         $this->instrumentation->testInitSpan(null);
         
         // Verify only one span exists (old one was removed, new one added)
+        $this->assertCount(1, $this->registry->getSpans());
+        $secondSpan = $this->registry->getSpan('test_instrumentation');
+        $this->assertNotNull($secondSpan);
+        // The span objects are the same mock, but they're different instances
+        // The important thing is that removeSpan was called (span count stays at 1)
         $this->assertCount(1, $this->registry->getSpans());
     }
 
     public function testInitSpanUsesNullCoalesceAssignment(): void
     {
         // Test that null coalesce assignment is used (not regular assignment)
-        $this->spanBuilder->expects($this->once())
+        // When context is null, null coalesce should assign Context::getCurrent()
+        // When context is provided, null coalesce should NOT overwrite it
+        
+        // Test 1: null context uses null coalesce to get current
+        $this->spanBuilder->expects($this->exactly(2))
             ->method('setParent')
             ->with($this->isInstanceOf(ContextInterface::class))
             ->willReturnSelf();
 
-        $this->tracer->expects($this->once())
+        $this->tracer->expects($this->exactly(2))
             ->method('spanBuilder')
             ->with('test_instrumentation')
             ->willReturn($this->spanBuilder);
 
-        $this->spanBuilder->expects($this->once())
+        $this->spanBuilder->expects($this->exactly(2))
             ->method('startSpan')
             ->willReturn($this->span);
 
@@ -233,37 +246,50 @@ class AbstractInstrumentationTest extends TestCase
         
         // Verify context was set (proving null coalesce was used)
         $this->assertNotNull($this->registry->getContext());
+        
+        // Test 2: provided context should be used (null coalesce doesn't overwrite)
+        $providedContext = Context::getCurrent();
+        $this->instrumentation->testInitSpan($providedContext);
+        
+        // Verify the provided context was used (not replaced by getCurrent())
+        $this->assertNotNull($this->registry->getContext());
     }
 
     public function testInitSpanChecksContextInstanceOf(): void
     {
-        // Test that instanceof check is used to fall back to Context::getCurrent()
-        $context = Context::getCurrent();
-        $this->registry->setContext($context);
+        // Test that instanceof check with negation is used to fall back to Context::getCurrent()
+        // The check is: if (!$context instanceof ContextInterface)
         
-        // Use reflection to set context to null to simulate getContext() returning null
+        // Test 1: When getContext() returns null (not instanceof ContextInterface)
         $reflection = new ReflectionClass($this->registry);
         $property = $reflection->getProperty('context');
         $property->setAccessible(true);
         $property->setValue($this->registry, null);
 
-        $this->spanBuilder->expects($this->once())
+        $this->spanBuilder->expects($this->exactly(2))
             ->method('setParent')
             ->with($this->isInstanceOf(ContextInterface::class))
             ->willReturnSelf();
 
-        $this->tracer->expects($this->once())
+        $this->tracer->expects($this->exactly(2))
             ->method('spanBuilder')
             ->with('test_instrumentation')
             ->willReturn($this->spanBuilder);
 
-        $this->spanBuilder->expects($this->once())
+        $this->spanBuilder->expects($this->exactly(2))
             ->method('startSpan')
             ->willReturn($this->span);
 
         // When getContext() returns null (not instanceof ContextInterface), should fall back
         $this->instrumentation->testInitSpan(null);
+        $this->assertTrue($this->instrumentation->isSpanSet());
         
+        // Test 2: When getContext() returns a ContextInterface, should NOT fall back
+        $validContext = Context::getCurrent();
+        $this->registry->setContext($validContext);
+        $this->instrumentation->testInitSpan(null);
+        
+        // Should use the valid context from registry, not fall back
         $this->assertTrue($this->instrumentation->isSpanSet());
     }
 

@@ -220,17 +220,19 @@ class MonologTraceContextProcessorTest extends TestCase
         }
 
         // When context is invalid, the record should be returned early without modification
+        // The return statement should be executed, not skipped
         $result = $processor($originalRecord);
         
         // Verify the record is returned unchanged (no trace context added)
         $this->assertInstanceOf(LogRecord::class, $result);
         if (!$this->hasExtraKey($result, 'trace_id')) {
-            // Verify original extra data is preserved
+            // Verify original extra data is preserved (proving early return happened)
             $extra = $this->getExtra($result);
             $this->assertArrayHasKey('existing', $extra);
             $this->assertSame('value', $extra['existing']);
             $this->assertFalse($this->hasExtraKey($result, 'trace_id'));
             $this->assertFalse($this->hasExtraKey($result, 'span_id'));
+            $this->assertFalse($this->hasExtraKey($result, 'trace_flags'));
         }
     }
 

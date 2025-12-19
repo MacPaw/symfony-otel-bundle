@@ -72,12 +72,38 @@ class InstrumentationRegistryTest extends TestCase
     {
         // Should not throw exception when removing non-existent span
         // This tests the early return when span doesn't exist
+        // The return statement should be executed, preventing unset() from being called
+        
+        // Verify spans array is empty initially
+        $this->assertCount(0, $this->registry->getSpans());
+        
+        // Remove non-existent span - should return early
         $this->registry->removeSpan('non_existent');
         $this->assertNull($this->registry->getSpan('non_existent'));
+        
+        // Verify spans array is still empty (unset was not called due to early return)
+        $this->assertCount(0, $this->registry->getSpans());
         
         // Verify that calling removeSpan again on non-existent span doesn't cause issues
         $this->registry->removeSpan('non_existent');
         $this->assertNull($this->registry->getSpan('non_existent'));
+        $this->assertCount(0, $this->registry->getSpans());
+    }
+
+    public function testRemoveSpanWhenExistsCallsUnset(): void
+    {
+        // Test that when span exists, unset is called (not early return)
+        $span = $this->createMock(SpanInterface::class);
+        $this->registry->addSpan($span, 'test_span');
+        $this->assertCount(1, $this->registry->getSpans());
+        $this->assertNotNull($this->registry->getSpan('test_span'));
+
+        // Remove existing span - should NOT return early, should call unset
+        $this->registry->removeSpan('test_span');
+        
+        // Verify span was removed (unset was called)
+        $this->assertNull($this->registry->getSpan('test_span'));
+        $this->assertCount(0, $this->registry->getSpans());
     }
 
     public function testClearSpans(): void

@@ -544,6 +544,53 @@ class HttpMetadataAttacherTest extends TestCase
         $this->service->addControllerAttributes($spanBuilder, $request);
     }
 
+    public function testAddControllerAttributesRequiresBothNsAndFnWithArrayCondition(): void
+    {
+        // Test that is_array($controller) && count($controller) === 2 is used (not ||)
+        // This kills the LogicalAnd mutant on line 78
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+
+        // Test with array that has count === 2 (should match the condition)
+        $controllerObject = new class {
+            public function index(): void
+            {
+            }
+        };
+        $attributes->method('get')->with('_controller')->willReturn([$controllerObject, 'index']);
+        $request->attributes = $attributes;
+
+        // If && is used: is_array(true) && count(2) === 2 -> true && true -> true -> process
+        // If || is used: is_array(true) || count(2) === 2 -> true || true -> true -> process
+        // So we need a case where one is true and the other is false
+        
+        // Test with array that has count !== 2 (should NOT match if && is used)
+        $attributes2 = $this->createMock(ParameterBag::class);
+        $attributes2->method('get')->with('_controller')->willReturn([$controllerObject]); // count = 1
+        $request2 = $this->createMock(Request::class);
+        $request2->attributes = $attributes2;
+        
+        // If && is used: is_array(true) && count(1) === 2 -> true && false -> false -> skip
+        // If || is used: is_array(true) || count(1) === 2 -> true || false -> true -> process (WRONG)
+        $spanBuilder2 = $this->createMock(SpanBuilderInterface::class);
+        $spanBuilder2->expects($this->never())
+            ->method('setAttribute');
+        
+        $this->service->addControllerAttributes($spanBuilder2, $request2);
+        
+        // Now test with count === 2 (should work)
+        $spanBuilder->expects($this->once())
+            ->method('setAttribute')
+            ->with(
+                $this->stringContains('code.function'),
+                $this->stringContains('::index')
+            )
+            ->willReturnSelf();
+        
+        $this->service->addControllerAttributes($spanBuilder, $request);
+    }
+
     public function testAddControllerAttributesWithEmptyStringForNs(): void
     {
         // Test && logic: if $ns is empty string and $fn is set, attribute should be set
@@ -871,6 +918,31 @@ class HttpMetadataAttacherTest extends TestCase
             )
             ->willReturnSelf();
 
+        $this->service->addControllerAttributesToSpan($span, $request);
+    }
+
+    public function testAddControllerAttributesToSpanRequiresBothNsAndFnWithArrayCondition(): void
+    {
+        // Test that is_array($controller) && count($controller) === 2 is used (not ||)
+        // This kills the LogicalAnd mutant on line 146
+        $span = $this->createMock(\OpenTelemetry\API\Trace\SpanInterface::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+
+        // Test with array that has count !== 2 (should NOT match if && is used)
+        $controllerObject = new class {
+            public function index(): void
+            {
+            }
+        };
+        $attributes->method('get')->with('_controller')->willReturn([$controllerObject]); // count = 1
+        $request->attributes = $attributes;
+        
+        // If && is used: is_array(true) && count(1) === 2 -> true && false -> false -> skip
+        // If || is used: is_array(true) || count(1) === 2 -> true || false -> true -> process (WRONG)
+        $span->expects($this->never())
+            ->method('setAttribute');
+        
         $this->service->addControllerAttributesToSpan($span, $request);
     }
 }

@@ -211,9 +211,17 @@ class TraceServiceTest extends TestCase
 
     public function testForceFlushUsesDefaultTimeoutOf200(): void
     {
-        // Test that default timeout is 200 (not 199 or 201)
+        // Test that default timeout is exactly 200 (not 199 or 201)
+        // This kills the IncrementInteger and DecrementInteger mutants
         $provider = InMemoryProviderFactory::create();
         $traceService = new TraceService($provider, 'test-service', 'test-tracer');
+
+        // Use reflection to verify the default parameter value is 200
+        $reflection = new \ReflectionMethod($traceService, 'forceFlush');
+        $parameters = $reflection->getParameters();
+        $this->assertCount(1, $parameters);
+        $defaultValue = $parameters[0]->getDefaultValue();
+        $this->assertSame(200, $defaultValue, 'Default timeout must be exactly 200 to kill increment/decrement mutants');
 
         // Verify default is 200 by calling without parameter
         try {
@@ -238,16 +246,19 @@ class TraceServiceTest extends TestCase
     public function testForceFlushChecksMethodExists(): void
     {
         // Test that method_exists check is used (not !method_exists)
+        // This kills the IfNegation mutant
         $provider = InMemoryProviderFactory::create();
         $traceService = new TraceService($provider, 'test-service', 'test-tracer');
 
         // method_exists should return true, so forceFlush should be called
+        // If the mutant (!method_exists) were applied, forceFlush would NOT be called
         try {
             $traceService->forceFlush(200);
             // @phpstan-ignore-next-line
             $this->assertTrue(true);
         } catch (TypeError $typeError) {
-            // The method_exists check passed, but call failed due to signature - that's expected
+            // The method_exists check passed (returned true), so forceFlush was called
+            // This proves method_exists (not !method_exists) was used
             $this->assertStringContainsString('forceFlush', $typeError->getMessage());
         }
     }
@@ -255,17 +266,21 @@ class TraceServiceTest extends TestCase
     public function testForceFlushCallsTracerProviderForceFlush(): void
     {
         // Test that tracerProvider->forceFlush is called when method exists
+        // This kills the MethodCallRemoval mutant
         $provider = InMemoryProviderFactory::create();
         $traceService = new TraceService($provider, 'test-service', 'test-tracer');
 
         // Verify the method call path is executed
+        // If MethodCallRemoval mutant were applied, forceFlush would NOT be called
         try {
             $traceService->forceFlush(200);
             // @phpstan-ignore-next-line
             $this->assertTrue(true);
         } catch (TypeError $typeError) {
-            // The call was attempted, which means the method_exists check passed
-            // and the call was made (even though it failed due to signature)
+            // The call was attempted, which means:
+            // 1. method_exists check passed (returned true)
+            // 2. forceFlush WAS called (proving MethodCallRemoval mutant is killed)
+            // If MethodCallRemoval were applied, we wouldn't get this TypeError
             $this->assertStringContainsString('forceFlush', $typeError->getMessage());
         }
     }

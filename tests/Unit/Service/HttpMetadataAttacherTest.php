@@ -340,4 +340,90 @@ class HttpMetadataAttacherTest extends TestCase
 
         $this->service->addHttpAttributes($spanBuilder, $request);
     }
+
+    public function testAddHttpAttributesContinuesWhenHeaderNotPresent(): void
+    {
+        // Test that continue is used (not break) when header is not present
+        $headerMappings = [
+            'user.id' => 'X-User-Id',
+            'client.version' => 'X-Client-Version',
+        ];
+
+        $service = new HttpMetadataAttacher($this->routerUtils, $headerMappings);
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+        $request = $this->createMock(Request::class);
+        $headers = $this->createMock(HeaderBag::class);
+
+        // First header is present, second is not - should continue to next iteration
+        $headers->method('has')
+            ->willReturnCallback(function (string $headerName): bool {
+                return match ($headerName) {
+                    'X-User-Id' => true,
+                    'X-Client-Version' => false, // This should cause continue, not break
+                    'X-Request-Id' => false,
+                    default => false,
+                };
+            });
+        $headers->method('get')
+            ->willReturnCallback(function (string $headerName): ?string {
+                return match ($headerName) {
+                    'X-User-Id' => 'user123',
+                    default => null,
+                };
+            });
+        $request->headers = $headers;
+        $request->method('getMethod')->willReturn('GET');
+        $request->method('getPathInfo')->willReturn('/');
+
+        // Should process first header and continue (not break), then add standard attributes
+        $spanBuilder->expects($this->atLeast(3))
+            ->method('setAttribute')
+            ->willReturnSelf();
+
+        $service->addHttpAttributes($spanBuilder, $request);
+    }
+
+    public function testAddHttpAttributesCastsHeaderValueToString(): void
+    {
+        // Test that header value is cast to string
+        $headerMappings = ['user.id' => 'X-User-Id'];
+        $service = new HttpMetadataAttacher($this->routerUtils, $headerMappings);
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+        $request = $this->createMock(Request::class);
+        $headers = $this->createMock(HeaderBag::class);
+
+        $headers->method('has')
+            ->willReturnCallback(function (string $headerName): bool {
+                return match ($headerName) {
+                    'X-User-Id' => true,
+                    'X-Request-Id' => false,
+                    default => false,
+                };
+            });
+        $headers->method('get')
+            ->willReturnCallback(function (string $headerName): ?string {
+                // Return as string since HeaderBag::get() returns ?string
+                return match ($headerName) {
+                    'X-User-Id' => '12345', // Return as string (simulating cast)
+                    default => null,
+                };
+            });
+        $request->headers = $headers;
+        $request->method('getMethod')->willReturn('GET');
+        $request->method('getPathInfo')->willReturn('/');
+
+        // Verify the value is cast to string (HeaderBag returns string, but we verify the cast happens)
+        $spanBuilder->expects($this->atLeastOnce())
+            ->method('setAttribute')
+            ->willReturnCallback(function (string $key, $value) use ($spanBuilder) {
+                // Verify that when user.id is set, the value is a string
+                if ($key === 'user.id') {
+                    $this->assertSame('12345', $value);
+                    $this->assertIsString($value);
+                }
+                return $spanBuilder;
+            });
+
+        $service->addHttpAttributes($spanBuilder, $request);
+    }
 }

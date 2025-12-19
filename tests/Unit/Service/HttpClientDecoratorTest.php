@@ -209,4 +209,80 @@ class HttpClientDecoratorTest extends TestCase
 
         $this->assertSame($response, $result);
     }
+
+    public function testRequestUsesNullSafeOperator(): void
+    {
+        // Test that null safe operator is used for request access
+        $response = $this->createMock(ResponseInterface::class);
+
+        $this->requestStack->method('getCurrentRequest')->willReturn(null);
+        $this->requestStack->method('getMainRequest')->willReturn(null);
+        $this->requestStack->method('getParentRequest')->willReturn(null);
+        
+        $this->propagator->method('fields')->willReturn(['traceparent', 'tracestate']);
+        $this->propagator->expects($this->once())->method('inject');
+
+        $this->httpClient
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                'GET',
+                'https://api.example.com/data',
+                $this->callback(function (array $options): bool {
+                    /** @var array<string, mixed> $options */
+                    /** @var array<string, string> $headers */
+                    $headers = $options['headers'] ?? [];
+                    // When request is null, null safe operator should not throw, and ID should be generated
+                    return isset($headers['X-Request-Id']) &&
+                        preg_match(
+                            '/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/',
+                            $headers['X-Request-Id']
+                        );
+                })
+            )
+            ->willReturn($response);
+
+        $decorator = $this->createDecorator();
+        $result = $decorator->request('GET', 'https://api.example.com/data');
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testRequestUsesCoalesceForHeaders(): void
+    {
+        // Test that coalesce is used for headers: $options['headers'] ?? []
+        $response = $this->createMock(ResponseInterface::class);
+        $request = $this->createMock(Request::class);
+        $headers = $this->createMock(HeaderBag::class);
+
+        $headers->method('get')->with('X-Request-Id')->willReturn(null);
+        $request->headers = $headers;
+
+        $this->requestStack->method('getCurrentRequest')->willReturn($request);
+        $this->requestStack->method('getMainRequest')->willReturn($request);
+        $this->requestStack->method('getParentRequest')->willReturn(null);
+        $this->propagator->method('fields')->willReturn(['traceparent', 'tracestate']);
+        $this->propagator->expects($this->once())->method('inject');
+
+        $this->httpClient
+            ->expects($this->once())
+            ->method('request')
+            ->with(
+                'GET',
+                'https://api.example.com/data',
+                $this->callback(function (array $options): bool {
+                    /** @var array<string, mixed> $options */
+                    // When headers key doesn't exist, coalesce should return []
+                    $headers = $options['headers'] ?? [];
+                    return is_array($headers) && isset($headers['X-Request-Id']);
+                })
+            )
+            ->willReturn($response);
+
+        $decorator = $this->createDecorator();
+        // Call without headers option to test coalesce
+        $result = $decorator->request('GET', 'https://api.example.com/data');
+
+        $this->assertSame($response, $result);
+    }
 }

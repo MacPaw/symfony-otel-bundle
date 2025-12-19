@@ -448,4 +448,30 @@ class RouterUtilsTest extends TestCase
         $this->assertSame('value1', $resultArray['123']);
         $this->assertSame('value2', $resultArray['456']);
     }
+
+    public function testGetRequestCoalesceOrder(): void
+    {
+        // Test that coalesce order is: currentRequest ?? mainRequest ?? parentRequest
+        $requestStack = $this->createMock(RequestStack::class);
+        $currentRequest = $this->createMock(Request::class);
+        $mainRequest = $this->createMock(Request::class);
+        $parentRequest = $this->createMock(Request::class);
+
+        // Test order: currentRequest is used first
+        $requestStack->expects($this->once())
+            ->method('getCurrentRequest')
+            ->willReturn($currentRequest);
+        $requestStack->expects($this->once())
+            ->method('getMainRequest')
+            ->willReturn($mainRequest);
+        $requestStack->expects($this->once())
+            ->method('getParentRequest')
+            ->willReturn($parentRequest);
+
+        $routerUtils = new RouterUtils($requestStack);
+        $result = $routerUtils->getRequest();
+
+        // Should return currentRequest (first in coalesce chain)
+        $this->assertSame($currentRequest, $result);
+    }
 }

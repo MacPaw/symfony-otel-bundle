@@ -206,6 +206,40 @@ class RequestExecutionTimeInstrumentationTest extends TestCase
         $this->assertNotNull($this->registry->getSpan($this->instrumentation->getName()));
     }
 
+    public function testRetrieveContextReturnsRegistryContextWhenAvailable(): void
+    {
+        // Test that return statement is present when registry context is available
+        $context = Context::getCurrent();
+        $this->registry->setContext($context);
+
+        $spanBuilder = $this->createMock(SpanBuilderInterface::class);
+        $span = $this->createMock(SpanInterface::class);
+
+        $spanBuilder->expects($this->once())
+            ->method('setSpanKind')
+            ->willReturnSelf();
+        $spanBuilder->expects($this->once())
+            ->method('startSpan')
+            ->willReturn($span);
+        $spanBuilder->expects($this->once())
+            ->method('setParent')
+            ->with($context) // Should use registry context directly
+            ->willReturnSelf();
+
+        $this->tracer->expects($this->once())
+            ->method('spanBuilder')
+            ->willReturn($spanBuilder);
+
+        $this->clock->expects($this->once())
+            ->method('now')
+            ->willReturn(1000000);
+
+        // Should return registry context immediately, not call propagator->extract
+        $this->propagator->expects($this->never())
+            ->method('extract');
+
+        $this->instrumentation->pre();
+    }
 
     protected function setUp(): void
     {

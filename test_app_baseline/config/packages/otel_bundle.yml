@@ -1,0 +1,11 @@
+otel_bundle:
+  tracer_name: '%env(OTEL_TRACER_NAME)%'
+  service_name: '%env(OTEL_SERVICE_NAME)%'
+  force_flush_on_terminate: false
+  force_flush_timeout_ms: 100
+  instrumentations:
+    - 'querybus.query.instrumentation'
+    - 'querybus.dispatch.instrumentation'
+    - 'commandbus.dispatch.instrumentation'
+  header_mappings:
+    http.request_id: 'X-Request-Id'

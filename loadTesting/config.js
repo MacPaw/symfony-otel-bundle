@@ -1,6 +1,7 @@
 // k6 Load Testing Configuration
 // Base URL from environment or default
 export const BASE_URL = __ENV.BASE_URL || 'http://php-app:8080';
+export const BASE_URL_BASELINE = __ENV.BASE_URL_BASELINE || 'http://php-app-baseline:8080';
 
 // Common thresholds for all tests
 export const thresholds = {

@@ -252,6 +252,20 @@ k6-comprehensive: ## ⚡ Run k6 comprehensive mixed workload test
 	@echo "$(GREEN)✅ Comprehensive test completed$(NC)"
 	@echo "$(BLUE)📄 HTML Report: loadTesting/reports/html-report.html$(NC)"
 
+k6-baseline: ## ⚡ Run k6 baseline test (app without OpenTelemetry)
+	@echo "$(BLUE)📊 Running k6 baseline test (without OTel)...$(NC)"
+	@echo "$(YELLOW)📊 Dashboard: http://localhost:$(K6_DASHBOARD_PORT:-5665)$(NC)"
+	@docker-compose run --rm k6 run /scripts/baseline-test.js
+	@echo "$(GREEN)✅ Baseline test completed$(NC)"
+	@echo "$(BLUE)📄 HTML Report: loadTesting/reports/html-report.html$(NC)"
+
+k6-comparison: ## ⚡ Run k6 comparison test (OTel vs baseline performance)
+	@echo "$(BLUE)⚖️  Running k6 comparison test...$(NC)"
+	@echo "$(YELLOW)📊 Dashboard: http://localhost:$(K6_DASHBOARD_PORT:-5665)$(NC)"
+	@docker-compose run --rm k6 run /scripts/comparison-test.js
+	@echo "$(GREEN)✅ Comparison test completed$(NC)"
+	@echo "$(BLUE)📄 HTML Report: loadTesting/reports/html-report.html$(NC)"
+
 k6-stress: ## ⚡ Run k6 stress test (~31 minutes, up to 300 VUs)
 	@echo "$(YELLOW)⚠️  Warning: This will take approximately 31 minutes$(NC)"
 	@echo "$(YELLOW)📊 Dashboard: http://localhost:$(K6_DASHBOARD_PORT:-5665)$(NC)"

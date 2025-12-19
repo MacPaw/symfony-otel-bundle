@@ -21,9 +21,23 @@ k6 is a modern load testing tool. Test scripts are written in JavaScript and exe
 - k6 service is built from `docker/k6-go/Dockerfile`
 - PHP app runs in Docker container defined in `docker/php/`
 
+## Test Applications
+
+This project includes two test applications for performance comparison:
+
+1. **test_app** - Full application with OpenTelemetry instrumentation
+   - URL: `http://php-app:8080`
+   - Port: 8080 (default)
+   - Includes: OtelBundle, OtelSdkBundle, SymfonyOtelBundle
+
+2. **test_app_baseline** - Baseline application without OpenTelemetry
+   - URL: `http://php-app-baseline:8080`
+   - Port: 8081 (default)
+   - Clean Symfony application without any OTel bundles
+
 ## Test App Endpoints
 
-The test application provides the following endpoints for load testing:
+Both test applications provide the following endpoints for load testing:
 
 | Endpoint | Description | Expected Response Time |
 |----------|-------------|------------------------|
@@ -131,7 +145,39 @@ docker-compose run --rm k6 run /scripts/comprehensive-test.js
 docker-compose run --rm k6 run /scripts/stress-test.js
 ```
 
-### 8. All Scenarios Test (`all-scenarios-test.js`) ⭐ RECOMMENDED
+### 9. Baseline Test (`baseline-test.js`)
+**Purpose:** Test the baseline app (without OpenTelemetry) to measure baseline performance.
+- **Target:** `http://php-app-baseline:8080`
+- **Use Case:** Measure application performance without OpenTelemetry overhead
+
+**Run:**
+```bash
+docker-compose run --rm k6 run /scripts/baseline-test.js
+```
+
+### 10. Comparison Test (`comparison-test.js`) ⭐ PERFORMANCE ANALYSIS
+**Purpose:** Compare performance between OTel-enabled app and baseline app side-by-side.
+- **Tests Both:**
+  - OTel-enabled app (`http://php-app:8080`)
+  - Baseline app (`http://php-app-baseline:8080`)
+- **Metrics:** Custom metrics for each app to measure overhead
+- **Output:** Shows performance comparison and overhead percentage
+
+**Run:**
+```bash
+docker-compose run --rm k6 run /scripts/comparison-test.js
+```
+
+**Example Output:**
+```
+=== Performance Comparison ===
+OTel App p95: 245.32ms
+Baseline App p95: 198.45ms
+Overhead: 23.62%
+=============================
+```
+
+### 11. All Scenarios Test (`all-scenarios-test.js`) ⭐ RECOMMENDED
 **Purpose:** Run all test scenarios in a single comprehensive test with parallel execution.
 - **Duration:** ~16 minutes
 - **Execution:** Uses k6 scenarios feature for parallel execution with staggered starts
@@ -208,6 +254,10 @@ make k6-pdo                # PDO instrumentation test
 make k6-cqrs               # CQRS pattern test
 make k6-comprehensive      # Mixed workload test
 make k6-stress             # Stress test (~31 minutes)
+
+# Performance comparison tests
+make k6-baseline           # Test baseline app (without OTel)
+make k6-comparison         # Compare OTel vs baseline performance
 
 # Run all scenarios in one comprehensive test
 make k6-all-scenarios      # All scenarios test (~15 minutes) ⭐ RECOMMENDED

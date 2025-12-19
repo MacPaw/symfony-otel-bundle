@@ -21,9 +21,6 @@ RUN install-php-extensions \
     gd \
     xml
 
-# Install OpenTelemetry extension
-RUN install-php-extensions opentelemetry-1.0.0
-
 # Install Xdebug for code coverage
 # Note: xdebug 3.3.1 may fail to compile with certain PHP headers; use 3.3.2+
 RUN install-php-extensions xdebug

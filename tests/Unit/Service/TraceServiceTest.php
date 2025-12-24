@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Service;
 
+use ReflectionMethod;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\TracerInterface;
 use OpenTelemetry\SDK\Trace\TracerProviderInterface;
@@ -217,7 +218,7 @@ class TraceServiceTest extends TestCase
         $traceService = new TraceService($provider, 'test-service', 'test-tracer');
 
         // Use reflection to verify the default parameter value is 200
-        $reflection = new \ReflectionMethod($traceService, 'forceFlush');
+        $reflection = new ReflectionMethod($traceService, 'forceFlush');
         $parameters = $reflection->getParameters();
         $this->assertCount(1, $parameters);
         $defaultValue = $parameters[0]->getDefaultValue();
@@ -314,7 +315,7 @@ class TraceServiceTest extends TestCase
             $traceService->forceFlush(200);
             // If we get here without exception, the method_exists check worked
             $this->assertTrue(true);
-        } catch (\TypeError $e) {
+        } catch (TypeError $e) {
             // If we get a TypeError, it means method_exists returned true and the call was attempted
             // This is actually testing the wrong path, but it's hard to test method_exists(false) with mocks
             // The important thing is we've verified the code structure

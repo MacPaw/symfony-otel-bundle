@@ -188,7 +188,7 @@ class AbstractInstrumentationTest extends TestCase
         // Test that removeSpan is called when isSpanSet is true
         // If removeSpan is NOT called, we'd have 2 spans with the same name (which shouldn't happen)
         // But since removeSpan IS called, we have only 1 span
-        
+
         // First init to set isSpanSet = true
         $this->tracer->expects($this->exactly(2))
             ->method('spanBuilder')
@@ -208,7 +208,7 @@ class AbstractInstrumentationTest extends TestCase
         $this->assertCount(1, $this->registry->getSpans());
         $this->assertTrue($this->instrumentation->isSpanSet());
         $this->assertNotNull($this->registry->getSpan('test_instrumentation'));
-        
+
         // Store the first span to verify it's replaced
         $firstSpan = $this->registry->getSpan('test_instrumentation');
 
@@ -216,11 +216,11 @@ class AbstractInstrumentationTest extends TestCase
         // If removeSpan is NOT called, we'd have 2 spans with the same name
         // But since removeSpan IS called, we have exactly 1 span (the old one was removed)
         $this->instrumentation->testInitSpan(null);
-        
+
         // Verify only 1 span exists (proving removeSpan was called)
         $this->assertCount(1, $this->registry->getSpans());
         $this->assertNotNull($this->registry->getSpan('test_instrumentation'));
-        
+
         // Verify the span was replaced (proving removeSpan removed the old one before adding new one)
         $secondSpan = $this->registry->getSpan('test_instrumentation');
         $this->assertSame($this->span, $secondSpan, 'New span should be the one from startSpan');

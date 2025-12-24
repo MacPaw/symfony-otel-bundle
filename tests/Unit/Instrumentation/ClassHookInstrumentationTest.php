@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Instrumentation;
 
+use OpenTelemetry\SemConv\Attributes\CodeAttributes;
 use Macpaw\SymfonyOtelBundle\Instrumentation\ClassHookInstrumentation;
 use Macpaw\SymfonyOtelBundle\Middleware\ClassHookInstrumentationSpanMiddlewareInterface;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
@@ -230,7 +231,7 @@ class ClassHookInstrumentationTest extends TestCase
         $span->expects($this->once())
             ->method('setAttribute')
             ->with(
-                \OpenTelemetry\SemConv\Attributes\CodeAttributes::CODE_FUNCTION_NAME,
+                CodeAttributes::CODE_FUNCTION_NAME,
                 sprintf('%s::%s', $this->className, $this->methodName)
             );
 

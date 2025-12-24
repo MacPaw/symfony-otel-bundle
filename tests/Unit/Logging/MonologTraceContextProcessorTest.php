@@ -78,7 +78,7 @@ class MonologTraceContextProcessorTest extends TestCase
      *
      * @return array<string, mixed>
      */
-    private function getExtra($record): array
+    private function getExtra(LogRecord|array $record): array
     {
         if ($record instanceof LogRecord) {
             /** @var array<string, mixed> $extra */

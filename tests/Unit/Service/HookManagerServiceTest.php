@@ -9,14 +9,16 @@ use Exception;
 use Macpaw\SymfonyOtelBundle\Instrumentation\HookInstrumentationInterface;
 use Macpaw\SymfonyOtelBundle\Service\HookManagerService;
 use OpenTelemetry\API\Instrumentation\AutoInstrumentation\HookManagerInterface;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use PHPUnit\Framework\MockObject\MockObject;
 
 class HookManagerServiceTest extends TestCase
 {
     private HookManagerService $hookManagerService;
+
     private LoggerInterface&MockObject $logger;
+
     private HookManagerInterface&MockObject $hookManager;
 
     protected function setUp(): void
@@ -125,8 +127,30 @@ class HookManagerServiceTest extends TestCase
                 $preHook();
             });
 
+        // Verify error is logged with proper array key 'error' using => operator (not >)
+        // The array must have ['error' => $throwable->getMessage()] structure
+        $callCount = 0;
         $this->logger->expects($this->exactly(2))
-            ->method('error');
+            ->method('error')
+            ->willReturnCallback(function (string $message, array $context = []) use (&$callCount): void {
+                $callCount++;
+                if ($callCount === 1) {
+                    $this->assertEquals("Error in hook pre(): {error}", $message);
+                    // Verify array has 'error' key with => operator (not >)
+                    // If > were used, the array would be malformed or missing the key
+                    $this->assertArrayHasKey('error', $context);
+                    $this->assertEquals('Pre hook error', $context['error']);
+                    // Verify the array structure is correct (=> operator creates proper key-value pair)
+                    $this->assertCount(1, $context, 'Array should have exactly 1 element with => operator');
+                    $this->assertSame('Pre hook error', $context['error'], 'Array value should match using => operator');
+                } elseif ($callCount === 2) {
+                    $this->assertEquals('Failed to register hook for {class}::{method}: {error}', $message);
+                    $this->assertArrayHasKey('class', $context);
+                    $this->assertArrayHasKey('method', $context);
+                    $this->assertArrayHasKey('instrumentation', $context);
+                    $this->assertArrayHasKey('error', $context);
+                }
+            });
 
         $this->logger->expects($this->never())
             ->method('debug');
@@ -148,8 +172,30 @@ class HookManagerServiceTest extends TestCase
                 $postHook();
             });
 
+        // Verify error is logged with proper array key 'error' using => operator (not >)
+        // The array must have ['error' => $throwable->getMessage()] structure
+        $callCount = 0;
         $this->logger->expects($this->exactly(2))
-            ->method('error');
+            ->method('error')
+            ->willReturnCallback(function (string $message, array $context = []) use (&$callCount): void {
+                $callCount++;
+                if ($callCount === 1) {
+                    $this->assertEquals("Error in hook post(): {error}", $message);
+                    // Verify array has 'error' key with => operator (not >)
+                    // If > were used, the array would be malformed or missing the key
+                    $this->assertArrayHasKey('error', $context);
+                    $this->assertEquals('Post hook error', $context['error']);
+                    // Verify the array structure is correct (=> operator creates proper key-value pair)
+                    $this->assertCount(1, $context, 'Array should have exactly 1 element with => operator');
+                    $this->assertSame('Post hook error', $context['error'], 'Array value should match using => operator');
+                } elseif ($callCount === 2) {
+                    $this->assertEquals('Failed to register hook for {class}::{method}: {error}', $message);
+                    $this->assertArrayHasKey('class', $context);
+                    $this->assertArrayHasKey('method', $context);
+                    $this->assertArrayHasKey('instrumentation', $context);
+                    $this->assertArrayHasKey('error', $context);
+                }
+            });
 
         $this->logger->expects($this->never())
             ->method('debug');
@@ -269,5 +315,71 @@ class HookManagerServiceTest extends TestCase
             );
 
         $this->hookManagerService->registerHooks([$instrumentation1, $instrumentation2]);
+    }
+
+    public function testRegisterHookWithSuccessfulPreHook(): void
+    {
+        $instrumentation = $this->createMock(HookInstrumentationInterface::class);
+        $instrumentation->method('getClass')->willReturn('TestClass');
+        $instrumentation->method('getMethod')->willReturn('testMethod');
+        $instrumentation->method('getName')->willReturn('test_instrumentation');
+        // pre() returns void, so no need to configure return value
+
+        $this->hookManager->expects($this->once())
+            ->method('hook')
+            ->willReturnCallback(function (string $class, string $method, callable $preHook, callable $postHook): void {
+                $preHook(); // Execute pre hook
+            });
+
+        $callCount = 0;
+        $this->logger->expects($this->exactly(2))
+            ->method('debug')
+            ->willReturnCallback(function ($message, array $context = []) use (&$callCount): void {
+                /** @var array<string, mixed> $context */
+                $callCount++;
+                if ($callCount === 1) {
+                    $this->assertEquals('Successfully executed pre hook for TestClass::testMethod', $message);
+                } elseif ($callCount === 2) {
+                    $this->assertEquals('Successfully registered hook for {class}::{method}', $message);
+                    $this->assertEquals('TestClass', $context['class'] ?? null);
+                    $this->assertEquals('testMethod', $context['method'] ?? null);
+                    $this->assertEquals('test_instrumentation', $context['instrumentation'] ?? null);
+                }
+            });
+
+        $this->hookManagerService->registerHook($instrumentation);
+    }
+
+    public function testRegisterHookWithSuccessfulPostHook(): void
+    {
+        $instrumentation = $this->createMock(HookInstrumentationInterface::class);
+        $instrumentation->method('getClass')->willReturn('TestClass');
+        $instrumentation->method('getMethod')->willReturn('testMethod');
+        $instrumentation->method('getName')->willReturn('test_instrumentation');
+        // post() returns void, so no need to configure return value
+
+        $this->hookManager->expects($this->once())
+            ->method('hook')
+            ->willReturnCallback(function (string $class, string $method, callable $preHook, callable $postHook): void {
+                $postHook(); // Execute post hook
+            });
+
+        $callCount = 0;
+        $this->logger->expects($this->exactly(2))
+            ->method('debug')
+            ->willReturnCallback(function ($message, array $context = []) use (&$callCount): void {
+                /** @var array<string, mixed> $context */
+                $callCount++;
+                if ($callCount === 1) {
+                    $this->assertEquals('Successfully executed post hook for TestClass::testMethod', $message);
+                } elseif ($callCount === 2) {
+                    $this->assertEquals('Successfully registered hook for {class}::{method}', $message);
+                    $this->assertEquals('TestClass', $context['class'] ?? null);
+                    $this->assertEquals('testMethod', $context['method'] ?? null);
+                    $this->assertEquals('test_instrumentation', $context['instrumentation'] ?? null);
+                }
+            });
+
+        $this->hookManagerService->registerHook($instrumentation);
     }
 }

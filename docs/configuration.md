@@ -15,17 +15,35 @@ otel_bundle:
     # Tracer configuration
     tracer_name: '%env(OTEL_TRACER_NAME)%'
     service_name: '%env(OTEL_SERVICE_NAME)%'
+
+  # Preserve BatchSpanProcessor async export (do not flush per request)
+    force_flush_on_terminate: false
+    force_flush_timeout_ms: 100
     
     # Built-in instrumentations
     instrumentations:
-        - 'Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation'
+      - 'Macpaw\\SymfonyOtelBundle\\Instrumentation\\RequestExecutionTimeInstrumentation'
     # Custom instrumentations
-        - 'App\Instrumentation\CustomInstrumentation'
+      - 'App\\Instrumentation\\CustomInstrumentation'
     
     # Header mappings for request ID propagation
     header_mappings:
         http.request_id: 'X-Request-Id'
         http.user_agent: 'X-User-Agent'
+
+  # Logging bridge (Monolog trace context)
+    logging:
+      enable_trace_processor: true
+      log_keys:
+        trace_id: 'trace_id'
+        span_id: 'span_id'
+        trace_flags: 'trace_flags'
+
+  # Metrics bridge (cheap request counters)
+    metrics:
+      request_counters:
+        enabled: false
+        backend: 'otel'   # 'otel' uses Metrics API; 'event' falls back to span events
 ```
 
 ### Environment Variables
@@ -224,3 +242,18 @@ php bin/console debug:config otel_bundle
 - [OpenTelemetry SDK Environment Variables](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/)
 - [OpenTelemetry Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/)
 - [Symfony Configuration Reference](https://symfony.com/doc/current/configuration.html) 
+
+## Force flush controls
+
+The bundle provides two switches to control flushing at the end of a request or when exceptions occur:
+
+- `force_flush_on_terminate` (boolean, default: false)
+    - When enabled, the bundle will call the tracer provider's non-destructive `forceFlush()` at the end of the request
+      and after exception handling.
+    - Keep this disabled in web/FPM environments to preserve `BatchSpanProcessor`'s async export. Consider enabling only
+      for CLI or short‑lived processes.
+
+- `force_flush_timeout_ms` (integer, default: 100)
+    - Timeout in milliseconds passed to `forceFlush()` when `force_flush_on_terminate` is enabled.
+    - Increase for more reliability under heavy load; decrease to minimize potential blocking. A value of `0` means no
+      timeout (wait indefinitely) if supported by the underlying SDK version.

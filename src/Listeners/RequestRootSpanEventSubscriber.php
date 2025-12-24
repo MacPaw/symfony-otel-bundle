@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Macpaw\SymfonyOtelBundle\Listeners;
 
+use Symfony\Component\HttpFoundation\Request;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Registry\SpanNames;
 use Macpaw\SymfonyOtelBundle\Service\HttpMetadataAttacher;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\Span;
+use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\Context\Context;
 use OpenTelemetry\Context\Propagation\TextMapPropagatorInterface;
+use OpenTelemetry\Context\ScopeInterface;
 use OpenTelemetry\SemConv\TraceAttributes;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -19,53 +22,95 @@ use Symfony\Component\HttpKernel\KernelEvents;
 
 final readonly class RequestRootSpanEventSubscriber implements EventSubscriberInterface
 {
+    /** @var array<string> */
+    private array $routePrefixes;
+
+    /**
+     * @param array<string> $routePrefixes
+     */
     public function __construct(
         private InstrumentationRegistry $instrumentationRegistry,
         private TextMapPropagatorInterface $propagator,
         private TraceService $traceService,
-        private HttpMetadataAttacher $httpMetadataAttacher
+        private HttpMetadataAttacher $httpMetadataAttacher,
+        private bool $forceFlushOnTerminate = false,
+        private int $forceFlushTimeoutMs = 100,
+        private bool $enabled = true,
+        array $routePrefixes = [],
     ) {
+        /** @var array<string> $routePrefixes */
+        $this->routePrefixes = $routePrefixes;
     }
 
     public function onKernelRequest(RequestEvent $event): void
     {
-        $context = $this->propagator->extract($event->getRequest()->headers->all());
+        if (!$this->enabled || !$event->isMainRequest()) {
+            return;
+        }
+
+        $request = $event->getRequest();
+        if ($this->routePrefixes !== [] && !$this->shouldSampleRoute($request)) {
+            return; // skip creating root span for non-matching routes
+        }
+
+        $context = $this->propagator->extract($request->headers->all());
         $spanInjectedContext = Span::fromContext($context)->getContext();
 
         $context = $spanInjectedContext->isValid() ? $context : Context::getCurrent();
 
         $this->instrumentationRegistry->setContext($context);
 
-        $request = $event->getRequest();
-
         $spanBuilder = $this->traceService
             ->getTracer()
-            ->spanBuilder(sprintf('%s %s', $request->getMethod(), $request->getPathInfo()))
+            ->spanBuilder($request->getMethod() . ' ' . $request->getPathInfo())
             ->setParent($context)
+            // Keep only essential attributes on the builder to minimize pre-start overhead
             ->setAttribute(TraceAttributes::HTTP_REQUEST_METHOD, $request->getMethod())
-            ->setAttribute(TraceAttributes::HTTP_ROUTE, $request->getPathInfo())
-            ->setAttribute(TraceAttributes::URL_SCHEME, $request->getScheme())
-            ->setAttribute(TraceAttributes::SERVER_ADDRESS, $request->getHost());
-
-        $this->httpMetadataAttacher->addHttpAttributes($spanBuilder, $request);
-        $this->httpMetadataAttacher->addRouteNameAttribute($spanBuilder);
+            ->setAttribute(TraceAttributes::HTTP_ROUTE, $request->getPathInfo());
 
         $requestStartSpan = $spanBuilder->startSpan();
         $this->instrumentationRegistry->addSpan($requestStartSpan, SpanNames::REQUEST_START);
-
         $this->instrumentationRegistry->setScope($requestStartSpan->activate());
+
+        // Attach additional HTTP metadata only if the span is recording to avoid extra overhead
+        if ($requestStartSpan->isRecording()) {
+            $this->httpMetadataAttacher->addHttpAttributesToSpan($requestStartSpan, $request);
+            $this->httpMetadataAttacher->addRouteNameAttributeToSpan($requestStartSpan);
+            $this->httpMetadataAttacher->addControllerAttributesToSpan($requestStartSpan, $request);
+        }
+    }
+
+    private function shouldSampleRoute(Request $request): bool
+    {
+        $path = $request->getPathInfo();
+        $routeNameAttr = $request->attributes->get('_route');
+        $routeName = is_string($routeNameAttr) ? $routeNameAttr : '';
+        foreach ($this->routePrefixes as $prefix) {
+            if ($prefix === '') {
+                continue;
+            }
+            /** @var string $prefix */
+            if (str_starts_with($path, $prefix) || ($routeName !== '' && str_starts_with($routeName, $prefix))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public function onKernelTerminate(TerminateEvent $event): void
     {
+        if (!$this->enabled) {
+            return;
+        }
+
         $requestStartSpan = $this->instrumentationRegistry->getSpan(SpanNames::REQUEST_START);
-        if ($requestStartSpan !== null) {
+        if ($requestStartSpan instanceof SpanInterface) {
             $response = $event->getResponse();
             $requestStartSpan->setAttribute(TraceAttributes::HTTP_RESPONSE_STATUS_CODE, $response->getStatusCode());
         }
 
         $scope = $this->instrumentationRegistry->getScope();
-        if ($scope !== null) {
+        if ($scope instanceof ScopeInterface) {
             $scope->detach();
         }
 
@@ -73,7 +118,10 @@ final readonly class RequestRootSpanEventSubscriber implements EventSubscriberIn
             $span->end();
         }
 
-        $this->traceService->shutdown();
+        // Preserve BatchSpanProcessor benefits: flush only when explicitly enabled
+        if ($this->forceFlushOnTerminate) {
+            $this->traceService->forceFlush($this->forceFlushTimeoutMs);
+        }
     }
 
     /**

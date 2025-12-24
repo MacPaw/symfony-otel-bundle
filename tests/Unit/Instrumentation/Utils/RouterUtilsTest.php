@@ -358,4 +358,220 @@ class RouterUtilsTest extends TestCase
 
         $this->assertEquals([], $result);
     }
+
+    public function testGetRequestReturnsCurrentRequestFirst(): void
+    {
+        $requestStack = $this->createMock(RequestStack::class);
+        $currentRequest = $this->createMock(Request::class);
+
+        $requestStack->expects($this->once())
+            ->method('getCurrentRequest')
+            ->willReturn($currentRequest);
+
+        // getMainRequest and getParentRequest may be called as part of the coalesce chain
+        // but their results won't be used when currentRequest is not null
+        $requestStack->expects($this->once())
+            ->method('getMainRequest')
+            ->willReturn(null);
+
+        $requestStack->expects($this->once())
+            ->method('getParentRequest')
+            ->willReturn(null);
+
+        $routerUtils = new RouterUtils($requestStack);
+        $result = $routerUtils->getRequest();
+
+        $this->assertSame($currentRequest, $result);
+    }
+
+    public function testGetRequestReturnsMainRequestWhenCurrentIsNull(): void
+    {
+        $requestStack = $this->createMock(RequestStack::class);
+        $mainRequest = $this->createMock(Request::class);
+
+        $requestStack->expects($this->once())
+            ->method('getCurrentRequest')
+            ->willReturn(null);
+
+        $requestStack->expects($this->once())
+            ->method('getMainRequest')
+            ->willReturn($mainRequest);
+
+        // getParentRequest may be called as part of the coalesce chain, but its result won't be used
+        $requestStack->expects($this->once())
+            ->method('getParentRequest')
+            ->willReturn(null);
+
+        $routerUtils = new RouterUtils($requestStack);
+        $result = $routerUtils->getRequest();
+
+        $this->assertSame($mainRequest, $result);
+    }
+
+    public function testGetRouteParamsCastsKeysToString(): void
+    {
+        $requestStack = $this->createMock(RequestStack::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+
+        $requestStack->expects($this->once())
+            ->method('getCurrentRequest')
+            ->willReturn($request);
+
+        $requestStack->expects($this->once())
+            ->method('getMainRequest')
+            ->willReturn(null);
+
+        $requestStack->expects($this->once())
+            ->method('getParentRequest')
+            ->willReturn(null);
+
+        $request->attributes = $attributes;
+        
+        // Use integer keys to test casting
+        $routeParams = [123 => 'value1', 456 => 'value2'];
+        $attributes->expects($this->once())
+            ->method('get')
+            ->with('_route_params')
+            ->willReturn($routeParams);
+
+        $routerUtils = new RouterUtils($requestStack);
+        $result = $routerUtils->getRouteParams();
+
+        // Verify keys are cast to strings
+        $this->assertNotNull($result);
+        $this->assertIsArray($result);
+        /** @var array<string, mixed> $resultArray */
+        $resultArray = (array) $result;
+        $this->assertArrayHasKey('123', $resultArray);
+        $this->assertArrayHasKey('456', $resultArray);
+        $this->assertSame('value1', $resultArray['123']);
+        $this->assertSame('value2', $resultArray['456']);
+    }
+
+    public function testGetRequestCoalesceOrder(): void
+    {
+        // Test that coalesce order is: currentRequest ?? mainRequest ?? parentRequest
+        $requestStack = $this->createMock(RequestStack::class);
+        $currentRequest = $this->createMock(Request::class);
+        $mainRequest = $this->createMock(Request::class);
+        $parentRequest = $this->createMock(Request::class);
+
+        // Test order: currentRequest is used first
+        $requestStack->expects($this->once())
+            ->method('getCurrentRequest')
+            ->willReturn($currentRequest);
+        $requestStack->expects($this->once())
+            ->method('getMainRequest')
+            ->willReturn($mainRequest);
+        $requestStack->expects($this->once())
+            ->method('getParentRequest')
+            ->willReturn($parentRequest);
+
+        $routerUtils = new RouterUtils($requestStack);
+        $result = $routerUtils->getRequest();
+
+        // Should return currentRequest (first in coalesce chain)
+        $this->assertSame($currentRequest, $result);
+    }
+
+    public function testGetRequestCoalesceOrderIsCorrect(): void
+    {
+        // Test that coalesce order is: currentRequest ?? mainRequest ?? parentRequest
+        // NOT: currentRequest ?? parentRequest ?? mainRequest
+        // NOT: mainRequest ?? currentRequest ?? parentRequest
+        
+        $requestStack = $this->createMock(RequestStack::class);
+        $mainRequest = $this->createMock(Request::class);
+        $parentRequest = $this->createMock(Request::class);
+
+        // When currentRequest is null, should use mainRequest (not parentRequest)
+        $requestStack->expects($this->once())
+            ->method('getCurrentRequest')
+            ->willReturn(null);
+
+        $requestStack->expects($this->once())
+            ->method('getMainRequest')
+            ->willReturn($mainRequest);
+
+        $requestStack->expects($this->once())
+            ->method('getParentRequest')
+            ->willReturn($parentRequest);
+
+        $routerUtils = new RouterUtils($requestStack);
+        $result = $routerUtils->getRequest();
+
+        // Should return mainRequest (second in coalesce chain), not parentRequest
+        $this->assertSame($mainRequest, $result);
+    }
+
+    public function testGetRouteNameAssertChecksStringOrNull(): void
+    {
+        // Test that assert checks: is_string($routeName) || is_null($routeName)
+        // NOT: !is_string($routeName) || !is_null($routeName)
+        // If the mutant were applied, assert would fail for string route names
+        
+        $requestStack = $this->createMock(RequestStack::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+
+        $requestStack->expects($this->once())
+            ->method('getCurrentRequest')
+            ->willReturn($request);
+        $requestStack->expects($this->once())
+            ->method('getMainRequest')
+            ->willReturn(null);
+        $requestStack->expects($this->once())
+            ->method('getParentRequest')
+            ->willReturn(null);
+
+        $request->attributes = $attributes;
+        
+        // Test with string route name - assert should PASS (not fail)
+        // If mutant (!is_string || !is_null) were applied, assert would FAIL for strings
+        $attributes->expects($this->once())
+            ->method('get')
+            ->with('_route')
+            ->willReturn('test_route');
+
+        $routerUtils = new RouterUtils($requestStack);
+        // If assert fails, this would throw AssertionError
+        // Since assert passes, we can get the result
+        $result = $routerUtils->getRouteName();
+
+        // Should return the string route name (assert passed, not failed)
+        $this->assertSame('test_route', $result);
+    }
+
+    public function testGetRouteNameAssertChecksStringOrNullWithNull(): void
+    {
+        // Test that assert checks: is_string($routeName) || is_null($routeName)
+        // NOT: !is_string($routeName) || !is_null($routeName)
+        // Test with null route name - assert should also PASS
+        
+        $requestStack = $this->createMock(RequestStack::class);
+        $request = $this->createMock(Request::class);
+        $attributes = $this->createMock(ParameterBag::class);
+
+        $requestStack->expects($this->once())
+            ->method('getCurrentRequest')
+            ->willReturn($request);
+        $requestStack->expects($this->once())
+            ->method('getMainRequest')
+            ->willReturn(null);
+        $requestStack->expects($this->once())
+            ->method('getParentRequest')
+            ->willReturn(null);
+
+        $request->attributes = $attributes;
+        
+        $attributes->expects($this->once())
+            ->method('get')
+            ->with('_route')
+            ->willReturn(null);
+        
+        $routerUtils = new RouterUtils($requestStack);
+        $result = $routerUtils->getRouteName();
+        $this->assertNull($result);
+    }
 }

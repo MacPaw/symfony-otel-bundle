@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Exception;
 use Macpaw\SymfonyOtelBundle\Instrumentation\RequestExecutionTimeInstrumentation;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
@@ -18,11 +15,16 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class InstrumentationIntegrationTest extends TestCase
 {
     private ContainerBuilder $container;
+
     private TraceService $traceService;
+
     private InstrumentationRegistry $registry;
 
     protected function setUp(): void
@@ -30,8 +32,13 @@ class InstrumentationIntegrationTest extends TestCase
         $this->container = new ContainerBuilder();
         $loader = new YamlFileLoader($this->container, new FileLocator(__DIR__ . '/../../Resources/config'));
 
+        $this->container->setParameter('otel_bundle.enabled', true);
         $this->container->setParameter('otel_bundle.service_name', 'test-service');
         $this->container->setParameter('otel_bundle.tracer_name', 'test-tracer');
+        $this->container->setParameter('otel_bundle.force_flush_on_terminate', false);
+        $this->container->setParameter('otel_bundle.force_flush_timeout_ms', 100);
+        $this->container->setParameter('otel_bundle.sampling.route_prefixes', []);
+        $this->container->setParameter('otel_bundle.header_mappings', ['http.request_id' => 'X-Request-Id']);
 
         $this->container->register('http_client', HttpClientInterface::class)
             ->setClass(HttpClient::class);
@@ -107,6 +114,7 @@ class InstrumentationIntegrationTest extends TestCase
         $this->assertSame($scope, $this->registry->getScope());
 
         $span->end();
+        $scope->detach();
     }
 
     public function testInstrumentationCanHandleExceptions(): void
@@ -128,9 +136,9 @@ class InstrumentationIntegrationTest extends TestCase
 
         try {
             throw new Exception('Test exception during instrumentation');
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
             $instrumentation->post();
-            $this->assertInstanceOf(Exception::class, $e);
+            $this->assertInstanceOf(Exception::class, $exception);
         }
     }
 }

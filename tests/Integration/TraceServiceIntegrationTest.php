@@ -4,23 +4,25 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Exception;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerInterface;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
-use Symfony\Component\Config\FileLocator;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class TraceServiceIntegrationTest extends TestCase
 {
     private ContainerBuilder $container;
+
     private YamlFileLoader $loader;
+
     private TraceService $traceService;
 
     protected function setUp(): void
@@ -28,8 +30,13 @@ class TraceServiceIntegrationTest extends TestCase
         $this->container = new ContainerBuilder();
         $this->loader = new YamlFileLoader($this->container, new FileLocator(__DIR__ . '/../../Resources/config'));
 
+        $this->container->setParameter('otel_bundle.enabled', true);
         $this->container->setParameter('otel_bundle.service_name', 'test-service');
         $this->container->setParameter('otel_bundle.tracer_name', 'test-tracer');
+        $this->container->setParameter('otel_bundle.force_flush_on_terminate', false);
+        $this->container->setParameter('otel_bundle.force_flush_timeout_ms', 100);
+        $this->container->setParameter('otel_bundle.sampling.route_prefixes', []);
+        $this->container->setParameter('otel_bundle.header_mappings', ['http.request_id' => 'X-Request-Id']);
 
         $this->container->register('http_client', HttpClientInterface::class)
             ->setClass(HttpClient::class);

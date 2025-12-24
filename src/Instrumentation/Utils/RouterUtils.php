@@ -10,7 +10,9 @@ use Symfony\Component\HttpFoundation\RequestStack;
 final readonly class RouterUtils
 {
     private ?Request $mainRequest;
+
     private ?Request $currentRequest;
+
     private ?Request $parentRequest;
 
     public function __construct(

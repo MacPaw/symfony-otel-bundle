@@ -14,18 +14,25 @@ class InstrumentationEventSubscriber implements EventSubscriberInterface
 {
     public function __construct(
         private RequestExecutionTimeInstrumentation $executionTimeInstrumentation,
+        private bool $enabled = true,
     ) {
     }
 
     public function onKernelRequestExecutionTime(RequestEvent $event): void
     {
-        $request = $event->getRequest();
-        $this->executionTimeInstrumentation->setHeaders($request->headers->all());
+        if (!$this->enabled || !$event->isMainRequest()) {
+            return;
+        }
+        // Avoid copying all headers on the hot path; context is already extracted by RequestRootSpanEventSubscriber.
+        // When not available, instrumentation falls back to current context.
         $this->executionTimeInstrumentation->pre();
     }
 
     public function onKernelTerminateExecutionTime(TerminateEvent $event): void
     {
+        if (!$this->enabled) {
+            return;
+        }
         $this->executionTimeInstrumentation->post();
     }
 

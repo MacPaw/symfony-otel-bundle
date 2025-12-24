@@ -4,22 +4,23 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Macpaw\SymfonyOtelBundle\Registry\InstrumentationRegistry;
 use Macpaw\SymfonyOtelBundle\Service\HookManagerService;
 use Macpaw\SymfonyOtelBundle\Service\TraceService;
 use Macpaw\SymfonyOtelBundle\SymfonyOtelBundle;
 use OpenTelemetry\API\Trace\TracerInterface;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
-use Symfony\Component\Config\FileLocator;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class BundleIntegrationTest extends TestCase
 {
     private ContainerBuilder $container;
+
     private YamlFileLoader $loader;
 
     protected function setUp(): void
@@ -43,8 +44,13 @@ class BundleIntegrationTest extends TestCase
 
     public function testTraceServiceIsAvailable(): void
     {
+        $this->container->setParameter('otel_bundle.enabled', true);
         $this->container->setParameter('otel_bundle.service_name', 'test-service');
         $this->container->setParameter('otel_bundle.tracer_name', 'test-tracer');
+        $this->container->setParameter('otel_bundle.force_flush_on_terminate', false);
+        $this->container->setParameter('otel_bundle.force_flush_timeout_ms', 100);
+        $this->container->setParameter('otel_bundle.sampling.route_prefixes', []);
+        $this->container->setParameter('otel_bundle.header_mappings', ['http.request_id' => 'X-Request-Id']);
 
         $this->loader->load('services.yml');
         $this->container->compile();
@@ -57,8 +63,13 @@ class BundleIntegrationTest extends TestCase
 
     public function testBundleConfiguration(): void
     {
+        $this->container->setParameter('otel_bundle.enabled', true);
         $this->container->setParameter('otel_bundle.service_name', 'test-service');
         $this->container->setParameter('otel_bundle.tracer_name', 'test-tracer');
+        $this->container->setParameter('otel_bundle.force_flush_on_terminate', false);
+        $this->container->setParameter('otel_bundle.force_flush_timeout_ms', 100);
+        $this->container->setParameter('otel_bundle.sampling.route_prefixes', []);
+        $this->container->setParameter('otel_bundle.header_mappings', ['http.request_id' => 'X-Request-Id']);
 
         $this->loader->load('services.yml');
         $this->container->compile();

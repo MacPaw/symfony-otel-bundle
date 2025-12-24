@@ -1,0 +1,17 @@
+parameters:
+    base_bus_config: &base_bus_config
+
+framework:
+    messenger:
+        default_bus: command.bus
+
+        buses:
+            command.bus: *base_bus_config
+            query.bus: ~
+
+        transports:
+            sync: 'sync://'
+
+        routing:
+            App\Infrastructure\MessageBus\CommandMessageInterface: sync
+            App\Infrastructure\MessageBus\QueryMessageInterface: sync

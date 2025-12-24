@@ -23,11 +23,29 @@ class ConfigurationTest extends TestCase
     {
         $processor = new Processor();
 
+        /** @var array<string, mixed> $config */
         $config = $processor->processConfiguration($this->configuration, []);
 
         $this->assertEquals('symfony-tracer', $config['tracer_name']);
         $this->assertEquals('symfony-app', $config['service_name']);
         $this->assertEquals([], $config['instrumentations']);
+        $this->assertFalse($config['force_flush_on_terminate']);
+        $this->assertEquals(100, $config['force_flush_timeout_ms']);
+        $this->assertEquals(['http.request_id' => 'X-Request-Id'], $config['header_mappings']);
+        /** @var array<string, mixed> $logging */
+        $logging = $config['logging'];
+        $this->assertTrue($logging['enable_trace_processor']);
+        /** @var array<string, string> $logKeys */
+        $logKeys = $logging['log_keys'];
+        $this->assertEquals('trace_id', $logKeys['trace_id']);
+        $this->assertEquals('span_id', $logKeys['span_id']);
+        $this->assertEquals('trace_flags', $logKeys['trace_flags']);
+        /** @var array<string, mixed> $metrics */
+        $metrics = $config['metrics'];
+        /** @var array<string, mixed> $requestCounters */
+        $requestCounters = $metrics['request_counters'];
+        $this->assertFalse($requestCounters['enabled']);
+        $this->assertEquals('otel', $requestCounters['backend']);
     }
 
     public function testCustomConfiguration(): void
@@ -160,5 +178,129 @@ class ConfigurationTest extends TestCase
         $this->assertEquals('tracer-with-special-chars_123', $config['tracer_name']);
         $this->assertEquals('service-with-special-chars_123', $config['service_name']);
         $this->assertEquals(['Namespace\With\Backslashes\InstrumentationClass'], $config['instrumentations']);
+    }
+
+    public function testConfigurationWithForceFlushSettings(): void
+    {
+        $processor = new Processor();
+        $inputConfig = [
+            SymfonyOtelExtension::NAME => [
+                'force_flush_on_terminate' => true,
+                'force_flush_timeout_ms' => 200,
+            ],
+        ];
+
+        /** @var array<int|string, mixed> $config */
+        $config = $processor->processConfiguration($this->configuration, $inputConfig);
+
+        $this->assertTrue($config['force_flush_on_terminate']);
+        $this->assertEquals(200, $config['force_flush_timeout_ms']);
+    }
+
+    public function testConfigurationWithHeaderMappings(): void
+    {
+        $processor = new Processor();
+        $inputConfig = [
+            SymfonyOtelExtension::NAME => [
+                'header_mappings' => [
+                    'user.id' => 'X-User-Id',
+                    'client.version' => 'X-Client-Version',
+                ],
+            ],
+        ];
+
+        /** @var array<int|string, mixed> $config */
+        $config = $processor->processConfiguration($this->configuration, $inputConfig);
+
+        /** @var array<string, string> $headerMappings */
+        $headerMappings = $config['header_mappings'];
+        $this->assertEquals('X-User-Id', $headerMappings['user.id']);
+        $this->assertEquals('X-Client-Version', $headerMappings['client.version']);
+    }
+
+    public function testConfigurationWithLoggingSettings(): void
+    {
+        $processor = new Processor();
+        $inputConfig = [
+            SymfonyOtelExtension::NAME => [
+                'logging' => [
+                    'enable_trace_processor' => false,
+                    'log_keys' => [
+                        'trace_id' => 'custom_trace_id',
+                        'span_id' => 'custom_span_id',
+                        'trace_flags' => 'custom_trace_flags',
+                    ],
+                ],
+            ],
+        ];
+
+        /** @var array<int|string, mixed> $config */
+        $config = $processor->processConfiguration($this->configuration, $inputConfig);
+
+        /** @var array<string, mixed> $logging */
+        $logging = $config['logging'];
+        $this->assertFalse($logging['enable_trace_processor']);
+        /** @var array<string, string> $logKeys */
+        $logKeys = $logging['log_keys'];
+        $this->assertEquals('custom_trace_id', $logKeys['trace_id']);
+        $this->assertEquals('custom_span_id', $logKeys['span_id']);
+        $this->assertEquals('custom_trace_flags', $logKeys['trace_flags']);
+    }
+
+    public function testConfigurationWithMetricsSettings(): void
+    {
+        $processor = new Processor();
+        $inputConfig = [
+            SymfonyOtelExtension::NAME => [
+                'metrics' => [
+                    'request_counters' => [
+                        'enabled' => true,
+                        'backend' => 'event',
+                    ],
+                ],
+            ],
+        ];
+
+        /** @var array<int|string, mixed> $config */
+        $config = $processor->processConfiguration($this->configuration, $inputConfig);
+
+        /** @var array<string, mixed> $metrics */
+        $metrics = $config['metrics'];
+        /** @var array<string, mixed> $requestCounters */
+        $requestCounters = $metrics['request_counters'];
+        $this->assertTrue($requestCounters['enabled']);
+        $this->assertEquals('event', $requestCounters['backend']);
+    }
+
+    public function testConfigurationWithInvalidForceFlushTimeout(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        $processor = new Processor();
+        $inputConfig = [
+            SymfonyOtelExtension::NAME => [
+                'force_flush_timeout_ms' => -1,
+            ],
+        ];
+
+        $processor->processConfiguration($this->configuration, $inputConfig);
+    }
+
+    public function testConfigurationWithInvalidMetricsBackend(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+
+        $processor = new Processor();
+        $inputConfig = [
+            SymfonyOtelExtension::NAME => [
+                'metrics' => [
+                    'request_counters' => [
+                        'backend' => 'invalid',
+                    ],
+                ],
+            ],
+        ];
+
+        $processor->processConfiguration($this->configuration, $inputConfig);
     }
 }

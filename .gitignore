@@ -1,6 +1,4 @@
 /vendor/
-var/cache/phpstan/
-var/coverage/
 composer.lock
 /.phpunit.result.cache
 /.phpcs-cache
@@ -10,3 +8,4 @@ composer.lock
 .docker-compose.override.yml
 /.env
 loadTesting/reports/
+/var

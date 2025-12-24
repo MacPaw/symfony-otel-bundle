@@ -6,6 +6,8 @@ namespace Macpaw\SymfonyOtelBundle\Instrumentation;
 
 interface HookInstrumentationInterface extends InstrumentationInterface
 {
+    public const TAG = 'otel.hook_instrumentation';
+
     /**
      * Hook class.
      *

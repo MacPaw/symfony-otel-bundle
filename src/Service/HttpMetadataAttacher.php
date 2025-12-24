@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Macpaw\SymfonyOtelBundle\Service;
 
+use OpenTelemetry\API\Trace\SpanInterface;
 use Macpaw\SymfonyOtelBundle\Instrumentation\Utils\RouterUtils;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
+use OpenTelemetry\SemConv\Attributes as SemConv;
 use Symfony\Component\HttpFoundation\Request;
 
 final readonly class HttpMetadataAttacher
 {
     public const REQUEST_ID_ATTRIBUTE = 'http.request_id';
+
     public const ROUTE_NAME_ATTRIBUTE = 'http.route_name';
 
     /**
@@ -22,6 +25,7 @@ final readonly class HttpMetadataAttacher
     ) {
     }
 
+    // Builder-based (pre-start) attachment — keep for internal uses
     public function addHttpAttributes(SpanBuilderInterface $spanBuilder, Request $request): void
     {
         foreach ($this->headerMappings as $spanAttributeName => $headerName) {
@@ -33,12 +37,16 @@ final readonly class HttpMetadataAttacher
             $spanBuilder->setAttribute($spanAttributeName, $headerValue);
         }
 
-        // W need to generate a request ID if it is not present in the request and pass it to the span.
+        // We need to generate a request ID if it is not present in the request and pass it to the span.
         if ($request->headers->has(HttpClientDecorator::REQUEST_ID_HEADER) === false) {
             $requestId = RequestIdGenerator::generate();
             $request->headers->set(HttpClientDecorator::REQUEST_ID_HEADER, $requestId);
             $spanBuilder->setAttribute(self::REQUEST_ID_ATTRIBUTE, $requestId);
         }
+
+        // Standard HTTP semantic attributes if not set upstream
+        $spanBuilder->setAttribute(SemConv\HttpAttributes::HTTP_REQUEST_METHOD, $request->getMethod());
+        $spanBuilder->setAttribute(SemConv\HttpAttributes::HTTP_ROUTE, $request->getPathInfo());
     }
 
     public function addRouteNameAttribute(SpanBuilderInterface $spanBuilder): void
@@ -46,6 +54,111 @@ final readonly class HttpMetadataAttacher
         $routeName = $this->routerUtils->getRouteName();
         if ($routeName !== null) {
             $spanBuilder->setAttribute(self::ROUTE_NAME_ATTRIBUTE, $routeName);
+        }
+    }
+
+    public function addControllerAttributes(SpanBuilderInterface $spanBuilder, Request $request): void
+    {
+        $controller = $request->attributes->get('_controller');
+        if ($controller === null) {
+            return;
+        }
+
+        $ns = null;
+        $fn = null;
+
+        if (is_string($controller)) {
+            // Formats: 'App\\Controller\\HomeController::index' or 'App\\Controller\\InvokableController'
+            if (str_contains($controller, '::')) {
+                [$ns, $fn] = explode('::', $controller, 2);
+            } else {
+                $ns = $controller;
+                $fn = '__invoke';
+            }
+        } elseif (is_array($controller) && count($controller) === 2) {
+            // [object|string, method]
+            $first = $controller[0];
+            $second = $controller[1];
+            $class = is_object($first) ? $first::class : (is_string($first) ? $first : '');
+            $ns = $class;
+            $fn = is_string($second) ? $second : '';
+        } elseif (is_object($controller)) {
+            // Invokable object
+            $ns = $controller::class;
+            $fn = '__invoke';
+        }
+
+        if ($ns !== null && $fn !== null) {
+            $spanBuilder->setAttribute(
+                SemConv\CodeAttributes::CODE_FUNCTION_NAME,
+                sprintf('%s::%s', $ns, $fn),
+            );
+        }
+    }
+
+    // Span-based (post-start) attachment — used when guarding with isRecording()
+    public function addHttpAttributesToSpan(SpanInterface $span, Request $request): void
+    {
+        foreach ($this->headerMappings as $spanAttributeName => $headerName) {
+            if ($request->headers->has($headerName) === false) {
+                continue;
+            }
+            $headerValue = (string)$request->headers->get($headerName);
+            /** @var non-empty-string $spanAttributeName */
+            $span->setAttribute($spanAttributeName, $headerValue);
+        }
+
+        if ($request->headers->has(HttpClientDecorator::REQUEST_ID_HEADER) === false) {
+            $requestId = RequestIdGenerator::generate();
+            $request->headers->set(HttpClientDecorator::REQUEST_ID_HEADER, $requestId);
+            $span->setAttribute(self::REQUEST_ID_ATTRIBUTE, $requestId);
+        }
+
+        $span->setAttribute(SemConv\HttpAttributes::HTTP_REQUEST_METHOD, $request->getMethod());
+        $span->setAttribute(SemConv\HttpAttributes::HTTP_ROUTE, $request->getPathInfo());
+    }
+
+    public function addRouteNameAttributeToSpan(SpanInterface $span): void
+    {
+        $routeName = $this->routerUtils->getRouteName();
+        if ($routeName !== null) {
+            $span->setAttribute(self::ROUTE_NAME_ATTRIBUTE, $routeName);
+        }
+    }
+
+    public function addControllerAttributesToSpan(SpanInterface $span, Request $request): void
+    {
+        $controller = $request->attributes->get('_controller');
+        if ($controller === null) {
+            return;
+        }
+
+        $ns = null;
+        $fn = null;
+
+        if (is_string($controller)) {
+            if (str_contains($controller, '::')) {
+                [$ns, $fn] = explode('::', $controller, 2);
+            } else {
+                $ns = $controller;
+                $fn = '__invoke';
+            }
+        } elseif (is_array($controller) && count($controller) === 2) {
+            $first = $controller[0];
+            $second = $controller[1];
+            $class = is_object($first) ? $first::class : (is_string($first) ? $first : '');
+            $ns = $class;
+            $fn = is_string($second) ? $second : '';
+        } elseif (is_object($controller)) {
+            $ns = $controller::class;
+            $fn = '__invoke';
+        }
+
+        if ($ns !== null && $fn !== null) {
+            $span->setAttribute(
+                SemConv\CodeAttributes::CODE_FUNCTION_NAME,
+                $ns . '::' . $fn,
+            );
         }
     }
 }

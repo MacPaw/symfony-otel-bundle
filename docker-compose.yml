@@ -29,7 +29,7 @@ services:
     ports:
       - "${GRAFANA_PORT:-3000}:3000"
 
-  # PHP application for testing
+  # PHP application for testing (with OpenTelemetry)
   php-app:
     user: root
     build:
@@ -58,6 +58,22 @@ services:
     ports:
       - "${APP_PORT:-8080}:8080"
 
+  # PHP baseline application (without OpenTelemetry)
+  php-app-baseline:
+    user: root
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    volumes:
+      - .:/var/www/html:rw
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini:rw
+    environment:
+      APP_ENV: test
+    networks:
+      - otel-network
+    ports:
+      - "${APP_BASELINE_PORT:-8081}:8080"
+
   # k6 Load Testing
   k6:
     build:
@@ -65,12 +81,14 @@ services:
       dockerfile: docker/k6-go/Dockerfile
     environment:
       BASE_URL: http://php-app:8080
+      BASE_URL_BASELINE: http://php-app-baseline:8080
       K6_WEB_DASHBOARD: ${K6_WEB_DASHBOARD:-true}
       K6_WEB_DASHBOARD_EXPORT: ${K6_WEB_DASHBOARD_EXPORT:-/scripts/reports/html-report.html}
     volumes:
       - ./loadTesting:/scripts:rw
     depends_on:
       - php-app
+      - php-app-baseline
     networks:
       - otel-network
     ports:

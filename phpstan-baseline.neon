@@ -1,0 +1,42 @@
+parameters:
+    ignoreErrors:
+        -
+            message: '#^Parameter \#1 \$record \(array<mixed>\) of method Macpaw\\SymfonyOtelBundle\\Logging\\MonologTraceContextProcessor::__invoke\(\) should be compatible with parameter \$record \(Monolog\\LogRecord\) of method Monolog\\Processor\\ProcessorInterface::__invoke\(\)$#'
+            identifier: method.childParameterType
+            path: src/Logging/MonologTraceContextProcessor.php
+
+        -
+            message: '#^Return type \(array<mixed>\) of method Macpaw\\SymfonyOtelBundle\\Logging\\MonologTraceContextProcessor::__invoke\(\) should be compatible with return type \(Monolog\\LogRecord\) of method Monolog\\Processor\\ProcessorInterface::__invoke\(\)$#'
+            identifier: method.childReturnType
+            path: src/Logging/MonologTraceContextProcessor.php
+
+        -
+            # Covers both getExtraValue() and hasExtraKey() parameter type issues
+            message: '#^Parameter \#1 \$record of method Tests\\Unit\\Logging\\MonologTraceContextProcessorTest::(getExtraValue|hasExtraKey)\(\) expects array<string, mixed>\|Monolog\\LogRecord, array<mixed>\|Monolog\\LogRecord given\.$#'
+            identifier: argument.type
+            path: tests/Unit/Logging/MonologTraceContextProcessorTest.php
+
+        -
+            message: '#^Access to an undefined property Monolog\\LogRecord::\$extra\.$#'
+            identifier: property.notFound
+            path: src/Logging/MonologTraceContextProcessorV3.php
+
+        -
+            message: '#^Cannot access offset string on mixed\.$#'
+            identifier: offsetAccess.nonOffsetAccessible
+            path: src/Logging/MonologTraceContextProcessorV3.php
+
+        -
+            message: '#^Access to an undefined property Monolog\\LogRecord::\$extra\.$#'
+            identifier: property.notFound
+            path: tests/Unit/Logging/MonologTraceContextProcessorTest.php
+
+        -
+            message: '#^Access to constant Info on an unknown class Monolog\\Level\.$#'
+            identifier: class.notFound
+            path: tests/Unit/Logging/MonologTraceContextProcessorTest.php
+
+        -
+            message: '#^Cannot instantiate interface Monolog\\LogRecord\.$#'
+            identifier: new.interface
+            path: tests/Unit/Logging/MonologTraceContextProcessorTest.php

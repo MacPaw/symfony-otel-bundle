@@ -1,5 +1,7 @@
 # Symfony OpenTelemetry Bundle
 
+![Symfony OTel Bundle](.github/header.png)
+
 A comprehensive OpenTelemetry integration bundle for Symfony applications that provides automatic instrumentation, custom span creation, and distributed tracing capabilities.
 
 ## Features

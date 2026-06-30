@@ -17,6 +17,9 @@ NC := \033[0m # No Color
 COMPOSE_FILE := docker-compose.yml
 COMPOSE_OVERRIDE := docker-compose.override.yml
 
+# Pinned tools (tag for readability, digest for immutability/reproducibility)
+TRIVY_IMAGE := aquasec/trivy:0.71.2@sha256:f5d0e600ecda7449e2a9b272805aef698631d3bb3f3a739a750de2c6819acdc9
+
 ## Environment Management
 up: ## Start the complete testing environment
 	@echo "$(BLUE)🐳 Starting Symfony OpenTelemetry Bundle Test Environment$(NC)"
@@ -388,7 +391,7 @@ lint-yaml: ## Lint YAML files
 
 security-scan: ## Run local security scanning
 	@echo "$(BLUE)🔒 Running local security scan...$(NC)"
-	@docker run --rm -v $(PWD):/workspace aquasec/trivy fs --security-checks vuln /workspace
+	@docker run --rm -v $(PWD):/workspace $(TRIVY_IMAGE) fs --scanners vuln /workspace
 	@echo "$(GREEN)✅ Security scan completed$(NC)"
 
 fix-whitespace: ## Fix trailing whitespace in all files
